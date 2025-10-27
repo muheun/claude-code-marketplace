@@ -8,11 +8,5 @@
   },
   "homepage": "https://github.com/muheun/claude-code-marketplace",
   "repository": "https://github.com/muheun/claude-code-marketplace.git",
-  "license": "MIT",
-  "commands": {
-    "init": {
-      "description": "speckit 프로젝트 초기화 및 CLI 설치 확인",
-      "source": "./commands/init.md"
-    }
-  }
+  "license": "MIT"
 }
