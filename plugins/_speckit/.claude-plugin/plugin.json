@@ -1,0 +1,18 @@
+{
+  "name": "_speckit",
+  "description": "GitHub SpecKit integration for Specification-Driven Development - define WHAT and HOW before coding",
+  "version": "0.0.1",
+  "author": {
+    "name": "muheun",
+    "url": "https://github.com/muheun/claude-code-marketplace"
+  },
+  "homepage": "https://github.com/muheun/claude-code-marketplace",
+  "repository": "https://github.com/muheun/claude-code-marketplace.git",
+  "license": "MIT",
+  "commands": {
+    "init": {
+      "description": "speckit 프로젝트 초기화 및 CLI 설치 확인",
+      "source": "./commands/init.md"
+    }
+  }
+}

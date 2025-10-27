@@ -1,0 +1,24 @@
+{
+  "name": "muheun-claude-plugins",
+  "owner": {
+    "name": "muheun"
+  },
+  "metadata": {
+    "description": "Productivity plugins for Claude Code to automate development workflows",
+    "version": "0.0.1",
+    "homepage": "https://github.com/muheun/claude-code-marketplace"
+  },
+  "plugins": [
+    {
+      "name": "_speckit",
+      "source": "./plugins/_speckit",
+      "description": "GitHub SpecKit integration for Specification-Driven Development - define WHAT and HOW before coding",
+      "version": "0.0.1",
+      "author": {
+        "name": "muheun"
+      },
+      "category": "productivity",
+      "homepage": "https://github.com/muheun/claude-code-marketplace"
+    }
+  ]
+}
