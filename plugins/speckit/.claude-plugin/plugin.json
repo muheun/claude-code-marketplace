@@ -1,5 +1,5 @@
 {
-  "name": "_speckit",
+  "name": "speckit",
   "description": "GitHub SpecKit integration for Specification-Driven Development - define WHAT and HOW before coding",
   "version": "0.0.1",
   "author": {
