@@ -1,0 +1,258 @@
+---
+name: smart-git-commit
+description: Git 커밋 메시지 자동 생성 및 커밋/푸시 수행. 사용자가 "커밋해줘", "commit", "저장해줘" 등 커밋 요청 시 소스 상태를 분석하여 Gitmoji + 한글 메시지를 추천하고, 승인 후 커밋/푸시를 수행합니다.
+---
+
+# Smart Git Commit
+
+## Overview
+
+Automatically generate Gitmoji-based Korean commit messages by analyzing project changes, then execute commits and pushes after user approval.
+
+**Core capabilities**:
+- 📊 Analyze git changes and check .gitignore violations
+- 🎨 Generate Gitmoji + Korean commit messages
+- ✅ Require user approval before committing
+- 🚀 Execute commits and pushes with one click
+
+## When to Use This Skill
+
+Use this skill when users request commit actions:
+- "커밋해줘" / "커밋해" / "commit"
+- "저장해줘" / "git commit"
+- "푸시해줘" (commit + push)
+
+## Workflow
+
+### Step 1: Analyze Changes
+
+Execute `scripts/analyze_changes.py`:
+
+```bash
+python3 scripts/analyze_changes.py
+```
+
+Checks:
+- Modified/added/deleted files
+- .gitignore violations
+- Sensitive information (API keys, .env, credentials)
+- Temporary/build files (node_modules, dist, *.log)
+
+**If violations detected**: Warn user and stop.
+
+### Step 2: Generate Commit Message
+
+Generate message using analysis result:
+
+```bash
+python3 scripts/analyze_changes.py | python3 scripts/generate_message.py
+```
+
+**Message rules**:
+- Gitmoji selection based on file types
+- Korean-first (title and body)
+- Under 300 characters
+- No AI signatures
+
+**Format**:
+```
+<gitmoji> <type>: Korean summary (max 50 chars)
+
+- Key change 1
+- Key change 2
+- Key change 3
+```
+
+**Improve generic messages** by:
+- Reading actual diffs with `git diff`
+- Identifying key functionality changes
+- Using domain-specific terms
+- Referencing `references/commit_examples.md`
+
+### Step 3: User Approval
+
+Show message and ask:
+
+```
+📋 Generated commit message:
+
+<message>
+
+✅ Commit with this message?
+🚀 Push as well?
+
+(1) Commit only
+(2) Commit + Push
+(3) Modify message
+(4) Cancel
+```
+
+**Never commit without explicit approval.**
+
+### Step 4: Execute
+
+Based on user choice:
+
+```bash
+# Commit only
+python3 scripts/execute_commit.py "message" false
+
+# Commit + Push
+python3 scripts/execute_commit.py "message" true
+```
+
+Report results:
+- ✅ "Commit completed: <hash>"
+- 🚀 "Pushed to: <branch>"
+- ❌ "Failed: <error>"
+
+## Gitmoji Selection
+
+Refer to `references/gitmoji_rules.md` for detailed rules.
+
+**Quick reference**:
+
+| Situation | Gitmoji | Type |
+|-----------|---------|------|
+| Test files | ✅ | test |
+| Bug fix | 🐛 | fix |
+| New feature | ✨ | feat |
+| Refactoring | ♻️ | refactor |
+| Performance | ⚡ | perf |
+| Documentation | 📝 | docs |
+| Configuration | 🔧 | chore |
+
+## Message Quality Standards
+
+Refer to `references/commit_examples.md` for examples.
+
+**Good**:
+- ✅ Imperative form ("add" not "added")
+- ✅ Concise and focused
+- ✅ Under 300 characters
+- ✅ Production files only
+- ✅ No AI signatures
+
+**Bad**:
+- ❌ AI signatures (🤖 Generated with...)
+- ❌ Over 300 characters
+- ❌ File-by-file details
+- ❌ Configuration file changes
+- ❌ Past tense
+
+## Prohibitions
+
+### Absolutely Forbidden
+
+1. **AI signatures**:
+   - `🤖 Generated with Claude Code`
+   - `Co-Authored-By: Claude`
+   - Any AI attribution
+
+2. **Force commits**:
+   - No `git add --force`
+   - No ignoring .gitignore rules
+
+3. **Sensitive information**:
+   - `.env`, credentials, API keys
+   - `*.pem`, `*.key`, `*.cert`
+
+4. **Temporary/build files**:
+   - `node_modules/`, `dist/`, `build/`
+   - `*.log`, `*.tmp`, `__pycache__/`
+   - `.DS_Store`, `Thumbs.db`
+
+### User Approval Required
+
+- Never commit without approval
+- Always show message before committing
+- Respect user choice
+
+## Scripts
+
+### analyze_changes.py
+
+Analyzes git status and checks violations.
+
+**Output**:
+```json
+{
+  "success": true,
+  "modified": ["file1.kt"],
+  "added": ["file2.py"],
+  "gitignore_violations": [],
+  "diff_summary": "2 files changed, 10 insertions(+)"
+}
+```
+
+### generate_message.py
+
+Generates commit message from analysis.
+
+**Output**:
+```json
+{
+  "success": true,
+  "message": "✨ feat: User auth API\n\n- JWT authentication\n- Token refresh\n- Login/logout",
+  "emoji": "✨",
+  "type": "feat"
+}
+```
+
+### execute_commit.py
+
+Executes git commit and optional push.
+
+**Usage**:
+```bash
+python3 scripts/execute_commit.py "message" false  # commit only
+python3 scripts/execute_commit.py "message" true   # commit + push
+```
+
+## Example Scenarios
+
+### Scenario 1: Test File Modified
+
+**User**: "커밋해줘"
+
+**Workflow**:
+1. Detect `PostEmbeddingRepositoryTest.kt` modified
+2. Generate ✅ test message
+3. Show message, ask approval
+4. Execute commit
+
+### Scenario 2: New Feature
+
+**User**: "푸시해줘"
+
+**Workflow**:
+1. Analyze new API files
+2. Generate ✨ feat message
+3. Ask for commit + push approval
+4. Execute and report
+
+### Scenario 3: .gitignore Violation
+
+**User**: "커밋해줘"
+
+**Result**:
+```
+⚠️ .gitignore violation detected:
+- .env (sensitive info)
+
+Cannot commit these files.
+Add to .gitignore or use git restore.
+```
+
+## Checklist
+
+Before each commit:
+- [ ] User requested commit
+- [ ] Analysis completed
+- [ ] No violations
+- [ ] No sensitive info
+- [ ] Correct Gitmoji
+- [ ] Korean message
+- [ ] Under 300 chars
+- [ ] No AI signature
+- [ ] User approved

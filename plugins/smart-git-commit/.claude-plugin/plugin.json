@@ -1,0 +1,12 @@
+{
+  "name": "smart-git-commit",
+  "description": "Automatically generate Gitmoji-based Korean commit messages by analyzing project changes, then execute commits and pushes after user approval.",
+  "version": "0.0.1",
+  "author": {
+    "name": "muheun",
+    "url": "https://github.com/muheun/claude-code-marketplace"
+  },
+  "homepage": "https://github.com/muheun/claude-code-marketplace",
+  "repository": "https://github.com/muheun/claude-code-marketplace.git",
+  "license": "MIT"
+}
