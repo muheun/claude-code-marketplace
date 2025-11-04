@@ -1,0 +1,12 @@
+{
+  "name": "ios-ui-design-guide",
+  "description": "Build native iOS interfaces that look professional and follow Apple Human Interface Guidelines (HIG) by applying systematic design principles. This skill provides comprehensive guidelines for SwiftUI-first development with color system, spacing, typography, and component-specific patterns optimized for iOS.",
+  "version": "0.0.1",
+  "author": {
+    "name": "muheun",
+    "url": "https://github.com/muheun/claude-code-marketplace"
+  },
+  "homepage": "https://github.com/muheun/claude-code-marketplace",
+  "repository": "https://github.com/muheun/claude-code-marketplace.git",
+  "license": "MIT"
+}

@@ -1,0 +1,12 @@
+{
+  "name": "web-ui-design-guide",
+  "description": "Ensure every web UI component built looks modern and professional by applying systematic design principles. This skill provides comprehensive guidelines for color, spacing, typography, and component-specific patterns to achieve clean, minimal, and consistent user interfaces.",
+  "version": "0.0.1",
+  "author": {
+    "name": "muheun",
+    "url": "https://github.com/muheun/claude-code-marketplace"
+  },
+  "homepage": "https://github.com/muheun/claude-code-marketplace",
+  "repository": "https://github.com/muheun/claude-code-marketplace.git",
+  "license": "MIT"
+}

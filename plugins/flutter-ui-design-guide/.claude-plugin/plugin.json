@@ -1,0 +1,12 @@
+{
+  "name": "flutter-ui-design-guide",
+  "description": "Build cross-platform Flutter apps with Material Design (Android) and Cupertino (iOS) support. This skill provides guidelines for adaptive widgets, theming, spacing, typography, and component patterns optimized for both platforms.",
+  "version": "0.0.1",
+  "author": {
+    "name": "muheun",
+    "url": "https://github.com/muheun/claude-code-marketplace"
+  },
+  "homepage": "https://github.com/muheun/claude-code-marketplace",
+  "repository": "https://github.com/muheun/claude-code-marketplace.git",
+  "license": "MIT"
+}

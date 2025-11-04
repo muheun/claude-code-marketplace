@@ -1,6 +1,6 @@
 ---
 name: smart-git-commit
-description: Git 커밋 메시지 자동 생성 및 커밋/푸시 수행. 사용자가 "커밋해줘", "commit", "저장해줘" 등 커밋 요청 시 소스 상태를 분석하여 Gitmoji + 한글 메시지를 추천하고, 승인 후 커밋/푸시를 수행합니다.
+description: Execute git commit operations when user requests to commit or push code changes. Use this skill to generate recommended commit messages, perform local commits, or push to remote repositories. If the request type is ambiguous (message generation vs. local commit vs. remote push), confirm with the user before proceeding.
 ---
 
 # Smart Git Commit

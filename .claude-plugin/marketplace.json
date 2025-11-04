@@ -30,6 +30,50 @@
       },
       "category": "productivity",
       "homepage": "https://github.com/muheun/claude-code-marketplace"
+    },
+    {
+      "name": "web-ui-design-guide",
+      "source": "./plugins/web-ui-design-guide",
+      "description": "Ensure every web UI component built looks modern and professional by applying systematic design principles. This skill provides comprehensive guidelines for color, spacing, typography, and component-specific patterns to achieve clean, minimal, and consistent user interfaces.",
+      "version": "0.0.1",
+      "author": {
+        "name": "muheun"
+      },
+      "category": "productivity",
+      "homepage": "https://github.com/muheun/claude-code-marketplace"
+    },
+    {
+      "name": "ios-ui-design-guide",
+      "source": "./plugins/ios-ui-design-guide",
+      "description": "Build native iOS interfaces that look professional and follow Apple Human Interface Guidelines (HIG) by applying systematic design principles. This skill provides comprehensive guidelines for SwiftUI-first development with color system, spacing, typography, and component-specific patterns optimized for iOS.",
+      "version": "0.0.1",
+      "author": {
+        "name": "muheun"
+      },
+      "category": "productivity",
+      "homepage": "https://github.com/muheun/claude-code-marketplace"
+    },
+    {
+      "name": "android-ui-design-guide",
+      "source": "./plugins/android-ui-design-guide",
+      "description": "Build native Android interfaces that follow Material Design 3 (Material You) by applying systematic design principles. This skill provides comprehensive guidelines for Jetpack Compose-first development with Dynamic Color, spacing, typography, and component-specific patterns optimized for Android.",
+      "version": "0.0.1",
+      "author": {
+        "name": "muheun"
+      },
+      "category": "productivity",
+      "homepage": "https://github.com/muheun/claude-code-marketplace"
+    },
+    {
+      "name": "flutter-ui-design-guide",
+      "source": "./plugins/flutter-ui-design-guide",
+      "description": "Build cross-platform Flutter apps with Material Design (Android) and Cupertino (iOS) support. This skill provides guidelines for adaptive widgets, theming, spacing, typography, and component patterns optimized for both platforms.",
+      "version": "0.0.1",
+      "author": {
+        "name": "muheun"
+      },
+      "category": "productivity",
+      "homepage": "https://github.com/muheun/claude-code-marketplace"
     }
   ]
 }
