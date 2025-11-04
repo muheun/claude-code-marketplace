@@ -1,4 +1,4 @@
-/---
+---
 name: web-ui-design-guide
 description: Apply modern, professional web UI design principles when building any web UI component. Only execute this when the current project is a web project and involves UI-related work. Use this skill for UI tasks involving buttons, forms, cards, layouts, navigation, or any visual web component. Ensures clean minimal design, neutral color palettes with single accent color, 8px grid spacing, clear typography hierarchy, and subtle visual effects. Prevents common anti-patterns like rainbow gradients, tiny text, and inconsistent spacing.
 ---
