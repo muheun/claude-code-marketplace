@@ -53,6 +53,8 @@ python3 scripts/analyze_changes.py | python3 scripts/generate_message.py
 - Korean-first (title and body)
 - Under 300 characters
 - No AI signatures
+- **No tracking codes** (Phase 4, T032-1, SC-003 등 절대 금지)
+- **Maximum conciseness** (각 bullet point 1줄, 핵심만 전달)
 
 **Format**:
 ```
@@ -128,36 +130,44 @@ Refer to `references/commit_examples.md` for examples.
 
 **Good**:
 - ✅ Imperative form ("add" not "added")
-- ✅ Concise and focused
+- ✅ **Extremely concise** (1줄 = 1 bullet point, 핵심만)
 - ✅ Under 300 characters
 - ✅ Production files only
 - ✅ No AI signatures
+- ✅ **No tracking codes** (외부 문서 참조 금지)
 
 **Bad**:
 - ❌ AI signatures (🤖 Generated with...)
+- ❌ **Tracking codes** (Phase 4, T032-1, SC-003 등)
 - ❌ Over 300 characters
 - ❌ File-by-file details
 - ❌ Configuration file changes
 - ❌ Past tense
+- ❌ Verbose explanations (기술 용어 과다, 장황한 설명)
 
 ## Prohibitions
 
 ### Absolutely Forbidden
 
-1. **AI signatures**:
+1. **Tracking codes**:
+   - `Phase 4`, `T032-1`, `SC-003` 등 문서 참조 코드
+   - 외부 이슈 트래커나 문서 시스템 참조
+   - 커밋 메시지는 독립적이고 자체 완결적이어야 함
+
+2. **AI signatures**:
    - `🤖 Generated with Claude Code`
    - `Co-Authored-By: Claude`
    - Any AI attribution
 
-2. **Force commits**:
+3. **Force commits**:
    - No `git add --force`
    - No ignoring .gitignore rules
 
-3. **Sensitive information**:
+4. **Sensitive information**:
    - `.env`, credentials, API keys
    - `*.pem`, `*.key`, `*.cert`
 
-4. **Temporary/build files**:
+5. **Temporary/build files**:
    - `node_modules/`, `dist/`, `build/`
    - `*.log`, `*.tmp`, `__pycache__/`
    - `.DS_Store`, `Thumbs.db`
