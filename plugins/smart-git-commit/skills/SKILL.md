@@ -84,28 +84,16 @@ git diff --cached --name-only
 - `.aider*`, `aider.*.md` - Aider AI files
 - `*.gpt.md` - ChatGPT related files
 
-**If AI files detected:**
-```
-⚠️ AI-related files are staged:
-- claudedocs/analysis.md
-- src/component.ai.md
+**If AI files detected:** Present options and handle user choice.
 
-These are typically not committed to version control.
-
-Options:
+**Options:**
 1. ✅ Proceed with commit (include AI files)
 2. 🚫 Exclude AI files from this commit
 3. ❌ Cancel
 
-Choose an option:
-```
-
 **Handle user choice:**
-- **Choice 1**: Continue with all files (user intentionally wants to commit AI files)
-- **Choice 2**: Remove AI files from staging, continue with remaining files
-  ```bash
-  git restore --staged claudedocs/ src/component.ai.md
-  ```
+- **Choice 1**: Continue with all files
+- **Choice 2**: Remove AI files from staging (`git restore --staged <files>`)
 - **Choice 3**: Stop workflow
 
 **Important**: Do NOT block or warn about other file types (.env, node_modules, etc.). User manages these via .gitignore/.gitignore_global.
@@ -134,89 +122,28 @@ Analyze file relationships using:
    - Test files: `*Test.kt`, `*_test.py`, `*.test.ts`, `*.spec.js`
    - Documentation: `README.md`, `*.md` in `docs/`
    - Configuration: `package.json`, `build.gradle`, `*.toml`, `*.yml`
-4. **Semantic relationships**: Analyze diff content to detect related changes (e.g., Service imports Repository)
+4. **Semantic relationships**: Analyze diff content to detect related changes
+
+*Detailed grouping strategies: `references/grouping_strategies.md`*
 
 **1.5.3 Present grouping to user:**
 
-```
-🔍 Large changeset detected (15 files)
+Present suggested grouping with file counts and domain names.
 
-Suggested grouping:
-📦 Group 1: User 모듈 구현 (5 files)
-   - src/user/User.kt
-   - src/user/UserService.kt
-   - src/user/UserRepository.kt
-   - src/user/UserDto.kt
-   - src/user/UserMapper.kt
-
-📦 Group 2: Product 모듈 구현 (4 files)
-   - src/product/Product.kt
-   - src/product/ProductService.kt
-   - src/product/ProductRepository.kt
-   - src/product/ProductDto.kt
-
-📦 Group 3: 테스트 추가 (3 files)
-   - tests/UserTest.kt
-   - tests/ProductTest.kt
-   - tests/IntegrationTest.kt
-
-📦 Group 4: 문서 업데이트 (3 files)
-   - README.md
-   - docs/api.md
-   - docs/setup.md
-
-Options:
-1. ✅ Create 4 separate commits (recommended)
+**Options:**
+1. ✅ Create separate commits (recommended)
 2. ⚠️ Create 1 combined commit
 3. ✏️ Modify grouping
 4. ❌ Cancel
 
-Choose an option:
-```
+**1.5.4 Handle user choice and execute grouped commits:**
 
-**1.5.4 Handle user choice:**
-
-- **Choice 1**: Generate separate commit message for each group (proceed to Step 2 for each group)
-- **Choice 2**: Combine all files into single commit (skip grouping, proceed to Step 2)
-- **Choice 3**: Ask user to specify custom grouping, then proceed
-- **Choice 4**: Stop workflow
-
-**1.5.5 Execute grouped commits:**
-
-For each group, execute Step 2 → Step 3 → Step 4 sequentially:
-
-```bash
-# Group 1
-git add src/user/*.kt
-git commit -m "$(cat <<'EOF'
-✨ feat: User 모듈 구현
-
-- User 엔티티 및 DTO 정의
-- UserService 비즈니스 로직
-- UserRepository 데이터 접근
-EOF
-)"
-
-# Group 2
-git add src/product/*.kt
-git commit -m "$(cat <<'EOF'
-✨ feat: Product 모듈 구현
-
-- Product 엔티티 및 DTO 정의
-- ProductService 비즈니스 로직
-- ProductRepository 데이터 접근
-EOF
-)"
-
-# Continue for remaining groups...
-```
+For each group, execute Step 2 → Step 3 → Step 4 sequentially.
 
 **Edge cases:**
-- If grouping is unclear or ambiguous → fallback to single commit (Choice 2)
+- If grouping is unclear or ambiguous → fallback to single commit
 - If user requests custom grouping → accept user's grouping logic
 - Files <10 → skip grouping, proceed directly to Step 2
-
-*Detailed grouping strategies: `references/grouping_strategies.md`*
 
 ### Step 2: Generate Commit Message
 
@@ -233,23 +160,13 @@ Read the actual code changes from `git diff --cached` output:
 
 Based on change type, refer to `references/gitmoji_rules.md` for complete guidelines.
 
-**Quick reference (most common):**
-
-| Gitmoji | Type | When to Use |
-|---------|------|-------------|
-| ✨ | feat | New feature, API, component |
-| 🐛 | fix | Bug fix, error handling |
-| ♻️ | refactor | Code restructure, no feature change |
-| ⚡ | perf | Performance optimization |
-| ✅ | test | Unit/integration tests |
-| 📝 | docs | Documentation, README |
-| 🔧 | chore | Build, config, dependencies |
-
-*Full list with 20+ Gitmoji: `references/gitmoji_rules.md`*
+**Quick Reference:** ✨ feat | 🐛 fix | ♻️ refactor | ⚡ perf | ✅ test | 📝 docs | 🔧 chore
 
 **Priority when multiple types:**
 1. feat > fix > refactor > perf > others
 2. Choose the most significant change
+
+*Complete Gitmoji mapping: `references/gitmoji_rules.md`*
 
 **2.3 Generate Korean summary:**
 
@@ -269,6 +186,9 @@ Based on change type, refer to `references/gitmoji_rules.md` for complete guidel
   - WHAT: 무엇을 개발/개선/해결했는가 (필수)
   - WHY: 왜 필요했는가 (선택적)
   - HOW: 어떻게 구현했는가 (핵심만)
+- **Domain-centric language** (not code-centric)
+  - Use general terms: "사용자 인증", "검색 기능", "데이터 계층"
+  - Avoid specific names: class/method/variable names, file names
 - Korean-first (title and body)
 - Imperative form ("추가" not "추가했습니다")
 - Under 300 characters total
@@ -276,6 +196,11 @@ Based on change type, refer to `references/gitmoji_rules.md` for complete guidel
 - Production code changes only
 
 ❌ **MUST NOT include:**
+- **Code references**:
+  - Class names: `UserService`, `VectorEntityType`
+  - Method names: `extractVectorFields()`, `getUserById()`
+  - Variable names: `userId`, `searchQuery`
+  - File names: `UserService.kt`, `auth.controller.js`
 - **AI signatures** (`🤖 Generated with...`, `Co-Authored-By: Claude`)
 - **Tracking codes** (`Phase 4`, `T032-1`, `SC-003`)
 - **Task/Issue IDs** (`TASK-123`, `JIRA-456`, `#789`)
@@ -287,29 +212,7 @@ Based on change type, refer to `references/gitmoji_rules.md` for complete guidel
 - Configuration file details (`.gitignore`, `package.json`)
 - Verbose explanations
 
-**2.5 Example:**
-
-**✅ GOOD:**
-```
-✨ feat: JWT 토큰 기반 인증 API 구현
-
-- 토큰 생성 및 검증 로직
-- 자동 갱신 기능 (만료 30분 전)
-- 로그인/로그아웃 엔드포인트
-```
-
-**❌ BAD:**
-```
-✨ feat: TASK-1234 사용자 인증 구현
-
-- JIRA-456: JWT 토큰 생성
-- SC-003: 로그인 시나리오 검증 완료
-- 34개 테스트 통과, 2개 실패
-```
-
-**Problems:** Task IDs, Scenario IDs, Test statistics
-
-*More examples: `references/commit_examples.md`*
+*Complete examples with transformations: `references/commit_examples.md`*
 
 ### Step 3: User Approval
 
@@ -409,17 +312,15 @@ Try: git push origin HEAD
 
 Common edge cases and how to handle them. For complete details, see `references/edge_cases.md`.
 
-**Large diff (>500 lines):**
-- Warn user to consider splitting commits
-- Ask for confirmation before proceeding
-
-**Unstaged changes:**
-- Inform user about unstaged files
-- Offer options: commit staged only, stage all, or cancel
-
-**No remote branch:**
-- Detect push failure due to no upstream
-- Offer to run `git push -u origin <branch>`
+**Quick Reference:**
+- Empty commit → Suggest generic message
+- Mixed types → Priority: feat > fix > refactor
+- Large diff (>500 lines) → Warn and suggest split
+- Unstaged changes → Offer options: staged only / stage all / cancel
+- Pre-commit hook failure → Never bypass with --no-verify
+- No remote branch → Offer `git push -u origin <branch>`
+- Merge conflict → Request resolution before commit
+- Detached HEAD → Suggest creating branch
 
 *Full edge case handling: `references/edge_cases.md`*
 
@@ -433,6 +334,7 @@ Before each commit:
 - [ ] AI-related files confirmed by user (if any)
 - [ ] Correct Gitmoji selected
 - [ ] Korean message (imperative form)
+- [ ] Domain-centric language (no class/method/variable names)
 - [ ] Under 300 characters total
 - [ ] No AI signature, tracking codes, or test statistics
 - [ ] User approved message
@@ -442,7 +344,7 @@ Before each commit:
 Detailed reference materials:
 
 - **`references/gitmoji_rules.md`** - Complete Gitmoji mapping (20+ entries) and selection guidelines
-- **`references/commit_examples.md`** - Extensive good/bad examples with explanations
+- **`references/commit_examples.md`** - Extensive good/bad examples with code reference transformations
 - **`references/edge_cases.md`** - Detailed edge case scenarios and solutions
 - **`references/grouping_strategies.md`** - Advanced grouping algorithms and project-specific patterns
 
@@ -455,11 +357,13 @@ This skill implements MY_RULES.md Git workflow rules:
 - Bash 직접 처리 금지
 - 한글 커밋 메시지
 - AI 서명 절대 금지
+- 클래스/메서드/변수명 직접 언급 금지
 
 ✅ **Triggers:**
 - "커밋", "커밋해줘", "commit", "push", "푸시"
 
 ✅ **Quality:**
 - Gitmoji + 한글 메시지 자동 생성
+- 도메인 중심 언어 사용
 - 300자 제한 준수
 - 사용자 승인 필수

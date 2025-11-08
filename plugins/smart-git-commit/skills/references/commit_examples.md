@@ -415,3 +415,233 @@ UserMapper.kt에는 Entity와 DTO 간 변환 로직을 구현하였습니다.
 - 디렉토리, 파일명, 변경 타입 기반 분석
 - 그룹별 순차 커밋 실행 지원
 ```
+
+---
+
+## 9. 코드 참조 제거 규칙 (CRITICAL)
+
+**핵심 원칙**: 커밋 메시지는 **비즈니스 기능 중심**이어야 하며, **코드 구조 중심**이 아니어야 합니다.
+
+### 절대 금지 항목
+
+❌ **클래스명 언급 금지**:
+- `UserService`, `ProductRepository`, `AuthController`
+- `VectorEntityType`, `TokenValidator`, `SearchService`
+→ 대신: "사용자 서비스", "상품 데이터 접근", "인증 컨트롤러"
+
+❌ **메서드명 언급 금지**:
+- `extractVectorFields()`, `getUserById()`, `calculateDiscount()`
+- `search()`, `validate()`, `save()`
+→ 대신: "벡터 필드 추출", "사용자 조회", "할인 계산"
+
+❌ **변수명/필드명 언급 금지**:
+- `userId`, `productList`, `searchQuery`
+- `expiresAt`, `createdAt`, `isActive`
+→ 대신: "사용자 ID", "상품 목록", "검색어"
+
+❌ **파일명 언급 금지**:
+- `UserService.kt`, `auth.controller.ts`, `product.dto.py`
+→ 대신: "사용자 서비스 계층", "인증 컨트롤러", "상품 데이터 모델"
+
+### 변환 공식
+
+```
+구체적 코드 참조 → 일반화된 도메인 기능 설명
+
+VectorEntityType enum
+→ 엔티티 타입 enum
+
+extractVectorFields()
+→ 벡터 필드 추출
+
+UserRepository.findByEmail()
+→ 이메일 기반 사용자 조회
+
+ProductService.calculateDiscount()
+→ 상품 할인 계산
+
+AuthController.login()
+→ 로그인 API
+```
+
+### 예시 1: 리팩토링 (벡터화 아키텍처)
+
+**❌ BAD (코드 중심)**:
+```
+♻️ refactor: 벡터화 아키텍처 개선
+
+- VectorEntityType enum으로 타입 안전성 보장
+- extractVectorFields() 통합으로 중복 코드 제거
+- OAuth2 사용자 생성 시 벡터화 누락 해결
+- E5 모델 Query/Passage prefix로 검색 정확도 향상
+```
+
+**문제점**:
+- `VectorEntityType` 클래스명 노출
+- `extractVectorFields()` 메서드명 노출
+- 코드 구조 중심 설명
+
+**✅ GOOD (도메인 중심)**:
+```
+♻️ refactor: 벡터화 아키텍처 개선 및 E5 모델 최적화
+
+- 엔티티 타입 enum으로 타입 안전성 보장
+- 벡터 필드 추출 중복 코드 리팩토링
+- OAuth2 사용자 생성 시 벡터화 누락 해결
+- 임베딩 모델 Query/Passage prefix로 검색 정확도 향상
+```
+
+**개선 이유**:
+- 일반화된 도메인 용어 사용
+- 기능 중심 설명
+- 코드 리팩토링 후에도 메시지 의미 유지
+
+---
+
+### 예시 2: 기능 추가 (데이터 계층)
+
+**❌ BAD**:
+```
+✨ feat: User 및 Product 리포지토리 구현
+
+- UserRepository.findByEmail() 추가
+- ProductRepository.searchByKeyword() 구현
+- BaseRepository 추상 클래스 생성
+```
+
+**✅ GOOD**:
+```
+✨ feat: 사용자 및 상품 데이터 접근 계층 구현
+
+- 이메일 기반 사용자 조회
+- 키워드 기반 상품 검색
+- 공통 데이터 접근 추상화
+```
+
+---
+
+### 예시 3: 성능 개선 (캐싱)
+
+**❌ BAD**:
+```
+⚡ perf: SearchService 쿼리 최적화
+
+- PostRepository.findByKeyword() 인덱스 추가
+- RedisCacheManager.set() TTL 5분 설정
+- SearchController.search() 응답시간 개선
+```
+
+**✅ GOOD**:
+```
+⚡ perf: 검색 성능 최적화
+
+- 게시물 검색 인덱스 추가
+- Redis 캐시 TTL 설정
+- 검색 API 응답 시간 75% 단축
+```
+
+---
+
+### 예시 4: 버그 수정 (토큰 검증)
+
+**❌ BAD**:
+```
+🐛 fix: TokenValidator.isExpired() 타임존 버그
+
+- ZonedDateTime.now(ZoneOffset.UTC) 사용
+- TokenEntity.expiresAt 필드 UTC 저장
+```
+
+**✅ GOOD**:
+```
+🐛 fix: 토큰 만료 시간 타임존 버그 수정
+
+- UTC 기준 시간 비교로 변경
+- 만료 시간 저장 로직 개선
+```
+
+---
+
+### 예시 5: 테스트 추가
+
+**❌ BAD**:
+```
+✅ test: UserServiceTest 예외 처리 케이스 추가
+
+- createUser_whenEmailExists_throwsException()
+- validatePassword_whenTooShort_throwsException()
+```
+
+**✅ GOOD**:
+```
+✅ test: 사용자 서비스 예외 처리 테스트 추가
+
+- 이메일 중복 예외 처리
+- 비밀번호 검증 예외 처리
+```
+
+---
+
+### 허용되는 기술 용어
+
+✅ **기술 개념/패턴은 OK**:
+- `enum`, `interface`, `abstract class` (개념)
+- `Redis`, `JWT`, `OAuth2` (기술 스택)
+- `Query/Passage prefix` (기술 용어)
+- `타입 안전성`, `불변성`, `캐싱` (아키텍처 개념)
+
+✅ **도메인 용어는 OK**:
+- "사용자 인증", "게시물 검색", "상품 필터링"
+- "벡터 필드", "엔티티 타입", "토큰 검증"
+- "데이터 계층", "비즈니스 로직", "API 엔드포인트"
+
+---
+
+### 변환 연습
+
+| ❌ 피해야 할 표현 | ✅ 선호하는 표현 |
+|-----------------|----------------|
+| `VectorEntityType enum` | `엔티티 타입 enum` |
+| `extractVectorFields()` | `벡터 필드 추출` |
+| `OAuth2UserService.createUser()` | `OAuth2 사용자 생성` |
+| `UserRepository.findByEmail()` | `이메일 기반 사용자 조회` |
+| `ProductDto` | `상품 데이터 모델` |
+| `searchQuery.toLowerCase()` | `검색어 소문자 변환` |
+| `TokenValidator.isExpired()` | `토큰 만료 검증` |
+| `PostRepository` | `게시물 데이터 접근` |
+| `AuthController.login()` | `로그인 API` |
+| `UserService.kt` | `사용자 서비스 계층` |
+
+---
+
+### 왜 이 규칙이 중요한가?
+
+**1. 코드 리팩토링에 강건함**:
+- 클래스명 변경 (`UserService` → `UserServiceImpl`)
+- 메서드명 변경 (`getUser` → `findUser`)
+→ 커밋 메시지 의미는 여전히 유효
+
+**2. 비개발자 가독성**:
+- PM, 디자이너, QA도 대략적 변경 이해 가능
+- "사용자 인증 추가" (이해 O) vs "AuthService.authenticate() 추가" (이해 X)
+
+**3. 기술 스택 독립성**:
+- 기술 변경 (`JPA` → `MyBatis`) 후에도 메시지 재사용 가능
+- "데이터 접근 개선" (기술 독립) vs "JPA 쿼리 개선" (기술 종속)
+
+**4. 장기 유지보수**:
+- 6개월 후 코드 구조 변경되어도 커밋 의미 명확
+- 히스토리 검색 시 기능 기반 검색 가능
+
+---
+
+### 자가 검증 체크리스트
+
+커밋 메시지 작성 후 체크:
+
+- [ ] 클래스명 (PascalCase 패턴) 없음
+- [ ] 메서드명 (`()` 포함) 없음
+- [ ] 변수명 (camelCase 패턴) 없음
+- [ ] 파일명 (확장자 포함) 없음
+- [ ] 도메인 용어로 대체됨
+- [ ] 기능 중심 설명임
