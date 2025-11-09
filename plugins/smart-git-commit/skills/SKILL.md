@@ -214,11 +214,17 @@ Based on change type, refer to `references/gitmoji_rules.md` for complete guidel
 
 *Complete examples with transformations: `references/commit_examples.md`*
 
-### Step 3: User Approval
+### Step 3: Show Message and Get User Approval
 
-Use AskUserQuestion tool to show message and get approval.
+⚠️ **CRITICAL RULE - NEVER SKIP THIS STEP**
 
-**Present message:**
+This step is **mandatory** and must **never** be skipped under any circumstances. Always show the generated commit message to the user and wait for explicit approval before proceeding to commit execution.
+
+**3.1 Display the generated message:**
+
+**MUST use AskUserQuestion tool** to present the commit message to the user. Do not proceed to Step 4 without completing this interaction.
+
+**Message format:**
 
 ```markdown
 📋 Generated commit message:
@@ -228,21 +234,23 @@ Use AskUserQuestion tool to show message and get approval.
 Choose an action:
 ```
 
-**Options:**
+**3.2 Provide exactly 4 options:**
 
 1. **Commit only** - Execute local commit
 2. **Commit + Push** - Commit and push to remote
 3. **Modify message** - Let user edit message
 4. **Cancel** - Abort commit
 
-**Handle user choice:**
+**3.3 Handle user choice:**
 
-- **Choice 1**: Proceed to Step 4 with `do_push=false`
-- **Choice 2**: Proceed to Step 4 with `do_push=true`
-- **Choice 3**: Ask user for new message, then go to Step 4
-- **Choice 4**: Stop workflow
+Wait for user selection. Do not assume or skip this step.
 
-**Never commit without explicit approval.**
+- **Choice 1**: User approved → Proceed to Step 4 with `do_push=false`
+- **Choice 2**: User approved with push → Proceed to Step 4 with `do_push=true`
+- **Choice 3**: User requests modification → Ask user for new message, then proceed to Step 4
+- **Choice 4**: User cancelled → Stop workflow entirely
+
+⚠️ **Enforcement**: If you proceed to Step 4 without completing Step 3, you are violating the core workflow. The user must see the message and make an explicit choice.
 
 ### Step 4: Execute Commit
 
