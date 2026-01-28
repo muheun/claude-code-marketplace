@@ -1,0 +1,12 @@
+{
+  "name": "smart-linear-issue",
+  "description": "Linear 이슈 생성/수정/코멘트 기능을 제공하는 스킬. Gitmoji 기반 한글 제목과 사용자 승인 워크플로우로 일관된 이슈 관리를 지원합니다.",
+  "version": "0.0.1",
+  "author": {
+    "name": "muheun",
+    "url": "https://github.com/muheun/claude-code-marketplace"
+  },
+  "homepage": "https://github.com/muheun/claude-code-marketplace",
+  "repository": "https://github.com/muheun/claude-code-marketplace.git",
+  "license": "MIT"
+}
