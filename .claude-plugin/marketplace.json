@@ -87,8 +87,8 @@
       "homepage": "https://github.com/muheun/claude-code-marketplace"
     },
     {
-      "name": "muheun-backend-pattern",
-      "source": "./plugins/muheun-backend-pattern",
+      "name": "my-backend-pattern",
+      "source": "./plugins/my-backend-pattern",
       "description": "Java + Spring Boot 백엔드 개발 패턴 가이드. Layered Architecture (Controller/Service/DAO/Entity/Domain Primitive) + jOOQ + JPA(validate-only) + Flyway + 도메인 프리미티브 패턴을 통한 타입 기반 검증과 Persistence Ignorance를 적용합니다.",
       "version": "0.0.1",
       "author": {
