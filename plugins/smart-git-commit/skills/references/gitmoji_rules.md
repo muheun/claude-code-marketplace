@@ -133,3 +133,19 @@ Complete Gitmoji reference for commit message generation.
 - 하나의 커밋에는 하나의 Gitmoji만 사용
 - 명확하지 않은 경우 가장 중요한 변경 사항에 맞춰 선택
 - 공식 사이트: https://gitmoji.dev
+
+## 브랜치 Prefix 매핑
+
+브랜치 생성 시에는 Gitmoji를 사용하지 않고 타입 prefix만 사용한다.
+
+| 변경 유형 | Commit 타입 | Branch prefix | 예시 |
+|----------|-------------|---------------|------|
+| 새로운 기능 | feat | `feat/` | `feat/create-items` |
+| 버그 수정 | fix | `fix/` | `fix/resolve-login-error` |
+| 구조 개선 | refactor | `refactor/` | `refactor/modify-member-business` |
+| 성능 개선 | perf | `perf/` | `perf/improve-search-speed` |
+| 테스트 | test | `test/` | `test/add-payment-coverage` |
+| 문서 | docs | `docs/` | `docs/update-install-guide` |
+| 유지보수 | chore | `chore/` | `chore/update-build-tooling` |
+
+`init`은 초기 커밋 메시지에만 사용한다. 일반 작업 브랜치에는 `init/` prefix를 사용하지 않는다. 사용자가 명시적으로 초기화 작업 브랜치를 요청하면 `chore/initialize-repository`처럼 작업 목적이 드러나는 이름을 우선한다.

@@ -407,3 +407,74 @@ Are you sure you want to commit these? (yes/no)
 2. 사용자 의사 존중
 3. 명확한 안내
 4. 복구 가능성 유지
+
+## Case 9: Repository Initialization Requested Inside Existing Repository
+
+### 상황
+- 사용자가 `git init` 또는 저장소 초기화를 요청했지만 현재 디렉토리가 이미 Git 저장소인 경우
+
+### 처리 방법
+
+```bash
+git rev-parse --is-inside-work-tree 2>/dev/null
+```
+
+성공하면 `git init`을 다시 실행하지 않는다. 현재 변경사항이 있으면 일반 커밋 워크플로우로 전환한다.
+
+안내 문구:
+
+```markdown
+현재 디렉토리는 이미 Git 저장소입니다. 초기화 대신 현재 변경사항 기준으로 커밋을 진행할 수 있습니다.
+```
+
+## Case 10: Branch Name Already Exists
+
+### 상황
+- 생성하려는 브랜치가 로컬 또는 원격에 이미 존재하는 경우
+
+### 처리 방법
+
+```bash
+git show-ref --verify --quiet refs/heads/<candidate-branch>
+git ls-remote --heads origin <candidate-branch> 2>/dev/null
+```
+
+이미 존재하면 의미 있는 suffix를 먼저 제안한다.
+
+예시:
+- `feat/create-items` → `feat/create-items-ui`
+- `fix/resolve-login-error` → `fix/resolve-login-error-validation`
+- 의미 있는 suffix가 없으면 `-2`를 붙인다.
+
+## Case 11: Branch Creation With Dirty Worktree
+
+### 상황
+- 커밋되지 않은 변경사항이 있는 상태에서 브랜치 생성을 요청한 경우
+
+### 처리 방법
+- 브랜치 생성을 막지 않는다.
+- 변경사항을 브랜치 이름 추론의 주요 근거로 사용한다.
+- `git switch -c <branch>`는 변경사항을 유지하므로 stash를 요구하지 않는다.
+- 단, 충돌이나 checkout 실패가 발생하면 Git 오류를 그대로 설명하고 사용자의 정리를 요청한다.
+
+## Case 12: Invalid Branch Name Generated
+
+### 상황
+- 사용자 의도 또는 diff 분석에서 공백, 한글, 특수문자, 연속 슬래시가 포함된 이름이 나온 경우
+
+### 처리 방법
+- prefix는 허용 목록 중 하나로 제한한다.
+- slug는 lowercase kebab-case 영어로 변환한다.
+- `a-z`, `0-9`, `-` 외 문자를 제거한다.
+- 빈 slug가 되면 `update-work`를 사용한다.
+
+## Case 13: Force Git Operation Seems Necessary
+
+### 상황
+- ignored 파일을 추가해야 하거나, hook이 실패하거나, push가 rejected 되어 force 계열 명령이 필요해 보이는 경우
+
+### 처리 방법
+- 사용자가 명시적으로 요청하지 않았으면 force 명령을 실행하지 않는다.
+- `git add -f`, `git add --force`, `git push --force`, `git push --force-with-lease`, `git commit --no-verify`를 자동으로 사용하지 않는다.
+- 실패 원인과 일반적인 해결 방법을 먼저 설명한다.
+- 사용자가 정확한 force 동작을 명시적으로 승인한 뒤에만 해당 명령을 실행한다.
