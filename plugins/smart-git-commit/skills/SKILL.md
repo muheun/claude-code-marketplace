@@ -389,9 +389,13 @@ Check whether the current directory is already a Git repository:
 
 ```bash
 git rev-parse --is-inside-work-tree 2>/dev/null
+git rev-parse --verify HEAD 2>/dev/null
 ```
 
-If it succeeds, do not run `git init` again. Continue with the normal commit workflow and use the current diff to generate the message.
+If `git rev-parse --is-inside-work-tree` succeeds, do not run `git init` again.
+
+- If `git rev-parse --verify HEAD` succeeds, continue with the normal commit workflow and use the current diff to generate the message.
+- If `git rev-parse --verify HEAD` fails, the repository is initialized but has no commits. Continue this initialization/initial-commit workflow without running `git init` again, and use the `🎉 init` message path.
 
 If it fails, inspect candidate files:
 
@@ -421,7 +425,7 @@ git status --porcelain=v1
 git diff --cached --stat
 ```
 
-Never use `git add -f` or `git add --force` unless the user explicitly requested force-adding ignored files.
+Never use `git add -f` or `git add --force` unless the user explicitly requested the exact `git add -f` or `git add --force` action.
 
 ### Init Step 4: Generate Initial Commit Message
 
@@ -446,6 +450,8 @@ Show the generated initial commit message and provide exactly 3 options:
 3. **Cancel** - Abort after leaving repository initialized if `git init` already ran
 
 Do not create the initial commit without explicit user approval.
+
+If the user cancels after staging files, explain that the index may contain staged files. Offer to clean up the index with `git restore --staged .`, but run it only after explicit user approval.
 
 ### Init Step 6: Execute Initial Commit
 
