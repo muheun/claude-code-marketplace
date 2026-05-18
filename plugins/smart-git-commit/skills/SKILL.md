@@ -27,11 +27,71 @@ English triggers:
 - Code review without intent to write Git state
 - Branch naming discussion without a request to create or switch branches
 
+## Shared Semantic Analysis
+
+Use this analysis for commit messages, initial commit messages, and branch names.
+
+**Repository state commands:**
+
+```bash
+git rev-parse --is-inside-work-tree 2>/dev/null
+git status --porcelain=v1
+git diff --cached --stat
+git diff --cached
+git diff --stat
+git diff
+```
+
+If the repository is not initialized yet, inspect files without staging ignored content:
+
+```bash
+git status --porcelain=v1 2>/dev/null || true
+rg --files -g '!.git' -g '!node_modules' -g '!dist' -g '!build' -g '!coverage'
+```
+
+**Semantic classification:**
+
+1. `feat` - new user-facing capability, new workflow, new integration, or meaningful new behavior
+2. `fix` - bug correction, broken behavior recovery, validation correction, or error handling correction
+3. `refactor` - structure improvement without behavior change
+4. `perf` - measurable performance improvement
+5. `test` - test-only change
+6. `docs` - documentation-only change
+7. `chore` - tooling, dependency, formatting, or maintenance change
+8. `init` - first repository commit only
+
+**Priority when multiple types apply:**
+
+`feat` > `fix` > `refactor` > `perf` > `test` > `docs` > `chore`
+
+Use `init` only for the first commit created by the initialization workflow.
+
+**Naming language rules:**
+
+- Commit titles and bodies remain Korean-first.
+- Branch slugs use lowercase English words separated by hyphens.
+- Branch slugs describe the domain or workflow, not file names, class names, method names, variables, issue IDs, or tracking numbers.
+- Prefer verb-object branch slugs: `create-items`, `modify-member-business`, `resolve-login-error`.
+- Keep branch names under 48 characters when possible.
+
+## Force Operation Safety
+
+Never run force-style Git operations unless the user explicitly requests the exact force action.
+
+Forbidden unless explicitly requested:
+
+- `git add -f`
+- `git add --force`
+- `git push --force`
+- `git push --force-with-lease`
+- `git commit --no-verify`
+- Any command that bypasses ignore rules, hooks, branch protection, or normal Git safety checks
+
+If a normal Git operation fails because a force action might be needed, stop and explain the cause. Ask the user for explicit approval before running any force command.
+
 ## Commit/Push Workflow
 
-Repository initialization uses `Repository Initialization Workflow` and branch creation uses `Branch Creation Workflow` once those sections are present.
-
-Follow these steps sequentially for every commit or push request:
+Follow these steps sequentially for every commit or push request. For repository initialization, use `Repository Initialization Workflow`. For branch creation, use `Branch Creation Workflow`.
 - **Step 1**: Analyze changes (with optional grouping for large changesets)
 - **Step 2**: Generate commit message (for each group if grouped)
 - **Step 3**: User approval
