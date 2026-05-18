@@ -469,6 +469,110 @@ Report the commit hash and current branch:
 git branch --show-current
 ```
 
+## Branch Creation Workflow
+
+Use this workflow when the user asks to create or switch to a new branch for the current work.
+
+### Branch Step 1: Verify Repository State
+
+Run:
+
+```bash
+git rev-parse --is-inside-work-tree 2>/dev/null
+git status --porcelain=v1
+git branch --show-current
+```
+
+If the directory is not a Git repository, offer to run `Repository Initialization Workflow` first.
+
+If the worktree has uncommitted changes, do not block branch creation. Use those changes as the primary context for naming unless the user provided a clearer branch purpose.
+
+### Branch Step 2: Analyze Work Intent
+
+Use the shared semantic analysis. Prefer user-provided intent over diff inference.
+
+Examples:
+
+- User says "아이템 생성 기능 작업 브랜치 만들어줘" → `feat/create-items`
+- User says "멤버 비즈니스 로직 정리 브랜치" → `refactor/modify-member-business`
+- User says "로그인 오류 수정 브랜치" → `fix/resolve-login-error`
+- Diff only changes docs → `docs/update-guide`
+- Diff only changes tests → `test/add-coverage`
+- Diff only changes tooling → `chore/update-tooling`
+
+### Branch Step 3: Generate Branch Name
+
+Use this format:
+
+```markdown
+<type>/<slug>
+```
+
+Allowed prefixes:
+
+- `feat/` for new behavior
+- `fix/` for bug fixes
+- `refactor/` for behavior-preserving structure changes
+- `perf/` for performance work
+- `test/` for test-only work
+- `docs/` for documentation-only work
+- `chore/` for tooling or maintenance
+
+Slug rules:
+
+- Use lowercase English.
+- Replace spaces and underscores with hyphens.
+- Remove characters outside `a-z`, `0-9`, and `-`.
+- Collapse repeated hyphens.
+- Trim leading and trailing hyphens.
+- Prefer 2 to 5 words.
+- Do not include issue IDs, dates, user names, file names, class names, method names, or variables.
+
+### Branch Step 4: Check for Conflicts
+
+Before creating the branch, run:
+
+```bash
+git show-ref --verify --quiet refs/heads/<candidate-branch>
+git ls-remote --heads origin <candidate-branch> 2>/dev/null
+```
+
+If the local or remote branch already exists, append a short semantic suffix instead of a number when possible:
+
+- `feat/create-items` → `feat/create-items-ui`
+- `fix/resolve-login-error` → `fix/resolve-login-error-validation`
+- If no meaningful suffix is available, append `-2`.
+
+### Branch Step 5: Ask for Approval
+
+Show the generated branch name and provide exactly 4 options:
+
+1. **Create branch** - Run `git switch -c <branch>`
+2. **Create + push upstream** - Run `git switch -c <branch>` and `git push -u origin <branch>`
+3. **Modify branch name** - Let user provide a branch name
+4. **Cancel** - Abort branch creation
+
+Do not create or push the branch without explicit user approval.
+
+### Branch Step 6: Execute Branch Creation
+
+For local branch creation:
+
+```bash
+git switch -c <branch>
+git branch --show-current
+```
+
+For branch creation with upstream push:
+
+```bash
+git switch -c <branch>
+git push -u origin <branch>
+git branch --show-current
+```
+
+If `git switch -c` fails because the branch exists, do not overwrite it. Ask whether to switch to the existing branch or choose a new name.
+
 ## Edge Cases
 
 Common edge cases and how to handle them. For complete details, see `references/edge_cases.md`.
@@ -508,6 +612,17 @@ Before repository initialization:
 - [ ] Force operations avoided unless explicitly requested
 - [ ] Initial commit message generated with `🎉 init`
 - [ ] User approved initial commit
+
+Before branch creation:
+
+- [ ] User explicitly requested branch creation or branch switch
+- [ ] Git repository verified
+- [ ] Current work intent analyzed from user request and diff
+- [ ] Branch prefix selected from allowed list
+- [ ] Branch slug normalized to lowercase kebab-case
+- [ ] Local and remote branch conflicts checked
+- [ ] Force push avoided unless explicitly requested
+- [ ] User approved branch creation
 
 ## References
 
