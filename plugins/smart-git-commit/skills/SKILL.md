@@ -379,6 +379,96 @@ Your changes are committed locally.
 Try: git push origin HEAD
 ```
 
+## Repository Initialization Workflow
+
+Use this workflow when the user asks to initialize Git, create an initial commit, or prepare the current directory as a repository.
+
+### Init Step 1: Inspect Current Directory
+
+Check whether the current directory is already a Git repository:
+
+```bash
+git rev-parse --is-inside-work-tree 2>/dev/null
+```
+
+If it succeeds, do not run `git init` again. Continue with the normal commit workflow and use the current diff to generate the message.
+
+If it fails, inspect candidate files:
+
+```bash
+pwd
+rg --files -g '!.git' -g '!node_modules' -g '!dist' -g '!build' -g '!coverage'
+```
+
+If no files are found, ask the user whether to create an empty repository. Do not create an empty commit unless the user explicitly asks.
+
+### Init Step 2: Initialize Repository
+
+Run:
+
+```bash
+git init
+git status --porcelain=v1
+```
+
+### Init Step 3: Stage Initial Files
+
+Stage files using the user's ignore rules:
+
+```bash
+git add .
+git status --porcelain=v1
+git diff --cached --stat
+```
+
+Never use `git add -f` or `git add --force` unless the user explicitly requested force-adding ignored files.
+
+### Init Step 4: Generate Initial Commit Message
+
+Reuse the same semantic message-generation rules from `Step 2: Generate Commit Message`, with this required title format:
+
+```markdown
+🎉 init: 프로젝트 초기 설정
+
+- 기본 작업 구조 구성
+- 핵심 설정 파일 추가
+- 초기 문서와 실행 기반 정리
+```
+
+Adjust the bullets to match the staged content. Keep the message Korean-first, imperative, under 300 characters, and free of AI signatures.
+
+### Init Step 5: Ask for Approval
+
+Show the generated initial commit message and provide exactly 3 options:
+
+1. **Initialize + Commit** - Create the initial commit
+2. **Modify message** - Let user edit message
+3. **Cancel** - Abort after leaving repository initialized if `git init` already ran
+
+Do not create the initial commit without explicit user approval.
+
+### Init Step 6: Execute Initial Commit
+
+After approval, run:
+
+```bash
+git commit -m "$(cat <<'EOF'
+🎉 init: 프로젝트 초기 설정
+
+- 기본 작업 구조 구성
+- 핵심 설정 파일 추가
+- 초기 문서와 실행 기반 정리
+EOF
+)"
+git rev-parse --short HEAD
+```
+
+Report the commit hash and current branch:
+
+```bash
+git branch --show-current
+```
+
 ## Edge Cases
 
 Common edge cases and how to handle them. For complete details, see `references/edge_cases.md`.
@@ -409,6 +499,15 @@ Before each commit or push workflow:
 - [ ] Under 300 characters total
 - [ ] No AI signature, tracking codes, or test statistics
 - [ ] User approved message
+
+Before repository initialization:
+
+- [ ] User explicitly requested initialization or initial commit
+- [ ] Existing Git repository check completed
+- [ ] Candidate files inspected with ignore rules respected
+- [ ] Force operations avoided unless explicitly requested
+- [ ] Initial commit message generated with `🎉 init`
+- [ ] User approved initial commit
 
 ## References
 
