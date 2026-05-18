@@ -191,14 +191,14 @@ git commit -m "message"
 
 ### 상황
 - `git push` 실행 시 upstream 브랜치가 설정되지 않음
-- 새로운 feature 브랜치인 경우
+- 새로운 `feat/` 브랜치인 경우
 
 ### 처리 방법
 
 **에러 감지:**
 ```bash
 git push origin HEAD
-# fatal: The current branch feature/auth has no upstream branch.
+# fatal: The current branch feat/auth has no upstream branch.
 ```
 
 **사용자에게 안내:**
@@ -206,20 +206,20 @@ git push origin HEAD
 ⚠️ No upstream branch configured.
 
 Run this to push and set upstream:
-git push -u origin feature/auth
+git push -u origin feat/auth
 
 Would you like me to execute this? (yes/no)
 ```
 
 **사용자 승인 시 실행:**
 ```bash
-git push -u origin feature/auth
+git push -u origin feat/auth
 ```
 
 **결과 보고:**
 ```
 ✅ Commit completed: abc123
-🚀 Pushed to: origin/feature/auth (upstream set)
+🚀 Pushed to: origin/feat/auth (upstream set)
 ```
 
 ---
@@ -347,16 +347,20 @@ Current: HEAD -> abc123
 Committing in this state is not recommended.
 
 Options:
-1. Create new branch: git checkout -b <branch-name>
+1. Create new branch with Branch Creation Workflow
 2. Return to branch: git checkout main
 3. Cancel commit
 
-Would you like me to create a branch? (yes/no)
+Would you like me to generate a branch name and create it? (yes/no)
 ```
 
 **사용자 승인 시:**
+- `Branch Creation Workflow`를 사용해 현재 작업 의도에 맞는 브랜치 이름을 생성한다.
+- 예: `feat/create-items`, `fix/resolve-login-error`, `refactor/modify-member-business`
+- 사용자 승인 후 생성한다.
+
 ```bash
-git checkout -b feature/temp-branch
+git switch -c feat/create-items
 # 이후 정상 커밋 진행
 ```
 
