@@ -19,13 +19,13 @@ Korean triggers:
 English triggers:
 - Commit/push: "commit" / "commit this" / "create commit" / "push" / "push changes" / "commit and push" / "save"
 - Init: "initialize git" / "git init" / "initial commit" / "initialize repository"
-- Branch: "create branch" / "new branch" / "checkout branch" / "make a branch"
+- Branch: "create branch" / "new branch" / "make a branch"
 
 **Do NOT activate for:**
 - General git questions or explanations
 - Browsing commit history
 - Code review without intent to write Git state
-- Branch naming discussion without a request to create or switch branches
+- Branch naming discussion without a request to create a branch
 
 ## Shared Semantic Analysis
 
@@ -47,6 +47,13 @@ If the repository is not initialized yet, inspect files without staging ignored 
 ```bash
 git status --porcelain=v1 2>/dev/null || true
 rg --files -g '!.git' -g '!node_modules' -g '!dist' -g '!build' -g '!coverage'
+# If rg is unavailable before repository initialization:
+find . -type f \
+  -not -path './.git/*' \
+  -not -path './node_modules/*' \
+  -not -path './dist/*' \
+  -not -path './build/*' \
+  -not -path './coverage/*'
 ```
 
 **Semantic classification:**
@@ -88,6 +95,31 @@ Forbidden unless explicitly requested:
 - Any command that bypasses ignore rules, hooks, branch protection, or normal Git safety checks
 
 If a normal Git operation fails because a force action might be needed, stop and explain the cause. Ask the user for explicit approval before running any force command.
+
+## Shell Portability
+
+Command blocks are intended for Codex agents running a Bash-compatible shell.
+
+On Windows, prefer Git Bash or WSL. PowerShell and CMD require adaptation for shell-specific syntax such as `2>/dev/null`, `|| true`, pipes, line continuations, and heredocs; the examples are not native PowerShell/CMD support promises.
+
+For file listing, prefer `rg --files` when ripgrep is installed. If `rg` is unavailable, choose the fallback based on repository state.
+
+Inside an initialized Git repository, use Git's ignore-aware listing:
+
+```bash
+git ls-files --cached --others --exclude-standard
+```
+
+Before repository initialization, use a Bash-compatible `find` fallback that excludes common generated or dependency directories:
+
+```bash
+find . -type f \
+  -not -path './.git/*' \
+  -not -path './node_modules/*' \
+  -not -path './dist/*' \
+  -not -path './build/*' \
+  -not -path './coverage/*'
+```
 
 ## Commit/Push Workflow
 
@@ -402,6 +434,13 @@ If it fails, inspect candidate files:
 ```bash
 pwd
 rg --files -g '!.git' -g '!node_modules' -g '!dist' -g '!build' -g '!coverage'
+# If rg is unavailable before repository initialization:
+find . -type f \
+  -not -path './.git/*' \
+  -not -path './node_modules/*' \
+  -not -path './dist/*' \
+  -not -path './build/*' \
+  -not -path './coverage/*'
 ```
 
 If no files are found, ask the user whether to create an empty repository. Do not create an empty commit unless the user explicitly asks.
@@ -479,7 +518,7 @@ git branch --show-current
 
 ## Branch Creation Workflow
 
-Use this workflow when the user asks to create or switch to a new branch for the current work.
+Use this workflow when the user asks to create a new branch for the current work.
 
 ### Branch Step 1: Verify Repository State
 
@@ -498,6 +537,16 @@ If the worktree has uncommitted changes, do not block branch creation. Use those
 ### Branch Step 2: Analyze Work Intent
 
 Use the shared semantic analysis. Prefer user-provided intent over diff inference.
+
+If the user only says something like "브랜치 생성해줘" or "create a branch" without a branch name or topic:
+
+1. Review the current conversation for the active work topic.
+2. Review the current diff and status for implementation context.
+3. Generate a branch name from the inferred topic if the intent is clear.
+4. If the intent is still unclear, brainstorm with the user before creating anything:
+   - Suggest 1-2 candidate branch names based on the best available context.
+   - Let the user choose one candidate or provide a custom branch name.
+   - Do not create a branch until the user confirms the name.
 
 Examples:
 
@@ -542,8 +591,11 @@ Before creating the branch, run:
 
 ```bash
 git show-ref --verify --quiet refs/heads/<candidate-branch>
+git remote get-url origin
 git ls-remote --heads origin <candidate-branch> 2>/dev/null
 ```
+
+If `git remote get-url origin` fails, the repository has no `origin` remote. Do not offer or run upstream push. Explain that only local branch creation is available unless the user configures a remote.
 
 If the local or remote branch already exists, append a short semantic suffix instead of a number when possible:
 
@@ -553,12 +605,18 @@ If the local or remote branch already exists, append a short semantic suffix ins
 
 ### Branch Step 5: Ask for Approval
 
-Show the generated branch name and provide exactly 4 options:
+Show the generated branch name. If `origin` exists, provide exactly 4 options:
 
 1. **Create branch** - Run `git switch -c <branch>`
 2. **Create + push upstream** - Run `git switch -c <branch>` and `git push -u origin <branch>`
-3. **Modify branch name** - Let user provide a branch name
+3. **Modify branch name** - Let user provide a branch name, then validate the format and conflict checks again
 4. **Cancel** - Abort branch creation
+
+If `origin` does not exist, provide exactly 3 options:
+
+1. **Create local branch** - Run `git switch -c <branch>`
+2. **Modify branch name** - Let user provide a branch name, then validate the format and conflict checks again
+3. **Cancel** - Abort branch creation
 
 Do not create or push the branch without explicit user approval.
 
@@ -590,7 +648,7 @@ Common edge cases and how to handle them. For complete details, see `references/
 - Mixed types → Priority: feat > fix > refactor
 - Large diff (>500 lines) → Warn and suggest split
 - Unstaged changes → Offer options: staged only / stage all / cancel
-- Pre-commit hook failure → Never bypass with --no-verify
+- Pre-commit hook failure → Never bypass automatically; use `--no-verify` only after the user explicitly requests that exact bypass action
 - No remote branch → Offer `git push -u origin <branch>`
 - Merge conflict → Request resolution before commit
 - Detached HEAD → Suggest creating branch
@@ -601,7 +659,7 @@ Common edge cases and how to handle them. For complete details, see `references/
 
 Before each commit or push workflow:
 
-- [ ] User explicitly requested commit
+- [ ] User explicitly requested commit or push
 - [ ] Git repository verified
 - [ ] Changes detected (not empty)
 - [ ] AI-related files confirmed by user (if any)
@@ -623,12 +681,14 @@ Before repository initialization:
 
 Before branch creation:
 
-- [ ] User explicitly requested branch creation or branch switch
+- [ ] User explicitly requested branch creation
 - [ ] Git repository verified
-- [ ] Current work intent analyzed from user request and diff
+- [ ] Current work intent analyzed from user request, conversation context, and diff
+- [ ] Ambiguous branch topic resolved with 1-2 suggestions or custom user input
 - [ ] Branch prefix selected from allowed list
 - [ ] Branch slug normalized to lowercase kebab-case
 - [ ] Local and remote branch conflicts checked
+- [ ] `origin` remote verified before offering upstream push
 - [ ] Force push avoided unless explicitly requested
 - [ ] User approved branch creation
 

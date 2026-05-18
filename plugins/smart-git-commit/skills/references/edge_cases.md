@@ -1,5 +1,7 @@
 # Edge Cases 처리 가이드
 
+> Command examples are Bash-oriented. On Windows, prefer Git Bash or WSL. PowerShell and CMD require adaptation for redirection, pipes, line continuations, and heredocs; these examples are not native PowerShell/CMD support promises.
+
 Detailed guidance for handling edge cases in commit workflow.
 
 ## Case 1: Empty Commit Message Generated
@@ -258,9 +260,10 @@ Please fix the issues and try again.
 2. 문제 수정
 3. 재시도
 
-**절대 하지 말 것:**
-- ❌ `git commit --no-verify` (hook 우회)
-- Hook은 코드 품질을 위한 것이므로 우회하지 말 것
+**자동으로 하지 말 것:**
+- ❌ `git commit --no-verify` 자동 실행
+- Hook 우회가 필요해 보여도 먼저 실패 원인과 일반 해결 방법을 설명한다.
+- 사용자가 정확히 `git commit --no-verify` 또는 hook 우회를 명시 요청하고 위험을 확인한 뒤에만 실행한다.
 
 ---
 
@@ -348,7 +351,7 @@ Committing in this state is not recommended.
 
 Options:
 1. Create new branch with Branch Creation Workflow
-2. Return to branch: git checkout main
+2. Return to branch: git switch main
 3. Cancel commit
 
 Would you like me to generate a branch name and create it? (yes/no)
@@ -420,7 +423,33 @@ git rev-parse --verify HEAD 2>/dev/null
 
 ---
 
-## Case 12: Branch Name Already Exists
+## Case 12: Empty Directory Initialization Requested
+
+### 상황
+- 사용자가 저장소 초기화 또는 초기 커밋을 요청했지만 현재 디렉토리에 커밋할 파일이 없는 경우
+
+### 처리 방법
+
+```bash
+rg --files -g '!.git' -g '!node_modules' -g '!dist' -g '!build' -g '!coverage'
+# If rg is unavailable before repository initialization:
+find . -type f \
+  -not -path './.git/*' \
+  -not -path './node_modules/*' \
+  -not -path './dist/*' \
+  -not -path './build/*' \
+  -not -path './coverage/*'
+git status --porcelain=v1 2>/dev/null || true
+```
+
+- 파일이 없으면 빈 저장소 생성 여부를 사용자에게 확인한다.
+- 사용자가 명시적으로 요청하지 않으면 empty commit을 만들지 않는다.
+- `git init`을 이미 실행했다면 저장소가 초기화된 상태로 남을 수 있음을 안내한다.
+- 초기 커밋을 만들 파일이 생긴 뒤 `🎉 init` 메시지 경로로 진행한다.
+
+---
+
+## Case 13: Branch Name Already Exists
 
 ### 상황
 - 생성하려는 브랜치가 로컬 또는 원격에 이미 존재하는 경우
@@ -429,6 +458,7 @@ git rev-parse --verify HEAD 2>/dev/null
 
 ```bash
 git show-ref --verify --quiet refs/heads/<candidate-branch>
+git remote get-url origin
 git ls-remote --heads origin <candidate-branch> 2>/dev/null
 ```
 
@@ -441,7 +471,7 @@ git ls-remote --heads origin <candidate-branch> 2>/dev/null
 
 ---
 
-## Case 13: Branch Creation With Dirty Worktree
+## Case 14: Branch Creation With Dirty Worktree
 
 ### 상황
 - 커밋되지 않은 변경사항이 있는 상태에서 브랜치 생성을 요청한 경우
@@ -454,7 +484,30 @@ git ls-remote --heads origin <candidate-branch> 2>/dev/null
 
 ---
 
-## Case 14: Invalid Branch Name Generated
+## Case 15: Branch Creation Requested Without Topic
+
+### 상황
+- 사용자가 브랜치 이름이나 작업 주제 없이 "브랜치 생성해줘" 또는 "create a branch"처럼 요청한 경우
+
+### 처리 방법
+- 현재 대화에서 진행 중인 작업 주제를 먼저 파악한다.
+- 대화만으로 부족하면 현재 diff와 `git status --porcelain=v1` 결과를 함께 확인한다.
+- 주제가 명확하면 해당 주제로 `feat/`, `fix/`, `refactor/` 등 허용 prefix를 선택하고 브랜치 이름을 생성한다.
+- 주제가 불명확하면 브랜치를 만들지 말고 사용자와 짧게 브레인스토밍한다.
+- 1-2개 후보 브랜치 이름을 제시하고, 사용자가 직접 이름을 입력할 수 있게 한다.
+
+예시:
+```markdown
+현재 작업 주제가 명확하지 않습니다. 아래 중 하나를 선택하거나 직접 브랜치 이름을 입력해주세요.
+
+1. `feat/update-workflow`
+2. `docs/update-guide`
+3. 직접 입력
+```
+
+---
+
+## Case 16: Invalid Branch Name Generated
 
 ### 상황
 - 사용자 의도 또는 diff 분석에서 공백, 한글, 특수문자, 연속 슬래시가 포함된 이름이 나온 경우
@@ -469,7 +522,25 @@ git ls-remote --heads origin <candidate-branch> 2>/dev/null
 
 ---
 
-## Case 15: Force Git Operation Seems Necessary
+## Case 17: No Origin Remote For Branch Push
+
+### 상황
+- 사용자가 브랜치 생성과 upstream push를 요청했지만 `origin` remote가 없는 경우
+
+### 처리 방법
+
+```bash
+git remote get-url origin
+```
+
+- `origin`이 없으면 `Create + push upstream` 옵션을 제공하지 않는다.
+- 로컬 브랜치 생성만 가능하다고 설명한다.
+- 사용자가 remote 설정을 원하면 remote URL을 받은 뒤 별도 Git 설정 작업으로 처리한다.
+- remote 설정 전에는 `git push -u origin <branch>`를 실행하지 않는다.
+
+---
+
+## Case 18: Force Git Operation Seems Necessary
 
 ### 상황
 - ignored 파일을 추가해야 하거나, hook이 실패하거나, push가 rejected 되어 force 계열 명령이 필요해 보이는 경우
@@ -478,7 +549,7 @@ git ls-remote --heads origin <candidate-branch> 2>/dev/null
 - 사용자가 명시적으로 요청하지 않았으면 force 명령을 실행하지 않는다.
 - `git add -f`, `git add --force`, `git push --force`, `git push --force-with-lease`, `git commit --no-verify`를 자동으로 사용하지 않는다.
 - 실패 원인과 일반적인 해결 방법을 먼저 설명한다.
-- 사용자가 정확한 force 동작을 명시적으로 승인한 뒤에만 해당 명령을 실행한다.
+- 사용자가 정확한 force 또는 bypass 명령/동작을 명시적으로 요청하고 위험을 확인한 뒤에만 해당 명령을 실행한다.
 
 ---
 
