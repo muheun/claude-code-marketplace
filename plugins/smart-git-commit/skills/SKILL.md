@@ -1,34 +1,37 @@
 ---
 name: smart-git-commit
-description: Execute git commit operations when user requests to commit or push code changes. Use this skill to generate recommended commit messages, perform local commits, or push to remote repositories. Auto-activates for Korean keywords ("커밋", "푸시") and English keywords ("commit", "push"). Always uses Bash tool for git operations and Claude's natural language processing for message generation.
+description: Execute smart Git operations when users request commit, push, repository initialization, or branch creation. Use semantic change analysis to generate Korean Gitmoji commit messages and conventional branch names such as feat/create-items, fix/resolve-login-error, or refactor/modify-member-business.
 ---
 
 # Smart Git Commit
 
-Automatically generate high-quality Gitmoji-based Korean commit messages by analyzing code changes, then execute commits and pushes after user approval.
+Generate high-quality Gitmoji-based Korean commit messages and safe Git workflow commands by analyzing the user's current repository state. This skill supports commit, push, repository initialization, and branch creation.
 
 ## When to Use This Skill
 
-**Auto-activate when users request commit actions:**
+**Auto-activate when users request Git write actions:**
 
 Korean triggers:
-- "커밋해줘" / "커밋해" / "커밋"
-- "저장해줘" / "저장해"
-- "푸시해줘" / "푸시해" / "푸시"
+- Commit/push: "커밋해줘" / "커밋해" / "커밋" / "저장해줘" / "저장해" / "푸시해줘" / "푸시해" / "푸시"
+- Init: "초기화해줘" / "깃 초기화" / "git init" / "저장소 초기화" / "초기 커밋"
+- Branch: "브랜치 만들어줘" / "브랜치 생성" / "새 브랜치" / "작업 브랜치 만들어줘"
 
 English triggers:
-- "commit" / "commit this" / "create commit"
-- "push" / "push changes" / "commit and push"
-- "save" / "save changes"
+- Commit/push: "commit" / "commit this" / "create commit" / "push" / "push changes" / "commit and push" / "save"
+- Init: "initialize git" / "git init" / "initial commit" / "initialize repository"
+- Branch: "create branch" / "new branch" / "checkout branch" / "make a branch"
 
 **Do NOT activate for:**
 - General git questions or explanations
 - Browsing commit history
-- Code review without commit intent
+- Code review without intent to write Git state
+- Branch naming discussion without a request to create or switch branches
 
-## Workflow
+## Commit/Push Workflow
 
-Follow these steps sequentially for every commit request:
+Repository initialization uses `Repository Initialization Workflow` and branch creation uses `Branch Creation Workflow` once those sections are present.
+
+Follow these steps sequentially for every commit or push request:
 - **Step 1**: Analyze changes (with optional grouping for large changesets)
 - **Step 2**: Generate commit message (for each group if grouped)
 - **Step 3**: User approval
@@ -332,9 +335,9 @@ Common edge cases and how to handle them. For complete details, see `references/
 
 *Full edge case handling: `references/edge_cases.md`*
 
-## Checklist
+## Commit/Push Checklist
 
-Before each commit:
+Before each commit or push workflow:
 
 - [ ] User explicitly requested commit
 - [ ] Git repository verified
@@ -368,7 +371,9 @@ This skill implements MY_RULES.md Git workflow rules:
 - 클래스/메서드/변수명 직접 언급 금지
 
 ✅ **Triggers:**
-- "커밋", "커밋해줘", "commit", "push", "푸시"
+- Commit/push: "커밋", "커밋해줘", "commit", "push", "푸시"
+- Init: "초기화", "깃 초기화", "initialize git", "initial commit"
+- Branch: "브랜치", "브랜치 만들어줘", "create branch", "new branch"
 
 ✅ **Quality:**
 - Gitmoji + 한글 메시지 자동 생성
