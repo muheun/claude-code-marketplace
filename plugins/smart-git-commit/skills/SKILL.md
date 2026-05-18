@@ -141,7 +141,7 @@ git diff --cached --name-only
 **AI-related file patterns (⚠️ User confirmation required):**
 - `claudedocs/` - Claude Code analysis/reports
 - `.claude/` - Claude Code configuration
-- `*.ai.md`, `*.claude.md` - AI-generated markdown
+- `*.ai.md`, `*.claude.md` - AI-authored markdown
 - `.cursor/` - Cursor IDE configuration
 - `*.copilot.md` - GitHub Copilot files
 - `.aider*`, `aider.*.md` - Aider AI files
@@ -264,7 +264,7 @@ Based on change type, refer to `references/gitmoji_rules.md` for complete guidel
   - Method names: `extractVectorFields()`, `getUserById()`
   - Variable names: `userId`, `searchQuery`
   - File names: `UserService.kt`, `auth.controller.js`
-- **AI signatures** (`🤖 Generated with...`, `Co-Authored-By: Claude`)
+- **AI signatures** (generator banners, automated co-author trailers)
 - **Tracking codes** (`Phase 4`, `T032-1`, `SC-003`)
 - **Task/Issue IDs** (`TASK-123`, `JIRA-456`, `#789`)
 - **Scenario IDs** (`SC-003`, `SCENARIO-45`)
