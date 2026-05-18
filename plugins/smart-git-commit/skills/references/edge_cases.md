@@ -391,23 +391,6 @@ Are you sure you want to commit these? (yes/no)
 - 빌드 파일은 .gitignore 추가 권장
 - 대용량 파일은 Git LFS 사용 고려
 
----
-
-## 일반 원칙
-
-### 모든 Edge Case 공통
-1. **사용자에게 명확히 알림**
-2. **옵션 제공** (진행/수정/취소)
-3. **절대 자동 우회 금지** (--no-verify, --force 등)
-4. **근본 원인 설명**
-5. **추천 조치 안내**
-
-### 에러 처리 우선순위
-1. 안전 (데이터 손실 방지)
-2. 사용자 의사 존중
-3. 명확한 안내
-4. 복구 가능성 유지
-
 ## Case 11: Repository Initialization Requested Inside Existing Repository
 
 ### 상황
@@ -417,15 +400,21 @@ Are you sure you want to commit these? (yes/no)
 
 ```bash
 git rev-parse --is-inside-work-tree 2>/dev/null
+git rev-parse --verify HEAD 2>/dev/null
 ```
 
-성공하면 `git init`을 다시 실행하지 않는다. 현재 변경사항이 있으면 일반 커밋 워크플로우로 전환한다.
+`git rev-parse --is-inside-work-tree`가 성공하면 `git init`을 다시 실행하지 않는다.
+
+- `git rev-parse --verify HEAD`가 성공하면 기존 커밋이 있는 저장소이므로 일반 커밋 워크플로우로 전환하고 현재 diff로 메시지를 생성한다.
+- `git rev-parse --verify HEAD`가 실패하면 초기화는 되었지만 아직 커밋이 없는 저장소이므로 `git init` 없이 초기화/초기 커밋 워크플로우를 계속 진행하고 `🎉 init` 메시지 경로를 사용한다.
 
 안내 문구:
 
 ```markdown
 현재 디렉토리는 이미 Git 저장소입니다. 초기화 대신 현재 변경사항 기준으로 커밋을 진행할 수 있습니다.
 ```
+
+---
 
 ## Case 12: Branch Name Already Exists
 
@@ -446,6 +435,8 @@ git ls-remote --heads origin <candidate-branch> 2>/dev/null
 - `fix/resolve-login-error` → `fix/resolve-login-error-validation`
 - 의미 있는 suffix가 없으면 `-2`를 붙인다.
 
+---
+
 ## Case 13: Branch Creation With Dirty Worktree
 
 ### 상황
@@ -457,6 +448,8 @@ git ls-remote --heads origin <candidate-branch> 2>/dev/null
 - `git switch -c <branch>`는 변경사항을 유지하므로 stash를 요구하지 않는다.
 - 단, 충돌이나 checkout 실패가 발생하면 Git 오류를 그대로 설명하고 사용자의 정리를 요청한다.
 
+---
+
 ## Case 14: Invalid Branch Name Generated
 
 ### 상황
@@ -466,7 +459,11 @@ git ls-remote --heads origin <candidate-branch> 2>/dev/null
 - prefix는 허용 목록 중 하나로 제한한다.
 - slug는 lowercase kebab-case 영어로 변환한다.
 - `a-z`, `0-9`, `-` 외 문자를 제거한다.
+- 연속된 hyphen(반복된 하이픈)은 하나로 축약한다.
+- 앞뒤 hyphen(앞뒤 하이픈)은 제거한다.
 - 빈 slug가 되면 `update-work`를 사용한다.
+
+---
 
 ## Case 15: Force Git Operation Seems Necessary
 
@@ -478,3 +475,20 @@ git ls-remote --heads origin <candidate-branch> 2>/dev/null
 - `git add -f`, `git add --force`, `git push --force`, `git push --force-with-lease`, `git commit --no-verify`를 자동으로 사용하지 않는다.
 - 실패 원인과 일반적인 해결 방법을 먼저 설명한다.
 - 사용자가 정확한 force 동작을 명시적으로 승인한 뒤에만 해당 명령을 실행한다.
+
+---
+
+## 일반 원칙
+
+### 모든 Edge Case 공통
+1. **사용자에게 명확히 알림**
+2. **옵션 제공** (진행/수정/취소)
+3. **절대 자동 우회 금지** (--no-verify, --force 등)
+4. **근본 원인 설명**
+5. **추천 조치 안내**
+
+### 에러 처리 우선순위
+1. 안전 (데이터 손실 방지)
+2. 사용자 의사 존중
+3. 명확한 안내
+4. 복구 가능성 유지
