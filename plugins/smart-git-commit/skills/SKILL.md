@@ -408,12 +408,14 @@ If no files are found, ask the user whether to create an empty repository. Do no
 
 ### Init Step 2: Initialize Repository
 
-Run:
+Run `git init` only when `git rev-parse --is-inside-work-tree` failed in Init Step 1:
 
 ```bash
 git init
 git status --porcelain=v1
 ```
+
+If already inside a repository but `git rev-parse --verify HEAD` failed, skip `git init` and continue to staging and initial commit message generation.
 
 ### Init Step 3: Stage Initial Files
 
