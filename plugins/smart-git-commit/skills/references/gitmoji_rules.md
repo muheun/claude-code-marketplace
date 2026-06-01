@@ -137,6 +137,7 @@ Complete Gitmoji reference for commit message generation.
 ## 브랜치 Prefix 매핑
 
 브랜치 생성 시에는 Gitmoji를 사용하지 않고 타입 prefix만 사용한다.
+새 기능 작업은 항상 `feat/`를 사용한다. `feature/`는 같은 의미의 legacy prefix로 보고 새 브랜치에는 사용하지 않는다.
 
 | 변경 유형 | Commit 타입 | Branch prefix | 예시 |
 |----------|-------------|---------------|------|

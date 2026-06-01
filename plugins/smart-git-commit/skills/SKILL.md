@@ -575,6 +575,14 @@ Allowed prefixes:
 - `docs/` for documentation-only work
 - `chore/` for tooling or maintenance
 
+Prefix canonicalization:
+
+- Always use `feat/` for feature work and new behavior.
+- Do not create `feature/` branches. Treat existing `feature/` branches as legacy history, not the current convention.
+- If the user asks for a `feature/` branch, normalize it to `feat/` unless they explicitly reject the convention.
+- When repository history contains both `feat/` and `feature/`, prefer the allowed prefix list above over existing branch names.
+- Example: `feature/create-items` -> `feat/create-items`.
+
 Slug rules:
 
 - Use lowercase English.

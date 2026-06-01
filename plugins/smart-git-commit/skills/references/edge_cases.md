@@ -471,7 +471,27 @@ git ls-remote --heads origin <candidate-branch> 2>/dev/null
 
 ---
 
-## Case 14: Branch Creation With Dirty Worktree
+## Case 14: Feature Branch Prefix Canonicalization
+
+### 상황
+- 사용자가 기능 작업 브랜치를 요청했거나 기존 저장소에 `feature/` 브랜치가 있는 경우
+- 과거에 `feature/<slug>` 형식 브랜치가 만들어져 있어 모델이 기존 관례로 오해할 수 있는 경우
+
+### 처리 방법
+- 새 기능, 새 스킬, 새 플러그인, 새 워크플로 브랜치는 항상 `feat/<slug>`로 생성한다.
+- `feature/`는 `feat/`와 의미가 같은 legacy prefix로 취급하고 새 브랜치에는 사용하지 않는다.
+- 기존 브랜치 목록에 `feature/`가 있어도 허용 prefix 목록의 `feat/`를 우선한다.
+- 사용자가 `feature/<slug>`를 직접 요청하면 `feat/<slug>`로 정규화한 후보를 제시한다.
+- 기본 정책은 `feat/`이며, 사용자가 `feat/` 정규화를 명시적으로 거부하고 `feature/` 사용을 재확인한 경우에만 예외로 허용한다.
+
+예시:
+- 요청: "기능 브랜치 만들어줘" → `feat/create-items`
+- 요청: "`feature/create-items` 브랜치 만들어줘" → 후보는 `feat/create-items`
+- 기존 브랜치: `feature/muheun-backend-pattern` → 새 백엔드 패턴 작업 후보는 `feat/update-backend-pattern`
+
+---
+
+## Case 15: Branch Creation With Dirty Worktree
 
 ### 상황
 - 커밋되지 않은 변경사항이 있는 상태에서 브랜치 생성을 요청한 경우
@@ -484,7 +504,7 @@ git ls-remote --heads origin <candidate-branch> 2>/dev/null
 
 ---
 
-## Case 15: Branch Creation Requested Without Topic
+## Case 16: Branch Creation Requested Without Topic
 
 ### 상황
 - 사용자가 브랜치 이름이나 작업 주제 없이 "브랜치 생성해줘" 또는 "create a branch"처럼 요청한 경우
@@ -507,7 +527,7 @@ git ls-remote --heads origin <candidate-branch> 2>/dev/null
 
 ---
 
-## Case 16: Invalid Branch Name Generated
+## Case 17: Invalid Branch Name Generated
 
 ### 상황
 - 사용자 의도 또는 diff 분석에서 공백, 한글, 특수문자, 연속 슬래시가 포함된 이름이 나온 경우
@@ -522,7 +542,7 @@ git ls-remote --heads origin <candidate-branch> 2>/dev/null
 
 ---
 
-## Case 17: No Origin Remote For Branch Push
+## Case 18: No Origin Remote For Branch Push
 
 ### 상황
 - 사용자가 브랜치 생성과 upstream push를 요청했지만 `origin` remote가 없는 경우
@@ -540,7 +560,7 @@ git remote get-url origin
 
 ---
 
-## Case 18: Force Git Operation Seems Necessary
+## Case 19: Force Git Operation Seems Necessary
 
 ### 상황
 - ignored 파일을 추가해야 하거나, hook이 실패하거나, push가 rejected 되어 force 계열 명령이 필요해 보이는 경우
