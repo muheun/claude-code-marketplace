@@ -1,70 +1,70 @@
 ---
 name: karpathy-guidelines
-description: Behavioral guidelines to reduce common LLM coding mistakes. Use when writing, reviewing, or refactoring code to avoid overcomplication, make surgical changes, surface assumptions, and define verifiable success criteria.
+description: 코드 작성, 기능 구현/추가, 코드 리뷰, 리팩터링, 버그 수정, 테스트 작성/추가, 코드 개선, 수정해줘, 고쳐줘 같은 요청에서 사용한다. 과한 추상화와 불필요한 변경을 피하고, 가정을 드러내며, 작은 수정과 검증 가능한 성공 기준을 우선한다.
 license: MIT
 ---
 
 # Karpathy Guidelines
 
-Behavioral guidelines to reduce common LLM coding mistakes, derived from [Andrej Karpathy's observations](https://x.com/karpathy/status/2015883857489522876) on LLM coding pitfalls.
+LLM이 코딩 작업에서 자주 하는 실수를 줄이기 위한 행동 지침이다. [Andrej Karpathy의 관찰](https://x.com/karpathy/status/2015883857489522876)을 바탕으로 한다.
 
-**Tradeoff:** These guidelines bias toward caution over speed. For trivial tasks, use judgment.
+**Tradeoff:** 이 지침은 속도보다 신중함을 우선한다. 아주 단순한 작업에서는 상황에 맞게 적용한다.
 
-## 1. Think Before Coding
+## 1. 코딩 전에 생각하기
 
-**Don't assume. Don't hide confusion. Surface tradeoffs.**
+**추측하지 않는다. 헷갈리는 점을 숨기지 않는다. 트레이드오프를 드러낸다.**
 
-Before implementing:
-- State your assumptions explicitly. If uncertain, ask.
-- If multiple interpretations exist, present them - don't pick silently.
-- If a simpler approach exists, say so. Push back when warranted.
-- If something is unclear, stop. Name what's confusing. Ask.
+구현 전에:
+- 가정을 명시한다. 확실하지 않으면 질문한다.
+- 여러 해석이 가능하면 조용히 하나를 고르지 말고 선택지를 드러낸다.
+- 더 단순한 접근이 있으면 말한다. 필요하면 요청의 범위나 접근 방식에 대해 이견을 제시한다.
+- 불명확한 부분이 있으면 멈추고 무엇이 애매한지 말한 뒤 질문한다.
 
-## 2. Simplicity First
+## 2. 단순함 우선
 
-**Minimum code that solves the problem. Nothing speculative.**
+**문제를 해결하는 최소 코드만 작성한다. 추측 기반 확장은 넣지 않는다.**
 
-- No features beyond what was asked.
-- No abstractions for single-use code.
-- No "flexibility" or "configurability" that wasn't requested.
-- No error handling for impossible scenarios.
-- If you write 200 lines and it could be 50, rewrite it.
+- 요청받지 않은 기능을 추가하지 않는다.
+- 한 번만 쓰는 코드에 추상화를 만들지 않는다.
+- 요청되지 않은 유연성이나 설정 옵션을 넣지 않는다.
+- 실제로 불가능한 시나리오를 위한 에러 처리를 만들지 않는다.
+- 200줄로 작성했지만 50줄로 가능하다면 다시 단순화한다.
 
-Ask yourself: "Would a senior engineer say this is overcomplicated?" If yes, simplify.
+스스로 묻는다. "시니어 엔지니어가 이걸 과하다고 볼까?" 그렇다면 단순화한다.
 
-## 3. Surgical Changes
+## 3. 필요한 부분만 수정하기
 
-**Touch only what you must. Clean up only your own mess.**
+**반드시 필요한 부분만 건드린다. 내가 만든 부산물만 정리한다.**
 
-When editing existing code:
-- Don't "improve" adjacent code, comments, or formatting.
-- Don't refactor things that aren't broken.
-- Match existing style, even if you'd do it differently.
-- If you notice unrelated dead code, mention it - don't delete it.
+기존 코드를 수정할 때:
+- 주변 코드, 주석, 포맷을 임의로 "개선"하지 않는다.
+- 망가지지 않은 구조를 리팩터링하지 않는다.
+- 개인적으로 다른 방식을 선호하더라도 기존 스타일을 따른다.
+- 관련 없는 죽은 코드를 발견하면 언급만 하고 삭제하지 않는다.
 
-When your changes create orphans:
-- Remove imports/variables/functions that YOUR changes made unused.
-- Don't remove pre-existing dead code unless asked.
+내 변경으로 불필요해진 코드가 생겼을 때:
+- 내 변경 때문에 사용되지 않게 된 import, 변수, 함수는 제거한다.
+- 기존부터 있던 죽은 코드는 요청받지 않았다면 제거하지 않는다.
 
-The test: Every changed line should trace directly to the user's request.
+검증 기준: 변경된 모든 줄은 사용자의 요청과 직접 연결되어야 한다.
 
-## 4. Goal-Driven Execution
+## 4. 목표 중심으로 실행하기
 
-**Define success criteria. Loop until verified.**
+**성공 기준을 정의한다. 검증될 때까지 반복한다.**
 
-Transform tasks into verifiable goals:
-- "Add validation" -> "Write tests for invalid inputs, then make them pass"
-- "Fix the bug" -> "Write a test that reproduces it, then make it pass"
-- "Refactor X" -> "Ensure tests pass before and after"
+작업을 검증 가능한 목표로 바꾼다:
+- "검증 추가" -> "잘못된 입력 테스트를 작성하고 통과시킨다"
+- "버그 수정" -> "버그를 재현하는 테스트를 작성하고 통과시킨다"
+- "X 리팩터링" -> "변경 전후 테스트가 통과하는지 확인한다"
 
-For multi-step tasks, state a brief plan:
+여러 단계 작업에서는 짧은 계획을 제시한다:
 ```
-1. [Step] -> verify: [check]
-2. [Step] -> verify: [check]
-3. [Step] -> verify: [check]
+1. [단계] -> 검증: [확인 방법]
+2. [단계] -> 검증: [확인 방법]
+3. [단계] -> 검증: [확인 방법]
 ```
 
-Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
+강한 성공 기준은 독립적으로 반복 작업을 가능하게 한다. 약한 기준, 예를 들어 "작동하게 해줘"는 계속 확인이 필요하다.
 
 ## Attribution
 
