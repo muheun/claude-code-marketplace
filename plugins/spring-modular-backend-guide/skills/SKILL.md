@@ -1,6 +1,6 @@
 ---
 name: spring-modular-backend-guide
-description: Use when working on Java Spring Boot backend architecture, scaffolding, reviewing, or modifying DDD-style multi-module projects that need reusable domain modules, api/core/adapter boundaries, app-owned web composition, QueryDSL/jOOQ persistence rules, Flyway migrations, common response envelopes, or backend-util paging.
+description: Use when working on Java Spring Boot backend architecture, scaffolding, reviewing, or modifying DDD-style multi-module projects that need reusable domain modules, api/core/adapter boundaries, app-owned web composition, QueryDSL/jOOQ persistence rules, Flyway migrations, identifier strategy, common response envelopes, or backend-util paging.
 ---
 
 # Spring Modular Backend Guide
@@ -20,7 +20,7 @@ This is an opinionated guideline for new scaffolds and architecture reviews. Do 
 |---|---|
 | New project, scaffold, or module structure | `references/architecture.md`, `references/build-setup.md`, and `references/testing-checklist.md` |
 | Service, Store, adapter names | `references/naming.md` |
-| JPA, QueryDSL, jOOQ, Flyway, paging | `references/persistence.md` |
+| JPA, QueryDSL, jOOQ, Flyway, paging, identifier strategy | `references/persistence.md` |
 | Controllers, DTOs, app composition, response envelope | `references/web-and-app.md` |
 | Reusable comment/file-like modules or cross-domain validation | `references/spi-and-reuse.md` |
 | Gradle dependencies or build plugin placement | `references/build-setup.md` |
@@ -58,5 +58,6 @@ Without this skill, agents commonly place controllers in domain modules, use `Re
 - Cross-domain calls use SPI or app composition, not direct domain dependencies.
 - Persistence naming and service naming follow the vocabulary rules.
 - JPA/jOOQ/Flyway choices match the persistence reference.
+- Identifier strategy and DDL type mapping match the persistence reference.
 - Architecture tests or equivalent checks protect the important rules.
 - `./gradlew test` or the project-specific test command passes.

@@ -26,10 +26,10 @@ Reusable modules should expose service APIs and SPI contracts, not HTTP adapters
 Keep reusable module Search DTOs out of HTTP responses when practical. Convert them to app response DTOs:
 
 ```java
-ResponseEntity<ApiResponse<BoardPostCommentPageResponse>> get(UUID postId, CommentSearch search)
+ResponseEntity<ApiResponse<BoardPostCommentPageResponse>> get(PostId postId, CommentSearch search)
 ```
 
-Request DTOs should be app-local. Commands/results remain in domain `api`.
+Request DTOs should be app-local. Commands/results remain in domain `api`. Use the project's ID value objects and converters instead of hard-coding `UUID` in controller examples.
 
 ## Response Envelope
 

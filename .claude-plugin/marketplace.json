@@ -100,7 +100,7 @@
     {
       "name": "spring-modular-backend-guide",
       "source": "./plugins/spring-modular-backend-guide",
-      "description": "Java Spring Boot DDD modular backend guideline. Defines reusable domain modules with api/core/adapter boundaries, app-owned web composition, StoreAdapter persistence, QueryDSL/jOOQ/Flyway rules, response envelope, and architecture tests.",
+      "description": "Java Spring Boot DDD modular backend guideline. Defines reusable domain modules with api/core/adapter boundaries, app-owned web composition, StoreAdapter persistence, QueryDSL/jOOQ/Flyway rules, identifier strategy, response envelope, and architecture tests.",
       "version": "0.0.1",
       "author": {
         "name": "muheun"

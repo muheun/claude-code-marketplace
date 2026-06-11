@@ -29,10 +29,16 @@ The host app implements it:
 ```java
 class BoardPostCommentTargetPolicy implements CommentTargetPolicy {
     private final BoardPostService boardPostService;
+    private final PostIdConverter postIdConverter;
 
     public boolean isCommentable(CommentTarget target) {
-        return supports(target.type())
-                && boardPostService.exists(new PostId(UUID.fromString(target.id())));
+        if (!supports(target.type())) {
+            return false;
+        }
+
+        return postIdConverter.tryFromExternal(target.id())
+                .filter(boardPostService::exists)
+                .isPresent();
     }
 }
 ```

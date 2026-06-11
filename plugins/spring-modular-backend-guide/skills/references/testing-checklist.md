@@ -26,6 +26,7 @@ Add architecture tests or equivalent checks when this guideline is used for a sc
 - Persistence adapters do not self-register with `@Component`, `@Service`, `@Repository`, or component-scanned `@Configuration`.
 - App uses `ddl-auto: validate`.
 - Adapter-local Flyway migrations exist for adapter-owned tables.
+- Selected identifier strategy has matching DDL type, public ID `NOT NULL`/`UNIQUE` lookup constraints when used, ID converter, and ordering expectations.
 - Paged search tests assert count, paging metadata, stable order, and result body.
 
 ## Web Rules
