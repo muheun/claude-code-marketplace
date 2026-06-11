@@ -98,6 +98,17 @@
       "homepage": "https://github.com/muheun/claude-code-marketplace"
     },
     {
+      "name": "spring-modular-backend-guide",
+      "source": "./plugins/spring-modular-backend-guide",
+      "description": "Java Spring Boot DDD modular backend guideline. Defines reusable domain modules with api/core/adapter boundaries, app-owned web composition, StoreAdapter persistence, QueryDSL/jOOQ/Flyway rules, response envelope, and architecture tests.",
+      "version": "0.0.1",
+      "author": {
+        "name": "muheun"
+      },
+      "category": "productivity",
+      "homepage": "https://github.com/muheun/claude-code-marketplace"
+    },
+    {
       "name": "karpathy-guidelines",
       "source": "./plugins/karpathy-guidelines",
       "description": "Behavioral guidelines to reduce common LLM coding mistakes by avoiding overcomplication, making surgical changes, surfacing assumptions, and defining verifiable success criteria.",
