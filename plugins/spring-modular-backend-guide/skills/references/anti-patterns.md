@@ -30,7 +30,7 @@ Use this file during code review and scaffold review.
 ## Web
 
 - Reusable modules expose generic HTTP APIs instead of app-owned host workflow endpoints.
-- Controllers inject concrete core implementations such as `Default*Service` instead of `*:api` service contracts.
+- Controllers inject concrete core implementations such as `*ServiceImpl` instead of `*:api` service contracts.
 - Common response contains boolean `success`.
 - 5xx fallback exposes raw exception messages.
 - HTTP response DTOs are placed in reusable module `api`.

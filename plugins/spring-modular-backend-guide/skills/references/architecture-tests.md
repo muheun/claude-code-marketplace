@@ -250,6 +250,8 @@ Required checks:
 - Domain `api/core` modules do not depend on JPA, Hibernate, QueryDSL, jOOQ, Flyway, Spring Data/JDBC/ORM/transaction, or SQL APIs.
 - Persistence adapters do not depend on `shared:web-support`.
 - Persistence adapters do not self-register with `@Component`, `@Service`, `@Repository`, or component-scanned `@Configuration`.
+- Service contracts use `*Service`; default core implementations use `*ServiceImpl`.
+- App web/controller code depends on `*:api` service contracts, not concrete `*ServiceImpl` classes.
 - Store implementations use technology-explicit `*StoreAdapter` names.
 - Standard JPA Stores do not use `JpaRepository`.
 - Paging mutation stays in service code, not Store adapters.

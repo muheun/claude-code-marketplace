@@ -62,7 +62,7 @@ app -> shared:web-support
 
 `shared:domain` may be used by domain contracts when pure shared domain types are needed. `shared:web-support` is web infrastructure and must stay out of domain `api/core` and persistence adapters.
 
-`app -> *:core` exists for composition and configuration, such as constructing default service implementations or importing selected adapter configurations. Controllers and HTTP-facing app services should depend on `*:api` service contracts, not concrete `Default*Service` core classes.
+`app -> *:core` exists for composition and configuration, such as constructing `*ServiceImpl` default service implementations or importing selected adapter configurations. Controllers and HTTP-facing app services should depend on `*:api` service contracts, not concrete `*ServiceImpl` core classes.
 
 Do not let bounded-context `api/core` modules depend on each other. For example, `comment:core` must not know `board`. The app implements a `CommentTargetPolicy` or similar SPI to connect them.
 

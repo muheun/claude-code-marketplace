@@ -16,6 +16,7 @@ Add architecture tests or equivalent checks when this guideline is used for a sc
 ## Naming Rules
 
 - Service methods start with allowed application prefixes.
+- Service contracts are `*Service`; default core implementations are `*ServiceImpl`.
 - Store methods start with allowed persistence prefixes.
 - Persistence ports end with `Store`.
 - Persistence adapter implementations match `(Jpa|Jooq|InMemory)*StoreAdapter`.
@@ -32,6 +33,7 @@ Add architecture tests or equivalent checks when this guideline is used for a sc
 ## Web Rules
 
 - Controller success responses use common envelope.
+- Controllers and HTTP-facing workflows depend on `*Service` contracts, not concrete `*ServiceImpl` classes.
 - Basic exceptions are converted to the common envelope.
 - Tests parse JSON structure instead of only checking string fragments.
 

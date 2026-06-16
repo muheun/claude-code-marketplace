@@ -36,6 +36,7 @@ This is an opinionated guideline for new scaffolds and architecture reviews. Do 
 - Domain `api/core` modules do not depend on other bounded contexts, app, web-support, persistence adapters, Spring MVC, JPA, or DB technology.
 - Domain `api` may expose only DB-neutral paging/search contracts; DB infrastructure bundles stay in app or selected persistence adapters.
 - Reusable modules expose SPI contracts from `api`; app or host composition implements them.
+- Service contracts are `*Service` interfaces in `api`; the default core implementation is `*ServiceImpl`.
 - Service methods use application verbs: `get`, `save`, `modify`, `remove`, `exists`, plus explicit domain verbs like `attach`.
 - Persistence ports use `*Store`; Store methods use query verbs: `select`, `insert`, `update`, `delete`, `upsert`, `exists`, `count`.
 - Persistence implementations use technology-explicit names such as `JpaPostStoreAdapter`, `JooqPostStoreAdapter`, `InMemoryPostStoreAdapter`.
@@ -55,6 +56,7 @@ Without this skill, agents commonly place controllers in domain modules, use `Re
 - Module boundaries match `api/core/adapter/app`.
 - Gradle includes and dependencies match the selected modules and adapters.
 - Controllers and HTTP DTOs are in app packages.
+- App controllers and workflows depend on `*:api` `*Service` contracts, not `*:core` `*ServiceImpl` classes.
 - Cross-domain calls use SPI or app composition, not direct domain dependencies.
 - Persistence naming and service naming follow the vocabulary rules.
 - JPA/jOOQ/Flyway choices match the persistence reference.

@@ -50,6 +50,21 @@ FileAttachmentService.attach(command)
 FileAttachmentService.get(search)
 ```
 
+## Service Implementation Names
+
+Service contracts live in domain `api` modules as `*Service` interfaces.
+
+The default implementation lives in the matching domain `core` module and uses `*ServiceImpl`:
+
+```text
+BoardPostService
+BoardPostServiceImpl
+CachedBoardPostService
+TenantAwareBoardPostService
+```
+
+App controllers, command handlers, schedulers, and workflows depend on the `*Service` contract. Direct references to `*ServiceImpl` are limited to app composition/configuration and implementation-focused unit tests.
+
 ## Persistence Port Names
 
 Persistence ports live in `core.port` and use `*Store`.
