@@ -20,6 +20,14 @@ app request DTO
 
 Store executes count and projection queries only. Store must not own paging result mutation.
 
+## Projection And Mapping
+
+Persistence adapters project read results into domain `api` result DTOs or adapter-local projection DTOs. Persistence adapters must not depend on app response DTOs.
+
+If QueryDSL or jOOQ can directly create the domain result DTO, do not add service/controller copy methods that only move the same fields again. Add a manual mapping only when the external response shape differs, masking/formatting/permission filtering is required, multiple bounded-context results are composed, or HTTP/app-only metadata is added.
+
+When an app response DTO is needed, map to it in the app controller or a single app assembler. Domain `api` result DTOs may be reused as response payloads only while they remain web-neutral. Keep them free of Spring MVC, Swagger/OpenAPI, Jackson-only response annotations, and other web concerns.
+
 ## Identifier Strategy
 
 Default to database-generated `BIGINT` identity primary keys for ordinary single-primary relational systems unless the project has a clear reason to generate globally unique IDs outside the database.
@@ -115,6 +123,7 @@ Rules:
 - Prefer `VyyyyMMddHHmm__module_action.sql` style names.
 - The version timestamp is the actual creation date/time of the migration file.
 - Do not derive a new migration version by adding one minute to the previous migration.
+- If multiple migrations are created in the same minute, use actual seconds with `VyyyyMMddHHmmss__module_action.sql` or regenerate at the real later creation time. Always verify there is no duplicate version across the runtime classpath.
 
 ## backend-util
 

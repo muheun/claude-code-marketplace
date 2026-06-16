@@ -33,7 +33,7 @@ Use this file during code review and scaffold review.
 - Controllers inject concrete core implementations such as `*ServiceImpl` instead of `*:api` service contracts.
 - Common response contains boolean `success`.
 - 5xx fallback exposes raw exception messages.
-- HTTP response DTOs are placed in reusable module `api`.
+- HTTP-specific response DTOs or web-annotated DTOs are placed in reusable module `api`.
 
 ## Skill-Specific Failure Signals
 

@@ -54,14 +54,16 @@ FileAttachmentService.get(search)
 
 Service contracts live in domain `api` modules as `*Service` interfaces.
 
-The default implementation lives in the matching domain `core` module and uses `*ServiceImpl`:
+Concrete service implementations live in the matching domain `core` module and use `*ServiceImpl`:
 
 ```text
 BoardPostService
 BoardPostServiceImpl
-CachedBoardPostService
-TenantAwareBoardPostService
+CachedBoardPostServiceImpl
+TenantAwareBoardPostServiceImpl
 ```
+
+Use extra qualifiers before `ServiceImpl` for non-default decorators, tenant-aware implementations, or cache-aware implementations. Do not name concrete implementations `*Service` without the `Impl` suffix because that makes them look like contracts.
 
 App controllers, command handlers, schedulers, and workflows depend on the `*Service` contract. Direct references to `*ServiceImpl` are limited to app composition/configuration and implementation-focused unit tests.
 

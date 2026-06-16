@@ -31,6 +31,8 @@ ResponseEntity<ApiResponse<BoardPostCommentPageResponse>> get(PostId postId, Com
 
 Request DTOs should be app-local. Commands/results remain in domain `api`. Use the project's ID value objects and converters instead of hard-coding `UUID` in controller examples.
 
+Single-item domain `api` result DTOs may be used directly as the `ApiResponse.data` payload when they already match the public response shape and contain no web-only annotations. This does not make them HTTP response DTOs; keep them web-neutral. Search/Paging DTOs should usually be wrapped in app response DTOs. Persistence adapters must not project directly into app response DTOs.
+
 ## Response Envelope
 
 Use `shared:web-support` for a common envelope:

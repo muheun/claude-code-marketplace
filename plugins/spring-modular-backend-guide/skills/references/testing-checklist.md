@@ -16,7 +16,7 @@ Add architecture tests or equivalent checks when this guideline is used for a sc
 ## Naming Rules
 
 - Service methods start with allowed application prefixes.
-- Service contracts are `*Service`; default core implementations are `*ServiceImpl`.
+- Service contracts are `*Service`; concrete core implementations, including decorators and variants, are `*ServiceImpl`.
 - Store methods start with allowed persistence prefixes.
 - Persistence ports end with `Store`.
 - Persistence adapter implementations match `(Jpa|Jooq|InMemory)*StoreAdapter`.
