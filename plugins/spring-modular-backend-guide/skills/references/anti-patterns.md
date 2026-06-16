@@ -23,7 +23,10 @@ Use this file during code review and scaffold review.
 - Query reads fetch entities and map every row through `toDomain()` by default.
 - List/search queries lack stable ordering.
 - Store mutates paging result state with `calcPaging` or `setBody`.
-- jOOQ adapter mixes jOOQ DSL with JPA/Spring Data.
+- jOOQ-backed Store uses JPA, Spring Data, or `EntityManager` for reads/writes instead of jOOQ DSL.
+- jOOQ generated sources come from a manually prepared or stale developer-local database.
+- Gradle runs compile/test before Flyway migration and jOOQ code generation are complete.
+- jOOQ selection removes JPA entity declarations or Hibernate `ddl-auto: validate` schema verification.
 - Flyway migrations are only in app even though a reusable adapter owns the table.
 - `ddl-auto` is `create`, `create-drop`, or `update` in the scaffold.
 

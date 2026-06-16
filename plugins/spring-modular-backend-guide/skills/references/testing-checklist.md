@@ -25,10 +25,32 @@ Add architecture tests or equivalent checks when this guideline is used for a sc
 
 - JPA adapters do not depend on `JpaRepository` for standard Store implementation.
 - Persistence adapters do not self-register with `@Component`, `@Service`, `@Repository`, or component-scanned `@Configuration`.
-- App uses `ddl-auto: validate`.
+- App uses Hibernate `ddl-auto: validate` for relational schema verification.
 - Adapter-local Flyway migrations exist for adapter-owned tables.
+- jOOQ adapters wire build tasks so Flyway-migrated schema verification runs before jOOQ code generation, and `compileJava` depends on generated sources before tests run.
 - Selected identifier strategy has matching DDL type, public ID `NOT NULL`/`UNIQUE` lookup constraints when used, ID converter, and ordering expectations.
 - Paged search tests assert count, paging metadata, stable order, and result body.
+
+## Layered Test Strategy
+
+- Core service tests instantiate the real `*ServiceImpl` and fake only external boundaries such as `*Store`, SPI, readers, or recorders.
+- Core service tests do not use real persistence adapters and must not add `core -> adapter` or `core -> app` dependencies for testing.
+- Persistence adapter tests exercise the real `Jpa*StoreAdapter`, `Jooq*StoreAdapter`, or `InMemory*StoreAdapter`; do not fake the adapter under test.
+- jOOQ-backed adapter tests verify JPA entities and Hibernate validation exist, while Store reads/writes go through the real jOOQ adapter.
+- SQL, join, projection, unique constraint, ordering, paging, and dialect behavior tests use the real target database product, preferably with Testcontainers.
+- Persistence integration tests apply Flyway migrations from the runtime classpath, such as `classpath:db/migration`, so adapter-owned migrations are included. Do not hard-code `app/src/main/resources/db/migration` unless the test is specifically for app-only migrations.
+- App tests cover controllers, security, common response envelopes, module composition, selected adapter imports, and bean wiring.
+- Service plus real adapter tests live in an adapter or app test source set and are integration tests, not core unit tests.
+
+Common test-design failures to reject:
+
+- Adding production or test dependencies from `core` to a persistence adapter just to run a convenient service test.
+- Replacing the target MariaDB/MySQL/PostgreSQL behavior with H2 for SQL, constraint, projection, ordering, or dialect-sensitive tests.
+- Hard-coding app migration paths in reusable adapter tests, which hides adapter-owned Flyway migrations.
+- Faking the `*StoreAdapter` class in a persistence adapter test instead of testing the real adapter implementation.
+- Running jOOQ code generation from a stale manual database or after `test` has already started.
+- Adding only `test.dependsOn(generateJooq)` while leaving `compileJava` free to run before generated sources exist.
+- Using JPA, Spring Data, or `EntityManager` for jOOQ-backed Store reads/writes instead of limiting JPA to entity declaration and validation.
 
 ## Web Rules
 

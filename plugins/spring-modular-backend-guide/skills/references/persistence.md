@@ -54,15 +54,15 @@ Storage rules:
 
 ## JPA And QueryDSL
 
-JPA entities are adapter-internal technology models.
+JPA entities are adapter-internal technology models and the default relational schema validation model. Keep Hibernate validation enabled even when a jOOQ-backed Store is selected.
 
-Write side:
+JPA/QueryDSL-backed Store write side:
 
 - `EntityManager.persist`, `merge`, and `remove` are allowed.
 - Entities remain package-private where possible.
 - Entities are not returned outside the adapter.
 
-Read side:
+JPA/QueryDSL-backed Store read side:
 
 - Use QueryDSL projection for single-item reads and list/search reads.
 - Add stable ordering for pageable lists.
@@ -89,30 +89,41 @@ queryFactory.select(Projections.constructor(
 
 ## jOOQ
 
-When a jOOQ adapter is selected, prefer jOOQ DSL for reads and writes.
+When a jOOQ-backed Store is selected, JPA entities still exist for Hibernate schema validation, but Store reads and writes use jOOQ DSL.
 
 Rules:
 
 - Use `DSLContext` and generated table/record classes.
 - Prefer jOOQ DSL for both 조회 and 저장.
-- Do not mix jOOQ with JPA/Spring Data inside the same adapter.
+- Do not use JPA, Spring Data, `JpaRepository`, or `EntityManager` for Store reads/writes in the jOOQ-backed Store.
+- JPA entities in a jOOQ-backed adapter are for entity declaration and `ddl-auto: validate` only.
 - Return domain objects or result DTOs through explicit mapping/projection.
 - Keep count query and row query separated for paged searches.
 
+Code generation lifecycle:
+
+- Generate jOOQ sources from a Flyway-migrated schema, not from a manually prepared developer-local database.
+- Keep the codegen database separate from the integration-test runtime database where practical.
+- Build order should be: prepare codegen DB -> apply Flyway migrations -> verify expected tables exist -> generate jOOQ sources -> compile -> test.
+- Integration tests still start or connect to their own runtime DB and apply Flyway migrations before exercising the real adapter.
+- If generated jOOQ sources are committed, CI must still verify they are current by running the same migration and codegen path or a generated-source drift check.
+
 ## Flyway And DDL
 
-Default JPA policy:
+Default schema policy:
 
 ```yaml
 spring:
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
   jpa:
     open-in-view: false
     hibernate:
       ddl-auto: validate
-  flyway:
-    enabled: true
-    locations: classpath:db/migration
 ```
+
+jOOQ projects use Flyway migrations as the schema source for both code generation and persistence integration tests. They still keep JPA entity declarations and Hibernate `ddl-auto: validate` as schema verification, but jOOQ-backed Stores do not use JPA/Spring Data for reads or writes.
 
 Rules:
 
@@ -124,6 +135,7 @@ Rules:
 - The version timestamp is the actual creation date/time of the migration file.
 - Do not derive a new migration version by adding one minute to the previous migration.
 - If multiple migrations are created in the same minute, use actual seconds with `VyyyyMMddHHmmss__module_action.sql` or regenerate at the real later creation time. Always verify there is no duplicate version across the runtime classpath.
+- Persistence integration tests should apply migrations from the runtime classpath, such as `classpath:db/migration`, so adapter-owned migrations are included. Adapter module tests include their own resources; app tests include selected adapter resources through dependencies. Avoid hard-coding `app/src/main/resources/db/migration` unless the test is specifically for app-only migrations.
 
 ## backend-util
 

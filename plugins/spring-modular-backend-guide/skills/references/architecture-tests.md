@@ -254,4 +254,7 @@ Required checks:
 - App web/controller code depends on `*:api` service contracts, not concrete `*ServiceImpl` classes.
 - Store implementations use technology-explicit `*StoreAdapter` names.
 - Standard JPA Stores do not use `JpaRepository`.
+- jOOQ-backed Stores do not use JPA, Spring Data, `JpaRepository`, or `EntityManager` for reads/writes.
+- jOOQ-backed adapters keep JPA entities and Hibernate `ddl-auto: validate` schema verification.
+- jOOQ code generation runs after Flyway-migrated schema verification and before `compileJava`/`test`.
 - Paging mutation stays in service code, not Store adapters.

@@ -15,9 +15,11 @@ include(
     "board:api",
     "board:core",
     "board:adapter:persistence-jpa",
+    // "board:adapter:persistence-jooq",
     "comment:api",
     "comment:core",
     "comment:adapter:persistence-jpa",
+    // "comment:adapter:persistence-jooq",
     "file:api",
     "file:core",
     "file:adapter:persistence-memory",
@@ -126,6 +128,47 @@ dependencies {
     annotationProcessor("jakarta.annotation:jakarta.annotation-api")
 }
 ```
+
+jOOQ adapter modules:
+
+```kotlin
+plugins {
+    `java-library`
+    // Apply the project's selected jOOQ code generation convention here.
+}
+
+dependencies {
+    implementation(project(":board:core"))
+    implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+    implementation("org.springframework.boot:spring-boot-starter-jooq")
+    // Add the target JDBC driver, Flyway, and jOOQ codegen dependencies through the project convention.
+    // Keep JPA entities for Hibernate schema validation; Store reads/writes still use jOOQ DSL.
+}
+```
+
+jOOQ-backed adapters still keep JPA entity declarations and `ddl-auto: validate` for schema verification. Do not add Spring Data repositories or use `EntityManager` for Store reads/writes in the jOOQ-backed Store.
+
+jOOQ adapters must generate sources from a Flyway-migrated schema before Java compilation and tests. Use project-specific task names, but keep this dependency order:
+
+```text
+prepareJooqCodegenDb
+-> flywayMigrateJooqCodegen
+-> verifyJooqCodegenSchema
+-> generateJooq
+-> compileJava
+-> test
+```
+
+Gradle wiring must make `generateJooq` depend on the migration and schema verification tasks, and `compileJava` depend on `generateJooq`. `compileJava.dependsOn(generateJooq)` is the required contract. `test` will then depend on generated sources through compilation; an explicit `test.dependsOn(generateJooq)` is only a supplemental clarity check.
+
+`verifyJooqCodegenSchema` should fail when:
+
+- Flyway migrations were not applied to the codegen database.
+- The expected schema is empty.
+- Required adapter-owned tables are missing.
+- The codegen database product or dialect differs from the target runtime database.
+
+Do not generate jOOQ classes from a manually prepared developer-local database. Keep the codegen database separate from integration-test runtime databases where practical.
 
 The `app` module selects concrete adapters:
 

@@ -23,8 +23,9 @@ This is an opinionated guideline for new scaffolds and architecture reviews. Do 
 | JPA, QueryDSL, jOOQ, Flyway, paging, identifier strategy | `references/persistence.md` |
 | Controllers, DTOs, app composition, response envelope | `references/web-and-app.md` |
 | Reusable comment/file-like modules or cross-domain validation | `references/spi-and-reuse.md` |
-| Gradle dependencies or build plugin placement | `references/build-setup.md` |
+| Gradle dependencies, build plugin placement, or jOOQ codegen setup | `references/build-setup.md` and `references/persistence.md` |
 | Architecture test implementation | `references/testing-checklist.md` and `references/architecture-tests.md` |
+| Layered service, persistence, or app test strategy | `references/testing-checklist.md` and `references/persistence.md` |
 | Code review or readiness check | `references/anti-patterns.md`, `references/testing-checklist.md`, and any changed-area references above |
 
 3. Apply the non-negotiable rules below before writing or reviewing code.
@@ -41,15 +42,17 @@ This is an opinionated guideline for new scaffolds and architecture reviews. Do 
 - Persistence ports use `*Store`; Store methods use query verbs: `select`, `insert`, `update`, `delete`, `upsert`, `exists`, `count`.
 - Persistence implementations use technology-explicit names such as `JpaPostStoreAdapter`, `JooqPostStoreAdapter`, `InMemoryPostStoreAdapter`.
 - Persistence adapters do not self-register with `@Component`; app imports selected configuration holders.
-- JPA read side uses QueryDSL projection with stable ordering. Do not make entity fetch plus `toDomain()` the default read pattern.
-- jOOQ adapters prefer jOOQ DSL for reads and writes; do not mix jOOQ with JPA/Spring Data inside the same adapter.
+- JPA/Hibernate entities are the relational schema validation model; keep `ddl-auto: validate` and make schema changes through Flyway.
+- JPA-backed adapters use QueryDSL projection with stable ordering. Do not make entity fetch plus `toDomain()` the default read pattern.
+- jOOQ-backed adapters keep JPA entities only for Hibernate validation; Store reads and writes use jOOQ DSL, not JPA/Spring Data APIs.
+- jOOQ generated sources come from a Flyway-migrated schema before compile/test, not from a stale manual database.
 - Paging result assembly belongs in service: `countBy`, `calcPaging`, `selectBy`, `setBody`.
 - HTTP response envelope has `status`, `code`, `message`, `data`; no boolean `success` field.
-- `ddl-auto` defaults to `validate`; schema changes are Flyway migrations.
+- Tests follow module dependency direction: core tests fake ports/SPI, persistence tests use real adapters, app tests verify web and composition.
 
 ## Baseline Failures This Skill Prevents
 
-Without this skill, agents commonly place controllers in domain modules, use `Repository/JpaRepository/find/save/create` as defaults, expose reusable modules as HTTP modules, put Flyway migrations only in app, return a boolean `success` field, or put paging mutation inside persistence. Treat those as architecture violations unless the user explicitly overrides the guideline.
+Without this skill, agents commonly place controllers in domain modules, use `Repository/JpaRepository/find/save/create` as defaults, expose reusable modules as HTTP modules, put Flyway migrations only in app, generate jOOQ classes from stale local schemas, drop Hibernate validation when jOOQ is selected, wire compile before codegen, return a boolean `success` field, or put paging mutation inside persistence. Treat those as architecture violations unless the user explicitly overrides the guideline.
 
 ## Completion Checklist
 
@@ -59,7 +62,10 @@ Without this skill, agents commonly place controllers in domain modules, use `Re
 - App controllers and workflows depend on `*:api` `*Service` contracts, not `*:core` `*ServiceImpl` classes.
 - Cross-domain calls use SPI or app composition, not direct domain dependencies.
 - Persistence naming and service naming follow the vocabulary rules.
-- JPA/jOOQ/Flyway choices match the persistence reference.
+- JPA/QueryDSL/jOOQ/Flyway choices match the persistence reference.
+- Hibernate validation is configured with `ddl-auto: validate`.
+- jOOQ adapters wire Flyway migration, schema verification, code generation, compile, and test in that order.
 - Identifier strategy and DDL type mapping match the persistence reference.
 - Architecture tests or equivalent checks protect the important rules.
+- Layered tests do not introduce `core -> adapter` or `core -> app` dependencies.
 - `./gradlew test` or the project-specific test command passes.
