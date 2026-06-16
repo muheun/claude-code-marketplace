@@ -136,38 +136,70 @@ Commit 3: ✅ test: User/Product 테스트 추가
 
 ### 처리 방법
 
+기본 원칙:
+- staged와 unstaged의 visible non-ignored 변경을 모두 분석한다.
+- non-ignored untracked 파일은 `git ls-files --others --exclude-standard`로 찾고, 필요한 경우 파일 내용을 read-only로 확인한다.
+- 사용자가 단순히 커밋을 요청했다면 visible non-ignored 변경 전체를 기본 커밋 대상으로 사용한다.
+- 사용자가 staged-only, selected paths, grouped commits를 요청한 경우에만 더 좁은 대상을 사용한다.
+- `.gitignore`, `.git/info/exclude`, global gitignore에 걸린 파일은 강제로 추가하지 않는다.
+
 **사용자에게 알림:**
 ```
 ⚠️ You have unstaged changes:
 - src/components/Header.tsx
 - src/utils/helper.js
 
-This commit will only include staged changes.
+Default target: all visible non-ignored changes.
 
 Options:
-1. Commit staged only
-2. Stage all and commit
-3. Cancel
+1. Include all visible non-ignored changes
+2. Commit staged only
+3. Select paths
+4. Cancel
 ```
 
 **옵션별 처리:**
 
-**Option 1: Commit staged only**
+**Option 1: Include all visible non-ignored changes**
 ```bash
-# staged 파일만 커밋
-git commit -m "message"
+# ignore rules를 존중하며 visible non-ignored 변경 전체를 stage
+git add --all
+git diff --cached --name-only
+git diff --cached --stat
 ```
 
-**Option 2: Stage all and commit**
+이후 staged target diff 기준으로 커밋 메시지를 생성하고 승인받은 뒤 커밋한다.
+
+**Option 2: Commit staged only**
 ```bash
-# 모든 변경사항 stage
-git add .
-git commit -m "message"
+# 이미 staged된 대상만 확인
+git diff --cached --name-only
+git diff --cached --stat
+
+# 남은 unstaged 변경은 의도적으로 제외되는지 확인
+git diff --name-only
+git status --porcelain=v1
+git ls-files --others --exclude-standard
 ```
 
-**Option 3: Cancel**
+남은 visible non-ignored 변경 목록을 보여주고, staged 대상만 커밋해도 되는지 사용자 확인을 받은 뒤 진행한다.
+
+**Option 3: Select paths**
+```bash
+# 사용자가 선택한 non-ignored 경로만 stage
+git add -- "src/api/auth.ts" "tests/auth.test.ts"
+git diff --cached --name-only
+git diff --cached --stat
+```
+
+**Option 4: Cancel**
 - 작업 중단
 - 사용자가 수동으로 정리
+
+**금지:**
+- `git add -f`
+- `git add --force`
+- ignored 파일을 포함하기 위한 우회 명령
 
 ### 예시
 
@@ -179,6 +211,15 @@ git commit -m "message"
 - `src/components/LoginForm.tsx` (진행 중)
 
 **생성된 메시지 (Option 1 선택 시):**
+```
+✨ feat: 인증 흐름 구현
+
+- JWT 기반 인증 API 추가
+- 로그인 폼 연동 흐름 반영
+- 인증 테스트 보강
+```
+
+**생성된 메시지 (Option 2 선택 시):**
 ```
 ✨ feat: 인증 API 구현
 

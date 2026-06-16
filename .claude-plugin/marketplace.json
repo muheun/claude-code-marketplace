@@ -23,7 +23,7 @@
     {
       "name": "smart-git-commit",
       "source": "./plugins/smart-git-commit",
-      "description": "Automatically generate Gitmoji-based Korean commit messages by analyzing project changes, then execute commits and pushes after user approval.",
+      "description": "Generate Gitmoji-based Korean commit messages and run Git write workflows only after an explicit user request and approval.",
       "version": "0.0.1",
       "author": {
         "name": "muheun"

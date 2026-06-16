@@ -1,31 +1,62 @@
 ---
 name: smart-git-commit
-description: Execute smart Git operations when users request commit, push, repository initialization, or branch creation. Use semantic change analysis to generate Korean Gitmoji commit messages and conventional branch names such as feat/create-items, fix/resolve-login-error, or refactor/modify-member-business.
+description: Use when the user explicitly asks to commit, push, initialize a Git repository, create a branch, or prepare a Korean Gitmoji commit message.
 ---
 
 # Smart Git Commit
 
-Generate high-quality Gitmoji-based Korean commit messages and safe Git workflow commands by analyzing the user's current repository state. This skill supports commit, push, repository initialization, and branch creation.
+Generate high-quality Gitmoji-based Korean commit messages and safe Git workflow commands by analyzing the user's current repository state. This skill supports message drafting without Git writes, and supports commit, push, repository initialization, and branch creation only after explicit user request.
+
+**Core safety rule:** Never run Git write commands because work is complete. Git write actions require an explicit current user request and the approval step in this skill.
 
 ## When to Use This Skill
 
-**Auto-activate when users request Git write actions:**
+**Auto-activate when users request Git write actions or commit-message drafting:**
 
 Korean triggers:
-- Commit/push: "커밋해줘" / "커밋해" / "커밋" / "저장해줘" / "저장해" / "푸시해줘" / "푸시해" / "푸시"
+- Commit/push: "커밋해줘" / "커밋해" / "커밋" / "푸시해줘" / "푸시해" / "푸시"
+- Message only: "커밋 메시지 작성" / "커밋 메시지 추천" / "커밋 메시지만 만들어줘" / "커밋 메세지 추천"
 - Init: "초기화해줘" / "깃 초기화" / "git init" / "저장소 초기화" / "초기 커밋"
 - Branch: "브랜치 만들어줘" / "브랜치 생성" / "새 브랜치" / "작업 브랜치 만들어줘"
 
 English triggers:
-- Commit/push: "commit" / "commit this" / "create commit" / "push" / "push changes" / "commit and push" / "save"
+- Commit/push: "commit" / "commit this" / "create commit" / "push" / "push changes" / "commit and push"
+- Message only: "write a commit message" / "suggest a commit message" / "commit message only"
 - Init: "initialize git" / "git init" / "initial commit" / "initialize repository"
 - Branch: "create branch" / "new branch" / "make a branch"
+
+**Ambiguous phrases require clarification before Git write actions:**
+- "저장해줘" / "저장해" / "save" / "save changes"
+- "정리해줘" / "마무리해줘" / "finish this" / "wrap up"
 
 **Do NOT activate for:**
 - General git questions or explanations
 - Browsing commit history
 - Code review without intent to write Git state
 - Branch naming discussion without a request to create a branch
+- Completed implementation, passing tests, or finished review without an explicit Git write request
+- Ambiguous save/finish wording that does not explicitly mention Git, commit, push, init, or branch creation
+
+## Git Write Safety
+
+Never run `git add`, `git commit`, `git push`, `git init`, `git switch -c`, or any other Git write command unless the current task flow includes an explicit user request for that Git write action.
+
+Do not infer permission from:
+
+- work being complete
+- tests or validation passing
+- code review being complete
+- changed files existing
+- a generated commit message
+- a previous unrelated turn or older session
+- the user's usual workflow or past approval pattern
+- "go ahead" unless it answers the active approval prompt in this workflow
+
+If a Git write action seems useful but was not requested, ask whether the user wants it and stop. Do not stage, commit, push, create a branch, or initialize a repository while waiting for that answer.
+
+For commit-message-only requests, generate the message and stop. Do not present commit, push, branch creation, or repository initialization as selectable actions unless the user separately requests a Git write action.
+
+Never force-add ignored files. Files ignored by repository `.gitignore`, `.git/info/exclude`, or the user's global gitignore are intentionally outside normal commit scope. Do not use `git add -f`, `git add --force`, or equivalent force-add behavior. If an ignored file seems necessary, report that it is ignored and stop; the user must explicitly request the exact force-add action or change the ignore rules.
 
 ## Shared Semantic Analysis
 
@@ -121,9 +152,24 @@ find . -type f \
   -not -path './coverage/*'
 ```
 
+## Commit Message Only Workflow
+
+Use this workflow when the user asks only for a Korean Gitmoji commit message, message suggestion, or message rewrite.
+
+Do not enter `Commit/Push Workflow` from this workflow. A generated message is not approval to stage, commit, or push.
+
+1. Analyze both staged and unstaged visible non-ignored changes with read-only commands from `Shared Semantic Analysis`.
+2. Use the combined visible non-ignored diff as the default message target, unless the user asks for staged-only or selected paths.
+3. For non-ignored untracked files, inspect file contents read-only before generating the message. Do not stage them.
+4. Generate the message using the format and quality rules from `Step 2: Generate Commit Message`, but do not stage files.
+5. Show only the message text and, if useful, one short note that no Git write action was performed.
+6. Stop. Do not run Step 3, Step 4, or ask the user to choose `Commit only`, `Commit + Push`, or any other Git write action.
+
+If the user later asks to commit or push, start `Commit/Push Workflow` from the beginning and complete its approval step.
+
 ## Commit/Push Workflow
 
-Follow these steps sequentially for every commit or push request. For repository initialization, use `Repository Initialization Workflow`. For branch creation, use `Branch Creation Workflow`.
+Enter this workflow only after the user explicitly requests commit or push in the current task flow. Follow these steps sequentially for every commit or push request. For repository initialization, use `Repository Initialization Workflow`. For branch creation, use `Branch Creation Workflow`.
 - **Step 1**: Analyze changes (with optional grouping for large changesets)
 - **Step 2**: Generate commit message (for each group if grouped)
 - **Step 3**: User approval
@@ -149,20 +195,55 @@ git status --porcelain
 
 If empty → "변경사항이 없습니다."
 
-**1.3 Get detailed diff:**
+**1.3 Analyze both scopes, then stage the commit target:**
+
+The commit message must describe exactly what will be committed. Do not generate a message from one diff and then stage a broader set of files afterward.
+
+Target rules:
+- Always inspect both staged and unstaged visible non-ignored changes before message generation.
+- If the user only says to commit, use all visible non-ignored changes as the default target.
+- If the user asks for staged-only, selected files, or grouped commits, use that narrower target.
+- For non-grouped commits, stage the final target before message generation so `git diff --cached` matches the future commit.
+- For grouped commits, stage only the current approved group before generating that group's message. Do not leave files from other groups staged.
+- If ignored files are required, stop and report that they are ignored; do not force-add them.
+
+Safe staging examples:
 
 ```bash
-# Staged changes
-git diff --cached
+# Stage all visible non-ignored changes for the default commit target
+git add --all
 
-# Unstaged changes (if needed)
-git diff
+# Stage selected non-ignored paths
+git add -- "file1.kt" "file2.py"
+```
 
-# Statistics
+Never use `git add -f` or `git add --force` unless the user explicitly requested that exact force-add action.
+
+After staging the target, verify the actual commit target:
+
+```bash
+git diff --cached --name-only
 git diff --cached --stat
 ```
 
-**1.4 Check AI-related files:**
+**1.4 Get detailed target diff:**
+
+```bash
+# Actual commit target
+git diff --cached
+
+# Remaining unstaged tracked changes only to verify intentionally excluded work
+git diff
+
+# Remaining unstaged and untracked visible non-ignored changes
+git status --porcelain=v1
+git ls-files --others --exclude-standard
+
+# Actual commit target statistics
+git diff --cached --stat
+```
+
+**1.5 Check AI-related files:**
 
 **Principle**: Respect user's .gitignore configuration. Files that passed .gitignore are trusted. Only verify AI-related files require user confirmation.
 
@@ -193,20 +274,24 @@ git diff --cached --name-only
 
 **Important**: Do NOT block or warn about other file types (.env, node_modules, etc.). User manages these via .gitignore/.gitignore_global.
 
-### Step 1.5: Logical Grouping (Optional)
+### Step 1.6: Logical Grouping (Optional)
 
 **Activation trigger**: Large changeset (10+ files) OR user explicitly requests commit splitting.
 
-**1.5.1 Analyze for grouping potential:**
+**1.6.1 Analyze for grouping potential:**
 
 ```bash
-# Count changed files
-git diff --cached --name-only | wc -l
+# Count visible non-ignored changed paths across staged, unstaged, and untracked scopes
+{
+  git diff --cached --name-only
+  git diff --name-only
+  git ls-files --others --exclude-standard
+} | sort -u | wc -l
 ```
 
 If ≥10 files, analyze for logical grouping.
 
-**1.5.2 Grouping analysis criteria:**
+**1.6.2 Grouping analysis criteria:**
 
 Analyze file relationships using:
 
@@ -221,7 +306,7 @@ Analyze file relationships using:
 
 *Detailed grouping strategies: `references/grouping_strategies.md`*
 
-**1.5.3 Present grouping to user:**
+**1.6.3 Present grouping to user:**
 
 Present suggested grouping with file counts and domain names.
 
@@ -231,9 +316,20 @@ Present suggested grouping with file counts and domain names.
 3. ✏️ Modify grouping
 4. ❌ Cancel
 
-**1.5.4 Handle user choice and execute grouped commits:**
+**1.6.4 Handle user choice and execute grouped commits:**
 
-For each group, execute Step 2 → Step 3 → Step 4 sequentially.
+If the user cancels after the workflow staged files, explain that the index may contain staged files. Offer cleanup with `git restore --staged .`, but run it only after explicit user approval.
+
+For each group, make the index contain only that group, then execute Step 2 → Step 3 → Step 4 sequentially.
+
+```bash
+git restore --staged .
+git add -- "group-file-1" "group-file-2"
+git diff --cached --name-only
+git diff --cached --stat
+```
+
+Never use `git add -f` or `git add --force` for grouped commits.
 
 **Edge cases:**
 - If grouping is unclear or ambiguous → fallback to single commit
@@ -244,9 +340,14 @@ For each group, execute Step 2 → Step 3 → Step 4 sequentially.
 
 Use Claude's natural language processing to generate message from diff analysis.
 
-**2.1 Analyze diff semantically:**
+**2.1 Analyze target diff semantically:**
 
-Read the actual code changes from `git diff --cached` output:
+Read the target diff prepared by the active workflow:
+- Commit/Push Workflow: use `git diff --cached` after Step 1.3 stages the target. This must be the same staged diff that will be committed.
+- Commit Message Only Workflow: use the read-only combined visible non-ignored diff from `git diff --cached`, `git diff`, and read-only inspection of `git ls-files --others --exclude-standard` output. Do not stage files for message-only requests.
+- Repository Initialization Workflow: use the staged initial target after Init Step 3.
+
+Analyze:
 - What functionality was added/changed?
 - What bugs were fixed?
 - What was refactored?
@@ -342,8 +443,8 @@ Wait for user selection. Do not assume or skip this step.
 
 - **Choice 1**: User approved → Proceed to Step 4 with `do_push=false`
 - **Choice 2**: User approved with push → Proceed to Step 4 with `do_push=true`
-- **Choice 3**: User requests modification → Ask user for new message, then proceed to Step 4
-- **Choice 4**: User cancelled → Stop workflow entirely
+- **Choice 3**: User requests modification → Ask user for the revised message, then show the revised message with the same 4 options again. Do not proceed to Step 4 until the user chooses `Commit only` or `Commit + Push`.
+- **Choice 4**: User cancelled → Stop workflow entirely. If this workflow staged files before approval, explain that the index may contain staged files. Offer cleanup with `git restore --staged .`, but run it only after explicit user approval.
 
 ⚠️ **Enforcement**: If you proceed to Step 4 without completing Step 3, you are violating the core workflow. The user must see the message and make an explicit choice.
 
@@ -351,15 +452,16 @@ Wait for user selection. Do not assume or skip this step.
 
 Use Bash tool to execute git operations.
 
-**4.1 Stage files:**
+**4.1 Verify target did not change after approval:**
+
+Do not stage new files after the user approves the message. Re-check the staged target before committing:
 
 ```bash
-# Stage all changes
-git add .
-
-# Or stage specific files (if user specified)
-git add "file1.kt" "file2.py"
+git diff --cached --name-only
+git diff --cached --stat
 ```
+
+If the staged target changed after message generation, return to Step 2 and generate a new message.
 
 **4.2 Commit with heredoc:**
 
@@ -461,12 +563,12 @@ If already inside a repository but `git rev-parse --verify HEAD` failed, skip `g
 Stage files using the user's ignore rules:
 
 ```bash
-git add .
+git add --all
 git status --porcelain=v1
 git diff --cached --stat
 ```
 
-Never use `git add -f` or `git add --force` unless the user explicitly requested the exact `git add -f` or `git add --force` action.
+Never use `git add -f` or `git add --force` unless the user explicitly requested the exact `git add -f` or `git add --force` action. If files are hidden by repository, info/exclude, or global ignore rules, report them as ignored and stop instead of forcing them into the initial commit.
 
 ### Init Step 4: Generate Initial Commit Message
 
@@ -491,6 +593,8 @@ Show the generated initial commit message and provide exactly 3 options:
 3. **Cancel** - Abort after leaving repository initialized if `git init` already ran
 
 Do not create the initial commit without explicit user approval.
+
+If the user chooses **Modify message**, ask for the revised message, then show the revised message with the same 3 options again. Do not create the initial commit until the user chooses **Initialize + Commit**.
 
 If the user cancels after staging files, explain that the index may contain staged files. Offer to clean up the index with `git restore --staged .`, but run it only after explicit user approval.
 
@@ -655,7 +759,7 @@ Common edge cases and how to handle them. For complete details, see `references/
 - Empty commit → Suggest generic message
 - Mixed types → Priority: feat > fix > refactor
 - Large diff (>500 lines) → Warn and suggest split
-- Unstaged changes → Offer options: staged only / stage all / cancel
+- Remaining unstaged changes after target staging → Confirm they are intentionally excluded or return to Step 1.3
 - Pre-commit hook failure → Never bypass automatically; use `--no-verify` only after the user explicitly requests that exact bypass action
 - No remote branch → Offer `git push -u origin <branch>`
 - Merge conflict → Request resolution before commit
@@ -663,13 +767,30 @@ Common edge cases and how to handle them. For complete details, see `references/
 
 *Full edge case handling: `references/edge_cases.md`*
 
-## Commit/Push Checklist
+## Git Workflow Checklists
+
+Before each commit-message-only workflow:
+
+- [ ] User asked only for a commit message draft, suggestion, or rewrite
+- [ ] Only read-only repository commands used
+- [ ] Staged and unstaged visible non-ignored changes analyzed
+- [ ] Non-ignored untracked file contents inspected read-only when present
+- [ ] Correct Gitmoji selected
+- [ ] Korean message follows the format and quality rules
+- [ ] No commit, push, branch, or initialization action offered
+- [ ] Workflow stopped after showing the message
 
 Before each commit or push workflow:
 
 - [ ] User explicitly requested commit or push
+- [ ] Current task flow explicitly authorizes this Git write action
+- [ ] Permission is not inferred from task completion, passing tests, review completion, changed files, or prior habits
 - [ ] Git repository verified
 - [ ] Changes detected (not empty)
+- [ ] Staged and unstaged visible non-ignored changes analyzed
+- [ ] Commit target staged before message generation
+- [ ] Ignored files left untracked unless the user explicitly requested exact force-add
+- [ ] Generated message describes the staged target diff
 - [ ] AI-related files confirmed by user (if any)
 - [ ] Correct Gitmoji selected
 - [ ] Korean message (imperative form)
@@ -677,12 +798,16 @@ Before each commit or push workflow:
 - [ ] Under 300 characters total
 - [ ] No AI signature, tracking codes, or test statistics
 - [ ] User approved message
+- [ ] If cancelled after staging, staged target state explained before stopping
+- [ ] User chose commit-only or commit-and-push after seeing the message
 
 Before repository initialization:
 
 - [ ] User explicitly requested initialization or initial commit
+- [ ] Current task flow explicitly authorizes repository initialization or initial commit
 - [ ] Existing Git repository check completed
 - [ ] Candidate files inspected with ignore rules respected
+- [ ] Ignored files left untracked unless the user explicitly requested exact force-add
 - [ ] Force operations avoided unless explicitly requested
 - [ ] Initial commit message generated with `🎉 init`
 - [ ] User approved initial commit
@@ -690,6 +815,7 @@ Before repository initialization:
 Before branch creation:
 
 - [ ] User explicitly requested branch creation
+- [ ] Current task flow explicitly authorizes branch creation
 - [ ] Git repository verified
 - [ ] Current work intent analyzed from user request, conversation context, and diff
 - [ ] Ambiguous branch topic resolved with 1-2 suggestions or custom user input
