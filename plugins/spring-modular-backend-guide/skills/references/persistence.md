@@ -113,6 +113,8 @@ Rules:
 - App-only composition tables or deployment-only schema changes may live in app migrations.
 - Migration versions must be unique across the runtime classpath.
 - Prefer `VyyyyMMddHHmm__module_action.sql` style names.
+- The version timestamp is the actual creation date/time of the migration file.
+- Do not derive a new migration version by adding one minute to the previous migration.
 
 ## backend-util
 

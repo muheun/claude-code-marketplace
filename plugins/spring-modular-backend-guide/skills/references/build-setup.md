@@ -171,3 +171,4 @@ comment/adapter/persistence-jpa/src/main/resources/db/migration/VyyyyMMddHHmm__c
 ```
 
 App-only composition tables may use app migrations. Migration versions must be unique across the runtime classpath.
+Use the actual creation date/time for `VyyyyMMddHHmm`; do not create new versions by incrementing the previous migration timestamp.
