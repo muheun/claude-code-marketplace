@@ -4,6 +4,9 @@ Use this file during code review and scaffold review.
 
 ## Module Boundaries
 
+- Big-bang architecture rewrites that change structure, behavior, naming, and persistence strategy in one step.
+- Splitting classes only because they are long, without a distinct change reason, dependency boundary, or test boundary.
+- Extracting abstractions that cannot be protected by tests, architecture rules, or clear module dependencies.
 - Domain module owns `adapter:web` or `@RestController`.
 - Reusable module imports host domain classes such as board/product/notice.
 - `api` depends on Spring Web, DB technology, `core`, or `adapter`.

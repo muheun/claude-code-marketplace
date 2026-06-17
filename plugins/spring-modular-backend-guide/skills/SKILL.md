@@ -19,6 +19,7 @@ This is an opinionated guideline for new scaffolds and architecture reviews. Do 
 | Work type | Required reference |
 |---|---|
 | New project, scaffold, or module structure | `references/architecture.md`, `references/build-setup.md`, and `references/testing-checklist.md` |
+| Architecture design, responsibility separation, or refactoring strategy | `references/architecture.md`, `references/anti-patterns.md`, and `references/testing-checklist.md` |
 | Service, Store, adapter names | `references/naming.md` |
 | JPA, QueryDSL, jOOQ, Flyway, paging, identifier strategy | `references/persistence.md` |
 | Controllers, DTOs, app composition, response envelope | `references/web-and-app.md` |
@@ -34,6 +35,7 @@ This is an opinionated guideline for new scaffolds and architecture reviews. Do 
 ## Non-Negotiable Rules
 
 - Domain modules use `api`, `core`, and `adapter:persistence-*`; app owns web controllers and host-specific DTOs.
+- Prefer small, verifiable architecture changes: identify mixed responsibilities, split by change reason, and protect the split with tests, architecture rules, module dependency checks, package rules, or focused layer tests; checklist-only notes do not count as protection.
 - Domain `api/core` modules do not depend on other bounded contexts, app, web-support, persistence adapters, Spring MVC, JPA, or DB technology.
 - Domain `api` may expose only DB-neutral paging/search contracts; DB infrastructure bundles stay in app or selected persistence adapters.
 - Reusable modules expose SPI contracts from `api`; app or host composition implements them.
@@ -52,11 +54,12 @@ This is an opinionated guideline for new scaffolds and architecture reviews. Do 
 
 ## Baseline Failures This Skill Prevents
 
-Without this skill, agents commonly place controllers in domain modules, use `Repository/JpaRepository/find/save/create` as defaults, expose reusable modules as HTTP modules, put Flyway migrations only in app, generate jOOQ classes from stale local schemas, drop Hibernate validation when jOOQ is selected, wire compile before codegen, return a boolean `success` field, or put paging mutation inside persistence. Treat those as architecture violations unless the user explicitly overrides the guideline.
+Without this skill, agents commonly place controllers in domain modules, use `Repository/JpaRepository/find/save/create` as defaults, expose reusable modules as HTTP modules, perform big-bang architecture rewrites, split classes only because they are long, extract abstractions with no protecting test, architecture rule, dependency check, package rule, or focused layer test, put Flyway migrations only in app, generate jOOQ classes from stale local schemas, drop Hibernate validation when jOOQ is selected, wire compile before codegen, return a boolean `success` field, or put paging mutation inside persistence. Treat those as architecture violations unless the user explicitly overrides the guideline.
 
 ## Completion Checklist
 
 - Module boundaries match `api/core/adapter/app`.
+- Responsibility splits are small enough to review and are protected by tests, architecture rules, module dependency checks, package rules, or focused layer tests; checklist-only notes do not count as protection.
 - Gradle includes and dependencies match the selected modules and adapters.
 - Controllers and HTTP DTOs are in app packages.
 - App controllers and workflows depend on `*:api` `*Service` contracts, not `*:core` `*ServiceImpl` classes.

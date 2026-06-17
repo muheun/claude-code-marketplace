@@ -1,5 +1,25 @@
 # Architecture Reference
 
+## Change Strategy
+
+Prefer small, verifiable architecture changes over one large redesign.
+
+When an area mixes multiple responsibilities, identify the reasons it changes before extracting anything. HTTP representation, use-case orchestration, domain rules, persistence queries, and infrastructure wiring should not be moved as one undifferentiated block.
+
+Separate responsibilities only when the split can be validated. A good split can be protected by module dependencies, package rules, naming rules, persistence rules, web response rules, architecture tests, or focused layer tests.
+
+Good change units:
+
+- Have one primary reason to change.
+- Do not add direct dependencies between bounded contexts.
+- Do not make `core` depend on `adapter` or `app`.
+- Leave a test, architecture rule, module dependency check, package rule, or focused layer test that would catch the old mixed responsibility.
+- Avoid changing structure, behavior, naming, and persistence strategy in the same step unless the user explicitly asks for a larger migration.
+
+A checklist item may record the decision, but it does not protect a boundary by itself.
+
+Small changes do not mean creating many classes by default. Split when change reasons, test boundaries, dependency direction, or reuse boundaries differ.
+
 ## Module Structure
 
 Use this shape for reusable bounded contexts:

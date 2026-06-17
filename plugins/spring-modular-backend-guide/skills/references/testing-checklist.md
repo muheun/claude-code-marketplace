@@ -2,6 +2,15 @@
 
 Add architecture tests or equivalent checks when this guideline is used for a scaffold. Use `architecture-tests.md` for compact ArchUnit examples.
 
+## Change Strategy Checks
+
+- Responsibility splits have a clear reason to change, not only a cosmetic class-length concern.
+- Architecture changes are small enough to review without also changing unrelated behavior, naming, and persistence strategy.
+- A split leaves a verification point: architecture test, module dependency check, package rule, or focused layer test.
+- Checklist-only documentation does not count as boundary protection.
+- Mixed HTTP, use-case orchestration, domain rule, persistence query, and infrastructure wiring concerns are separated at the appropriate `app`, `api`, `core`, or `adapter` boundary.
+- Refactoring does not add direct bounded-context dependencies or make `core` depend on `adapter`/`app`.
+
 ## Module Boundary Rules
 
 - `shared:domain` and `shared:web-support` are separate modules.
