@@ -1,6 +1,6 @@
 {
   "name": "karpathy-guidelines",
-  "description": "코딩 작업에서 과한 추상화, 불필요한 변경, 숨은 추측을 줄이고 사용자 코드 스타일과 검증 가능한 작은 수정을 우선합니다.",
+  "description": "코딩 작업에서 과한 추상화, 불필요한 변경, 숨은 추측을 줄이고 diff 정리 중에도 사용자 코드 스타일과 검증 가능한 작은 수정을 우선합니다.",
   "version": "0.0.1",
   "author": {
     "name": "forrestchang",

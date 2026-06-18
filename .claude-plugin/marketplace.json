@@ -100,7 +100,7 @@
     {
       "name": "spring-modular-backend-guide",
       "source": "./plugins/spring-modular-backend-guide",
-      "description": "Java Spring Boot DDD modular backend guideline. Defines reusable domain modules with api/core/adapter boundaries, app-owned web composition, Java import ordering, StoreAdapter persistence, QueryDSL/jOOQ/Flyway rules, identifier strategy, response envelope, and architecture tests.",
+      "description": "Java Spring Boot DDD modular backend guideline. Defines reusable domain modules with api/core/adapter boundaries, app-owned web composition, Java import ordering, Java test helper formatting, StoreAdapter persistence, QueryDSL/jOOQ/Flyway rules, identifier strategy, response envelope, and architecture tests.",
       "version": "0.0.1",
       "author": {
         "name": "muheun"
@@ -111,7 +111,7 @@
     {
       "name": "karpathy-guidelines",
       "source": "./plugins/karpathy-guidelines",
-      "description": "Behavioral guidelines to reduce common LLM coding mistakes by avoiding overcomplication, preserving user-chosen code style, making surgical changes, surfacing assumptions, and defining verifiable success criteria.",
+      "description": "Behavioral guidelines to reduce common LLM coding mistakes by avoiding overcomplication, preserving user-chosen code style during edits and diff cleanup, making surgical changes, surfacing assumptions, and defining verifiable success criteria.",
       "version": "0.0.1",
       "author": {
         "name": "forrestchang",

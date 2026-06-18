@@ -8,6 +8,8 @@ Rules:
 - Keep regular imports and static imports in separate groups.
 - Sort each group by the complete path, not by a package-type category such as `model`, `event`, or `service`.
 - Do not move nested type imports after their enclosing package siblings if the full path sorts earlier.
+- Do not add imports for classes from the same package as the current Java file.
+- Remove same-package imports only when your own change introduced them or the user explicitly asked for import cleanup.
 - Do not use wildcard imports unless the existing project formatter requires them.
 - If a file has an established formatter or import layout, follow that layout instead of rewriting unrelated imports.
 
@@ -26,6 +28,12 @@ import com.fixelsoft.hr.leave.api.service.LeaveRequestService;
 import com.fixelsoft.hr.leave.api.service.LeaveShareRecipientService;
 import com.fixelsoft.hr.people.api.service.PeopleMemberService;
 ```
+
+## Java Test Helper Formatting
+
+When adding or changing Java tests, keep existing multiline helper method parameter alignment unless the helper signature itself is part of the requested change.
+
+Do not re-align existing helper parameters while trying to remove unrelated diffs. If a test change only adds a new case, the final diff should not contain parameter alignment changes in existing helper methods.
 
 ## Service Method Names
 

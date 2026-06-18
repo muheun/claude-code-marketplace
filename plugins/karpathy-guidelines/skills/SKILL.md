@@ -1,6 +1,6 @@
 ---
 name: karpathy-guidelines
-description: Use when coding, reviewing, refactoring, fixing bugs, writing tests, improving code, making requested edits, or preserving user/project code style, formatting, imports, and indentation.
+description: Use when coding, reviewing, refactoring, fixing bugs, writing tests, improving code, cleaning unrelated diffs, making requested edits, or preserving user/project code style, formatting, imports, and indentation.
 license: MIT
 ---
 
@@ -47,6 +47,13 @@ LLM이 코딩 작업에서 자주 하는 실수를 줄이기 위한 행동 지�
 - 사용자가 명시적으로 풀어쓴 import나 타입 시작선 기준 정렬을 "noise", "cleanup", "formatter improvement"로 판단하지 않는다.
 - 포맷터나 린터가 실패해도 실패 원인과 직접 관련된 최소 범위만 수정하고, import 방식이나 indentation 정렬 같은 사용자 스타일 선택은 임의로 바꾸지 않는다.
 - 스타일이 의심되면 고치지 말고 현재 스타일을 유지한다고 말한다.
+
+불필요한 diff를 정리할 때:
+- `git diff` hunk에서 요청과 무관한 줄만 식별하고, 파일 전체를 `HEAD`나 개인 formatter 감각으로 다시 만들지 않는다.
+- `HEAD`를 항상 정답으로 보지 않는다. 현재 파일의 사용자 스타일과 프로젝트 formatter가 우선이다.
+- 의미 변경과 포맷 변경이 섞인 hunk는 의미 변경만 남도록 최소 편집하고, import 블록이나 메서드 전체를 다시 쓰지 않는다.
+- "unrelated diff 제거", "cleanup", "noise 제거"라는 명목으로 import, parameter alignment, helper method 정렬을 새로 바꾸지 않는다.
+- 정리 후 `git diff`를 다시 확인해 정리 과정에서 만든 포맷 전용 hunk가 남지 않았는지 확인한다.
 
 내 변경으로 불필요해진 코드가 생겼을 때:
 - 내 변경 때문에 사용되지 않게 된 import, 변수, 함수는 제거한다.
