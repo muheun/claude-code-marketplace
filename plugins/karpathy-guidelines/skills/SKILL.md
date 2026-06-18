@@ -1,6 +1,6 @@
 ---
 name: karpathy-guidelines
-description: 코드 작성, 기능 구현/추가, 코드 리뷰, 리팩터링, 버그 수정, 테스트 작성/추가, 코드 개선, 수정해줘, 고쳐줘 같은 요청에서 사용한다. 과한 추상화와 불필요한 변경을 피하고, 가정을 드러내며, 작은 수정과 검증 가능한 성공 기준을 우선한다.
+description: Use when coding, reviewing, refactoring, fixing bugs, writing tests, improving code, making requested edits, or preserving user/project code style, formatting, imports, and indentation.
 license: MIT
 ---
 
@@ -41,6 +41,12 @@ LLM이 코딩 작업에서 자주 하는 실수를 줄이기 위한 행동 지�
 - 망가지지 않은 구조를 리팩터링하지 않는다.
 - 개인적으로 다른 방식을 선호하더라도 기존 스타일을 따른다.
 - 관련 없는 죽은 코드를 발견하면 언급만 하고 삭제하지 않는다.
+
+사용자 또는 기존 diff가 만든 스타일 선택을 되돌리지 않는다:
+- import 정렬, wildcard import 사용 여부, static import 명시 여부, 파라미터 줄바꿈, indentation 정렬은 버그가 아니면 수정하지 않는다.
+- 사용자가 명시적으로 풀어쓴 import나 타입 시작선 기준 정렬을 "noise", "cleanup", "formatter improvement"로 판단하지 않는다.
+- 포맷터나 린터가 실패해도 실패 원인과 직접 관련된 최소 범위만 수정하고, import 방식이나 indentation 정렬 같은 사용자 스타일 선택은 임의로 바꾸지 않는다.
+- 스타일이 의심되면 고치지 말고 현재 스타일을 유지한다고 말한다.
 
 내 변경으로 불필요해진 코드가 생겼을 때:
 - 내 변경 때문에 사용되지 않게 된 import, 변수, 함수는 제거한다.

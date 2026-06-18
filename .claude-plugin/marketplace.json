@@ -111,7 +111,7 @@
     {
       "name": "karpathy-guidelines",
       "source": "./plugins/karpathy-guidelines",
-      "description": "Behavioral guidelines to reduce common LLM coding mistakes by avoiding overcomplication, making surgical changes, surfacing assumptions, and defining verifiable success criteria.",
+      "description": "Behavioral guidelines to reduce common LLM coding mistakes by avoiding overcomplication, preserving user-chosen code style, making surgical changes, surfacing assumptions, and defining verifiable success criteria.",
       "version": "0.0.1",
       "author": {
         "name": "forrestchang",
