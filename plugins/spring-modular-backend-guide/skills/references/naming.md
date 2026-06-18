@@ -1,5 +1,32 @@
 # Naming Reference
 
+## Java Import Ordering
+
+Sort Java imports alphabetically by the fully qualified name after `import`.
+
+Rules:
+- Keep regular imports and static imports in separate groups.
+- Sort each group by the complete path, not by a package-type category such as `model`, `event`, or `service`.
+- Do not move nested type imports after their enclosing package siblings if the full path sorts earlier.
+- Do not use wildcard imports unless the existing project formatter requires them.
+- If a file has an established formatter or import layout, follow that layout instead of rewriting unrelated imports.
+
+Example:
+
+```java
+import com.fixelsoft.hr.BaseConfigTest;
+import com.fixelsoft.hr.leave.api.event.LeaveLifecycleEvent.Shared;
+import com.fixelsoft.hr.leave.api.event.LeaveLifecycleProcess;
+import com.fixelsoft.hr.leave.api.model.LeaveVo;
+import com.fixelsoft.hr.leave.api.model.enums.LeaveType;
+import com.fixelsoft.hr.leave.api.service.LeaveApprovalService;
+import com.fixelsoft.hr.leave.api.service.LeaveApproverService;
+import com.fixelsoft.hr.leave.api.service.LeaveBalanceService;
+import com.fixelsoft.hr.leave.api.service.LeaveRequestService;
+import com.fixelsoft.hr.leave.api.service.LeaveShareRecipientService;
+import com.fixelsoft.hr.people.api.service.PeopleMemberService;
+```
+
 ## Service Method Names
 
 Service interfaces use application/use-case vocabulary.

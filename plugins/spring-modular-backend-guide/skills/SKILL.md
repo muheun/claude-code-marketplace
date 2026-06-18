@@ -1,6 +1,6 @@
 ---
 name: spring-modular-backend-guide
-description: Use when working on Java Spring Boot backend architecture, scaffolding, reviewing, or modifying DDD-style multi-module projects that need reusable domain modules, api/core/adapter boundaries, app-owned web composition, QueryDSL/jOOQ persistence rules, Flyway migrations, identifier strategy, common response envelopes, or backend-util paging.
+description: Use when working on Java Spring Boot backend architecture, scaffolding, reviewing, or modifying DDD-style multi-module projects that need reusable domain modules, api/core/adapter boundaries, app-owned web composition, QueryDSL/jOOQ persistence rules, Flyway migrations, identifier strategy, Java import ordering, common response envelopes, or backend-util paging.
 ---
 
 # Spring Modular Backend Guide
@@ -20,7 +20,7 @@ This is an opinionated guideline for new scaffolds and architecture reviews. Do 
 |---|---|
 | New project, scaffold, or module structure | `references/architecture.md`, `references/build-setup.md`, and `references/testing-checklist.md` |
 | Architecture design, responsibility separation, or refactoring strategy | `references/architecture.md`, `references/anti-patterns.md`, and `references/testing-checklist.md` |
-| Service, Store, adapter names | `references/naming.md` |
+| Service, Store, adapter names, or Java import ordering | `references/naming.md` |
 | JPA, QueryDSL, jOOQ, Flyway, paging, identifier strategy | `references/persistence.md` |
 | Controllers, DTOs, app composition, response envelope | `references/web-and-app.md` |
 | Reusable comment/file-like modules or cross-domain validation | `references/spi-and-reuse.md` |
@@ -43,6 +43,7 @@ This is an opinionated guideline for new scaffolds and architecture reviews. Do 
 - Service methods use application verbs: `get`, `save`, `modify`, `remove`, `exists`, plus explicit domain verbs like `attach`.
 - Persistence ports use `*Store`; Store methods use query verbs: `select`, `insert`, `update`, `delete`, `upsert`, `exists`, `count`.
 - Persistence implementations use technology-explicit names such as `JpaPostStoreAdapter`, `JooqPostStoreAdapter`, `InMemoryPostStoreAdapter`.
+- Java imports sort by fully qualified name inside each import group; do not invent package-type groups such as event/model/service unless the existing formatter already does so.
 - Persistence adapters do not self-register with `@Component`; app imports selected configuration holders.
 - JPA/Hibernate entities are the relational schema validation model; keep `ddl-auto: validate` and make schema changes through Flyway.
 - JPA-backed adapters use QueryDSL projection with stable ordering. Do not make entity fetch plus `toDomain()` the default read pattern.
@@ -65,6 +66,7 @@ Without this skill, agents commonly place controllers in domain modules, use `Re
 - App controllers and workflows depend on `*:api` `*Service` contracts, not `*:core` `*ServiceImpl` classes.
 - Cross-domain calls use SPI or app composition, not direct domain dependencies.
 - Persistence naming and service naming follow the vocabulary rules.
+- Java imports remain sorted by fully qualified name within regular and static import groups.
 - JPA/QueryDSL/jOOQ/Flyway choices match the persistence reference.
 - Hibernate validation is configured with `ddl-auto: validate`.
 - jOOQ adapters wire Flyway migration, schema verification, code generation, compile, and test in that order.
