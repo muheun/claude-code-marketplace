@@ -1,6 +1,6 @@
 ---
 name: spring-modular-backend-guide
-description: Use when working on Java Spring Boot backend architecture, scaffolding, reviewing, or modifying DDD-style multi-module projects that need reusable domain modules, api/core/adapter boundaries, app-owned web composition, QueryDSL/jOOQ persistence rules, Flyway migrations, identifier strategy, Java import ordering, Java test helper formatting, common response envelopes, or backend-util paging.
+description: Use when working on Java Spring Boot backend architecture, scaffolding, reviewing, or modifying DDD-style multi-module projects that need reusable domain modules, api/core/adapter boundaries, app-owned web composition, QueryDSL/jOOQ persistence rules, Flyway migrations, identifier strategy, Java import ordering, Java test helper formatting, layered service/persistence/app test strategy, Mockito/fake boundaries, Testcontainers DB tests, common response envelopes, or backend-util paging.
 ---
 
 # Spring Modular Backend Guide
@@ -53,7 +53,7 @@ This is an opinionated guideline for new scaffolds and architecture reviews. Do 
 - jOOQ generated sources come from a Flyway-migrated schema before compile/test, not from a stale manual database.
 - Paging result assembly belongs in service: `countBy`, `calcPaging`, `selectBy`, `setBody`.
 - HTTP response envelope has `status`, `code`, `message`, `data`; no boolean `success` field.
-- Tests follow module dependency direction: core tests fake ports/SPI, persistence tests use real adapters, app tests verify web and composition.
+- Tests follow module dependency direction: core service tests use the real `*ServiceImpl` with fake or Mockito-controlled external boundaries, persistence tests use real adapters with the target DB via Testcontainers when SQL behavior matters, and app tests verify thin HTTP contracts plus composition.
 
 ## Baseline Failures This Skill Prevents
 

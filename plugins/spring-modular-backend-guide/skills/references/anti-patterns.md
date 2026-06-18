@@ -42,6 +42,13 @@ Use this file during code review and scaffold review.
 - 5xx fallback exposes raw exception messages.
 - HTTP-specific response DTOs or web-annotated DTOs are placed in reusable module `api`.
 
+## Tests
+
+- Service tests verify only Mockito interactions without asserting service output, state changes, or exceptions from the real `*ServiceImpl`.
+- Service tests mock stateful `*Store` flows so heavily that count, paging, or saved-then-read behavior is no longer realistic.
+- Persistence tests replace the real database with H2 for dialect-sensitive SQL, constraints, ordering, or projection behavior.
+- Controller tests duplicate service policy tests instead of staying focused on binding, validation, status, envelope, exception handling, security, filters, or interceptors.
+
 ## Skill-Specific Failure Signals
 
 If a proposed answer says "keep controllers inside each feature/domain module", "use JpaRepository for simple CRUD", "service create/find/list", or "put all migrations in app by default", stop and realign with this skill.

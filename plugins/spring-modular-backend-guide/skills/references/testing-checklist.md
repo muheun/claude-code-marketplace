@@ -44,13 +44,17 @@ Add architecture tests or equivalent checks when this guideline is used for a sc
 
 ## Layered Test Strategy
 
-- Core service tests instantiate the real `*ServiceImpl` and fake only external boundaries such as `*Store`, SPI, readers, or recorders.
+- Core service tests instantiate the real `*ServiceImpl` and replace only external boundaries such as `*Store`, SPI, readers, recorders, notifiers, senders, or publishers.
+- Mockito is acceptable in service tests for controlling boundary return values, exceptions, or verifying side-effect calls. The mock is not the test subject.
+- Prefer hand-written fakes when state matters: storing then reading, count plus paging, accumulated changes, or scenarios where Mockito setup becomes longer than the behavior under test.
+- Prefer Mockito mocks for stateless external-boundary readers, validators, policies, notifiers, senders, publishers, and one-off exception paths. Core business policy collaborators stay real unless they are the unit under test in a separate focused test.
 - Core service tests do not use real persistence adapters and must not add `core -> adapter` or `core -> app` dependencies for testing.
 - Persistence adapter tests exercise the real `Jpa*StoreAdapter`, `Jooq*StoreAdapter`, or `InMemory*StoreAdapter`; do not fake the adapter under test.
 - jOOQ-backed adapter tests verify JPA entities and Hibernate validation exist, while Store reads/writes go through the real jOOQ adapter.
 - SQL, join, projection, unique constraint, ordering, paging, and dialect behavior tests use the real target database product, preferably with Testcontainers.
 - Persistence integration tests apply Flyway migrations from the runtime classpath, such as `classpath:db/migration`, so adapter-owned migrations are included. Do not hard-code `app/src/main/resources/db/migration` unless the test is specifically for app-only migrations.
-- App tests cover controllers, security, common response envelopes, module composition, selected adapter imports, and bean wiring.
+- App tests cover thin controller HTTP contracts, security, common response envelopes, module composition, selected adapter imports, and bean wiring.
+- Controller tests may mock service contracts, but they must verify HTTP concerns such as binding, validation, status codes, response envelopes, exception handling, security, filters, or interceptors. Do not retest service business logic through controllers.
 - Service plus real adapter tests live in an adapter or app test source set and are integration tests, not core unit tests.
 
 Common test-design failures to reject:
@@ -59,6 +63,9 @@ Common test-design failures to reject:
 - Replacing the target MariaDB/MySQL/PostgreSQL behavior with H2 for SQL, constraint, projection, ordering, or dialect-sensitive tests.
 - Hard-coding app migration paths in reusable adapter tests, which hides adapter-owned Flyway migrations.
 - Faking the `*StoreAdapter` class in a persistence adapter test instead of testing the real adapter implementation.
+- Testing Mockito behavior instead of the real `*ServiceImpl` behavior.
+- Mocking `*Store` when a simple fake would better preserve state needed by the service scenario.
+- Expanding controller tests into duplicated service policy tests instead of keeping them focused on HTTP contracts.
 - Running jOOQ code generation from a stale manual database or after `test` has already started.
 - Adding only `test.dependsOn(generateJooq)` while leaving `compileJava` free to run before generated sources exist.
 - Using JPA, Spring Data, or `EntityManager` for jOOQ-backed Store reads/writes instead of limiting JPA to entity declaration and validation.
