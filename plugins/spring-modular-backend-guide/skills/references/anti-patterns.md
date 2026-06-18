@@ -6,6 +6,7 @@ Use this file during code review and scaffold review.
 
 - Big-bang architecture rewrites that change structure, behavior, naming, and persistence strategy in one step.
 - Splitting classes only because they are long, without a distinct change reason, dependency boundary, or test boundary.
+- Splitting every method into a separate `Service`, `Store`, SPI, Reader, or Notifier contract without a distinct consumer role, change reason, or dependency boundary.
 - Extracting abstractions that cannot be protected by tests, architecture rules, or clear module dependencies.
 - Domain module owns `adapter:web` or `@RestController`.
 - Reusable module imports host domain classes such as board/product/notice.

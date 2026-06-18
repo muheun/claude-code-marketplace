@@ -106,6 +106,8 @@ App controllers, command handlers, schedulers, and workflows depend on the `*Ser
 
 Persistence ports live in `core.port` and use `*Store`.
 
+In this guideline, `Store` is the repository-like persistence port owned by `core`. Do not name core ports `*Repository`, and do not expose Spring Data `JpaRepository` as the Store contract or standard Store implementation.
+
 Store methods use persistence/query vocabulary:
 
 ```text

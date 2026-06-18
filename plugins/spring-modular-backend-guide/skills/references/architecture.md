@@ -20,6 +20,28 @@ A checklist item may record the decision, but it does not protect a boundary by 
 
 Small changes do not mean creating many classes by default. Split when change reasons, test boundaries, dependency direction, or reuse boundaries differ.
 
+### Interface Granularity
+
+Split `Service`, `Store`, SPI, Reader, and Notifier contracts by role and change reason, not by method count.
+
+Prefer separate contracts when:
+
+- Consumers belong to different use cases.
+- External concepts differ. For example, Google Calendar attendee email and Slack user id can come from the same member source but should not leak into the same consumer.
+- Change reasons, implementations, exception policy, cache behavior, or lifecycle can realistically differ.
+- The split hides concepts a consumer should not know.
+- Tests get a clearer fake boundary and no longer need inheritance-based fakes or `null` constructor arguments.
+
+Prefer one contract when:
+
+- Methods query the same source in the same way.
+- Inputs, lifecycle, and exception policy are the same.
+- The methods always move with the same implementation and separate implementations are unlikely.
+- The only reason to split is "one method per interface" or test convenience.
+- Extra files and wiring increase without protecting a module boundary or dependency direction.
+
+Small interfaces are useful when they protect consumers from unnecessary knowledge. They are over-split when method-level separation only increases files and wiring.
+
 ## Module Structure
 
 Use this shape for reusable bounded contexts:

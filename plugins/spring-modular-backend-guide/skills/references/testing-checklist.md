@@ -10,6 +10,8 @@ Add architecture tests or equivalent checks when this guideline is used for a sc
 - Checklist-only documentation does not count as boundary protection.
 - Mixed HTTP, use-case orchestration, domain rule, persistence query, and infrastructure wiring concerns are separated at the appropriate `app`, `api`, `core`, or `adapter` boundary.
 - Refactoring does not add direct bounded-context dependencies or make `core` depend on `adapter`/`app`.
+- New `Service`, `Store`, SPI, Reader, or Notifier contracts are split by consumer role and change reason, not only because each interface has one method.
+- Interface splits either hide concepts a consumer should not know, support realistic implementation/lifecycle differences, or remove unsafe test coupling such as inheritance-based fakes and `null` constructor arguments.
 
 ## Module Boundary Rules
 
