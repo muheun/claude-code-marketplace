@@ -13,6 +13,17 @@ Add architecture tests or equivalent checks when this guideline is used for a sc
 - New `Service`, `Store`, SPI, Reader, or Notifier contracts are split by consumer role and change reason, not only because each interface has one method.
 - Interface splits either hide concepts a consumer should not know, support realistic implementation/lifecycle differences, or remove unsafe test coupling such as inheritance-based fakes and `null` constructor arguments.
 
+## Test Scope Checks
+
+- Required tests are present; keeping test scope small is not a reason to skip contract protection.
+- Each new test can name the regression it catches in one sentence.
+- Prefer one small, sufficient architecture rule, dependency check, or focused layer test over several tests that assert the same boundary.
+- Cross-cutting policy moved to `app` composition is tested by ownership and affected method set, not every annotation attribute.
+- Architecture rules apply only to modules included in the current migration scope unless the task explicitly broadens the cleanup.
+- Controller tests stay at HTTP contract level; they do not duplicate service policy tests.
+- Service tests assert result, state, exception, or side-effect payload from the real `*ServiceImpl`; they do not stop at mock interaction counts.
+- Persistence tests assert database behavior that cannot be trusted from unit tests: schema, SQL projection, ordering, paging, constraints, and dialect-sensitive errors.
+
 ## Module Boundary Rules
 
 - `shared:domain` and `shared:web-support` are separate modules.
@@ -64,6 +75,9 @@ Common test-design failures to reject:
 - Hard-coding app migration paths in reusable adapter tests, which hides adapter-owned Flyway migrations.
 - Faking the `*StoreAdapter` class in a persistence adapter test instead of testing the real adapter implementation.
 - Testing Mockito behavior instead of the real `*ServiceImpl` behavior.
+- Freezing cache keys, transaction proxy details, private method order, or other implementation details when ownership and method coverage are the real contract.
+- Broadening an architecture rule to unrelated modules and creating failures outside the current cleanup scope.
+- Duplicating one business policy across service, controller, and integration tests without a separate contract at each layer.
 - Mocking `*Store` when a simple fake would better preserve state needed by the service scenario.
 - Expanding controller tests into duplicated service policy tests instead of keeping them focused on HTTP contracts.
 - Running jOOQ code generation from a stale manual database or after `test` has already started.

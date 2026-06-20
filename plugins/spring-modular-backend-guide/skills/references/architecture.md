@@ -20,6 +20,28 @@ A checklist item may record the decision, but it does not protect a boundary by 
 
 Small changes do not mean creating many classes by default. Split when change reasons, test boundaries, dependency direction, or reuse boundaries differ.
 
+## Test Scope Calibration
+
+Do not skip tests. Tests should protect the changed responsibility or boundary with the smallest sufficient check, not mirror every implementation detail. Before adding a test, state the regression it should catch in one sentence.
+
+Use the smallest sufficient check that protects the contract:
+
+- If a module boundary moved, add one architecture rule or dependency check for that boundary.
+- If cache, transaction, security, or another cross-cutting policy moved from `core` to `app` composition, verify policy ownership and the affected service method names.
+- If service policy changed, test the real `*ServiceImpl` through inputs, outputs, state changes, and exceptions.
+- If persistence behavior changed, test the real adapter against the target database for projection, ordering, paging, constraints, or dialect-sensitive SQL.
+- If controller behavior changed, test HTTP binding, validation, status, response envelope, security, filters, or interceptors.
+
+Avoid tests that:
+
+- Re-test the same policy through service, controller, and integration layers.
+- Freeze annotation key/value strings, private call order, or other implementation details that are not part of the contract.
+- Verify only mock interactions without asserting service output, state, or exception behavior.
+- Expand architecture rules to modules outside the migration scope.
+- Change production dependencies or add test-only abstractions just to make a test easier.
+
+A good boundary test is narrow but complete for the moved boundary. For example, a cache decorator test can assert the full set of service methods that must carry cache annotations without asserting every cache key. A transaction boundary test can forbid `org.springframework.transaction..` in the `core` packages that were cleaned up while leaving modules that still intentionally own transaction policy out of scope.
+
 ### Interface Granularity
 
 Split `Service`, `Store`, SPI, Reader, and Notifier contracts by role and change reason, not by method count.

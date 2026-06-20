@@ -54,10 +54,11 @@ This is an opinionated guideline for new scaffolds and architecture reviews. Do 
 - Paging result assembly belongs in service: `countBy`, `calcPaging`, `selectBy`, `setBody`.
 - HTTP response envelope has `status`, `code`, `message`, `data`; no boolean `success` field.
 - Tests follow module dependency direction: core service tests use the real `*ServiceImpl` with fake or Mockito-controlled external boundaries, persistence tests use real adapters with the target DB via Testcontainers when SQL behavior matters, and app tests verify thin HTTP contracts plus composition.
+- Do not skip tests. Test scope follows the changed contract: protect the moved boundary or behavior with the smallest sufficient architecture rule or focused layer test, and do not duplicate implementation details across layers.
 
 ## Baseline Failures This Skill Prevents
 
-Without this skill, agents commonly place controllers in domain modules, use `Repository/JpaRepository/find/save/create` as defaults, expose reusable modules as HTTP modules, perform big-bang architecture rewrites, split classes only because they are long, create one-method contracts with no distinct role or change reason, extract abstractions with no protecting test, architecture rule, dependency check, package rule, or focused layer test, put Flyway migrations only in app, generate jOOQ classes from stale local schemas, drop Hibernate validation when jOOQ is selected, wire compile before codegen, return a boolean `success` field, or put paging mutation inside persistence. Treat those as architecture violations unless the user explicitly overrides the guideline.
+Without this skill, agents commonly place controllers in domain modules, use `Repository/JpaRepository/find/save/create` as defaults, expose reusable modules as HTTP modules, perform big-bang architecture rewrites, split classes only because they are long, create one-method contracts with no distinct role or change reason, extract abstractions with no protecting test, architecture rule, dependency check, package rule, or focused layer test, over-expand tests into duplicated implementation checks, put Flyway migrations only in app, generate jOOQ classes from stale local schemas, drop Hibernate validation when jOOQ is selected, wire compile before codegen, return a boolean `success` field, or put paging mutation inside persistence. Treat those as architecture violations unless the user explicitly overrides the guideline.
 
 ## Completion Checklist
 
@@ -75,5 +76,6 @@ Without this skill, agents commonly place controllers in domain modules, use `Re
 - jOOQ adapters wire Flyway migration, schema verification, code generation, compile, and test in that order.
 - Identifier strategy and DDL type mapping match the persistence reference.
 - Architecture tests or equivalent checks protect the important rules.
+- Required tests are present or added as needed, proportional to the changed boundary or behavior, and do not duplicate the same policy across layers.
 - Layered tests do not introduce `core -> adapter` or `core -> app` dependencies.
 - `./gradlew test` or the project-specific test command passes.
