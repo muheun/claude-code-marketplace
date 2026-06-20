@@ -108,6 +108,17 @@
       },
       "category": "productivity",
       "homepage": "https://github.com/multica-ai/andrej-karpathy-skills"
+    },
+    {
+      "name": "understand-anything",
+      "source": "./plugins/understand-anything",
+      "description": "AI-powered codebase understanding - analyze, visualize, and explain any project.",
+      "version": "2.7.5",
+      "author": {
+        "name": "Lum1104"
+      },
+      "category": "productivity",
+      "homepage": "https://github.com/Lum1104/Understand-Anything"
     }
   ]
 }
