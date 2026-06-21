@@ -45,7 +45,7 @@ This is an opinionated guideline for new scaffolds and architecture reviews. Do 
 - Service methods use application verbs: `get`, `save`, `modify`, `remove`, `exists`, plus explicit domain verbs like `attach`.
 - Persistence ports use `*Store`; Store methods use query verbs: `select`, `insert`, `update`, `delete`, `upsert`, `exists`, `count`.
 - Persistence implementations use technology-explicit names such as `JpaPostStoreAdapter`, `JooqPostStoreAdapter`, `InMemoryPostStoreAdapter`.
-- Java imports sort by fully qualified name inside each import group; do not add same-package imports or invent package-type groups such as event/model/service unless the existing formatter already does so.
+- Java imports follow the repository/IntelliJ import layout groups, then sort by fully qualified name inside each group; do not add same-package imports or invent package-type groups such as event/model/service unless the existing formatter already does so.
 - Persistence adapters do not self-register with `@Component`; app imports selected configuration holders.
 - JPA/Hibernate entities are the relational schema validation model; keep `ddl-auto: validate` and make schema changes through Flyway.
 - JPA-backed adapters use QueryDSL projection with stable ordering. Do not make entity fetch plus `toDomain()` the default read pattern.
@@ -58,7 +58,7 @@ This is an opinionated guideline for new scaffolds and architecture reviews. Do 
 
 ## Baseline Failures This Skill Prevents
 
-Without this skill, agents commonly place controllers in domain modules, use `Repository/JpaRepository/find/save/create` as defaults, expose reusable modules as HTTP modules, perform big-bang architecture rewrites, split classes only because they are long, create one-method contracts with no distinct role or change reason, extract abstractions with no protecting test, architecture rule, dependency check, package rule, or focused layer test, over-expand tests into duplicated implementation checks, put Flyway migrations only in app, generate jOOQ classes from stale local schemas, drop Hibernate validation when jOOQ is selected, wire compile before codegen, return a boolean `success` field, or put paging mutation inside persistence. Treat those as architecture violations unless the user explicitly overrides the guideline.
+Without this skill, agents commonly place controllers in domain modules, use `Repository/JpaRepository/find/save/create` as defaults, expose reusable modules as HTTP modules, perform big-bang architecture rewrites, split classes only because they are long, create one-method contracts with no distinct role or change reason, extract abstractions with no protecting test, architecture rule, dependency check, package rule, or focused layer test, over-expand tests into duplicated implementation checks, flatten Java import layout groups into one global alphabetical list, put Flyway migrations only in app, generate jOOQ classes from stale local schemas, drop Hibernate validation when jOOQ is selected, wire compile before codegen, return a boolean `success` field, or put paging mutation inside persistence. Treat those as architecture violations unless the user explicitly overrides the guideline.
 
 ## Completion Checklist
 
@@ -70,7 +70,7 @@ Without this skill, agents commonly place controllers in domain modules, use `Re
 - App controllers and workflows depend on `*:api` `*Service` contracts, not `*:core` `*ServiceImpl` classes.
 - Cross-domain calls use SPI or app composition, not direct domain dependencies.
 - Persistence naming and service naming follow the vocabulary rules.
-- Java imports remain sorted by fully qualified name within regular and static import groups, with no new same-package imports added.
+- Java imports remain sorted by fully qualified name within the repository import layout groups, with no new same-package imports added.
 - JPA/QueryDSL/jOOQ/Flyway choices match the persistence reference.
 - Hibernate validation is configured with `ddl-auto: validate`.
 - jOOQ adapters wire Flyway migration, schema verification, code generation, compile, and test in that order.

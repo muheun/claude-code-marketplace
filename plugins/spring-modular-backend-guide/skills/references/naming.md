@@ -2,32 +2,30 @@
 
 ## Java Import Ordering
 
-Sort Java imports alphabetically by the fully qualified name after `import`.
+Follow the IntelliJ import layout used by the project, then sort alphabetically
+inside each layout group.
+
+Default IntelliJ layout:
+
+```text
+import module imports
+import all other imports
+
+import javax.*
+import java.*
+
+import static all other imports
+```
 
 Rules:
-- Keep regular imports and static imports in separate groups.
-- Sort each group by the complete path, not by a package-type category such as `model`, `event`, or `service`.
-- Do not move nested type imports after their enclosing package siblings if the full path sorts earlier.
+- Keep the IntelliJ layout order exactly as configured, including adjacent entries that render without a blank line in Java source.
+- Sort imports alphabetically by the complete path after `import` only inside each layout entry.
+- Do not invent extra package-type groups such as `model`, `event`, or `service`.
+- Nested type imports stay in the sorted position for their full path within the current layout group.
 - Do not add imports for classes from the same package as the current Java file.
 - Remove same-package imports only when your own change introduced them or the user explicitly asked for import cleanup.
 - Do not use wildcard imports unless the existing project formatter requires them.
-- If a file has an established formatter or import layout, follow that layout instead of rewriting unrelated imports.
-
-Example:
-
-```java
-import com.fixelsoft.hr.BaseConfigTest;
-import com.fixelsoft.hr.leave.api.event.LeaveLifecycleEvent.Shared;
-import com.fixelsoft.hr.leave.api.event.LeaveLifecycleProcess;
-import com.fixelsoft.hr.leave.api.model.LeaveVo;
-import com.fixelsoft.hr.leave.api.model.enums.LeaveType;
-import com.fixelsoft.hr.leave.api.service.LeaveApprovalService;
-import com.fixelsoft.hr.leave.api.service.LeaveApproverService;
-import com.fixelsoft.hr.leave.api.service.LeaveBalanceService;
-import com.fixelsoft.hr.leave.api.service.LeaveRequestService;
-import com.fixelsoft.hr.leave.api.service.LeaveShareRecipientService;
-import com.fixelsoft.hr.people.api.service.PeopleMemberService;
-```
+- If a repository has an established formatter or import layout, follow that layout instead of rewriting unrelated imports.
 
 ## Java Test Helper Formatting
 
