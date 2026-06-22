@@ -28,6 +28,12 @@ If QueryDSL or jOOQ can directly create the domain result DTO, do not add servic
 
 When an app response DTO is needed, map to it in the app controller or a single app assembler. Domain `api` result DTOs may be reused as response payloads only while they remain web-neutral. Keep them free of Spring MVC, Swagger/OpenAPI, Jackson-only response annotations, and other web concerns.
 
+## Store Write Inputs
+
+Store write inputs are persistence-neutral domain commands or value objects. For non-trivial writes, prefer `CommentCreate`, `CommentUpdate`, or similar records over scalar field lists. Keep validation that protects the domain contract in those records or in the service policy; adapter entity annotations may mirror schema constraints but are not sufficient alone.
+
+Do not pass JPA entities, jOOQ records, Spring Data types, app request DTOs, or other adapter entities through `Store` contracts. Do not reuse read projections as write commands. If an existing domain type is intentionally reused as a write model, it must not carry generated IDs, timestamps, derived flags, or fields outside the write intent.
+
 ## Identifier Strategy
 
 Default to database-generated `BIGINT` identity primary keys for ordinary single-primary relational systems unless the project has a clear reason to generate globally unique IDs outside the database.

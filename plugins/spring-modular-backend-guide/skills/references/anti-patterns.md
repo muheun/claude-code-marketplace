@@ -24,6 +24,8 @@ Use this file during code review and scaffold review.
 
 ## Persistence
 
+- Store write methods mirror database columns as long scalar parameter lists.
+- Store write methods reuse read projections, app request DTOs, JPA entities, jOOQ records, Spring Data types, or other adapter entities as write commands.
 - Query reads fetch entities and map every row through `toDomain()` by default.
 - List/search queries lack stable ordering.
 - Store mutates paging result state with `calcPaging` or `setBody`.

@@ -122,11 +122,16 @@ Example:
 
 ```java
 interface CommentStore {
-    Comment insert(Comment comment);
+    Comment insert(CommentCreate command);
+    void update(CommentUpdate command);
     long countBy(CommentSearch search);
     List<CommentResult> selectBy(CommentSearch search);
 }
 ```
+
+Store write methods should communicate write intent through the input type, not a long column-shaped parameter list. Use a purpose-specific command/value record such as `CommentCreate` or `CommentUpdate` when an `insert`, `update`, or `upsert` needs more than a few fields, repeats primitive/String types, or has validation rules.
+
+Do not use app request DTOs, read projections, adapter entities, JPA entities, jOOQ records, or Spring Data types as Store write commands. A domain model may be reused only when it is explicitly the write model and does not carry generated IDs, timestamps, derived flags, or fields outside the write intent; this exception does not apply to app request DTOs, read projections, adapter entities, JPA entities, jOOQ records, or Spring Data types.
 
 ## Adapter Names
 

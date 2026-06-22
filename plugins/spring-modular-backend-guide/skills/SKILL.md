@@ -21,6 +21,7 @@ This is an opinionated guideline for new scaffolds and architecture reviews. Do 
 | New project, scaffold, or module structure | `references/architecture.md`, `references/build-setup.md`, and `references/testing-checklist.md` |
 | Architecture design, responsibility separation, or refactoring strategy | `references/architecture.md`, `references/anti-patterns.md`, and `references/testing-checklist.md` |
 | Service, Store, SPI, Reader, or Notifier contract granularity | `references/architecture.md` and `references/testing-checklist.md` |
+| Store write input design or review | `references/naming.md`, `references/persistence.md`, `references/testing-checklist.md`, and `references/anti-patterns.md` |
 | Service, Store, adapter names, Java import ordering, or Java test helper formatting | `references/naming.md` |
 | JPA, QueryDSL, jOOQ, Flyway, paging, identifier strategy | `references/persistence.md` |
 | Controllers, DTOs, app composition, response envelope | `references/web-and-app.md` |
@@ -38,6 +39,7 @@ This is an opinionated guideline for new scaffolds and architecture reviews. Do 
 - Domain modules use `api`, `core`, and `adapter:persistence-*`; app owns web controllers and host-specific DTOs.
 - Prefer small, verifiable architecture changes: identify mixed responsibilities, split by change reason, and protect the split with tests, architecture rules, module dependency checks, package rules, or focused layer tests; checklist-only notes do not count as protection.
 - Split `Service`, `Store`, SPI, Reader, and Notifier contracts by role and change reason, not by method count; avoid one-method interfaces that only add files and wiring.
+- Store write methods do not pass app DTOs, adapter entities, JPA/jOOQ/Spring Data types, or read projections as write commands; non-trivial write inputs use purpose-specific domain command/value records instead of long scalar field lists.
 - Domain `api/core` modules do not depend on other bounded contexts, app, web-support, persistence adapters, Spring MVC, JPA, or DB technology.
 - Domain `api` may expose only DB-neutral paging/search contracts; DB infrastructure bundles stay in app or selected persistence adapters.
 - Reusable modules expose SPI contracts from `api`; app or host composition implements them.
@@ -58,7 +60,7 @@ This is an opinionated guideline for new scaffolds and architecture reviews. Do 
 
 ## Baseline Failures This Skill Prevents
 
-Without this skill, agents commonly place controllers in domain modules, use `Repository/JpaRepository/find/save/create` as defaults, expose reusable modules as HTTP modules, perform big-bang architecture rewrites, split classes only because they are long, create one-method contracts with no distinct role or change reason, extract abstractions with no protecting test, architecture rule, dependency check, package rule, or focused layer test, over-expand tests into duplicated implementation checks, flatten Java import layout groups into one global alphabetical list, put Flyway migrations only in app, generate jOOQ classes from stale local schemas, drop Hibernate validation when jOOQ is selected, wire compile before codegen, return a boolean `success` field, or put paging mutation inside persistence. Treat those as architecture violations unless the user explicitly overrides the guideline.
+Without this skill, agents commonly place controllers in domain modules, use `Repository/JpaRepository/find/save/create` as defaults, expose reusable modules as HTTP modules, perform big-bang architecture rewrites, split classes only because they are long, create one-method contracts with no distinct role or change reason, extract abstractions with no protecting test, architecture rule, dependency check, package rule, or focused layer test, over-expand tests into duplicated implementation checks, flatten Java import layout groups into one global alphabetical list, push service field lists down into Store write ports, reuse read projections, app DTOs, JPA entities, jOOQ records, or Spring Data types as write commands, put Flyway migrations only in app, generate jOOQ classes from stale local schemas, drop Hibernate validation when jOOQ is selected, wire compile before codegen, return a boolean `success` field, or put paging mutation inside persistence. Treat those as architecture violations unless the user explicitly overrides the guideline.
 
 ## Completion Checklist
 
@@ -70,6 +72,7 @@ Without this skill, agents commonly place controllers in domain modules, use `Re
 - App controllers and workflows depend on `*:api` `*Service` contracts, not `*:core` `*ServiceImpl` classes.
 - Cross-domain calls use SPI or app composition, not direct domain dependencies.
 - Persistence naming and service naming follow the vocabulary rules.
+- Non-trivial Store write inputs are purpose-specific domain records or value objects; domain-contract validation is enforced in those inputs or service policy, and adapter entity annotations are not sufficient alone.
 - Java imports remain sorted by fully qualified name within the repository import layout groups, with no new same-package imports added.
 - JPA/QueryDSL/jOOQ/Flyway choices match the persistence reference.
 - Hibernate validation is configured with `ddl-auto: validate`.

@@ -45,6 +45,9 @@ Add architecture tests or equivalent checks when this guideline is used for a sc
 
 ## Persistence Rules
 
+- Store write methods do not use app request DTOs, read projections, JPA entities, jOOQ records, Spring Data types, or other adapter entities as write commands.
+- Non-trivial Store write inputs use purpose-specific command/value records instead of long scalar parameter lists.
+- Write input validation is covered by focused value-object or service tests when validation is part of the domain contract.
 - JPA adapters do not depend on `JpaRepository` for standard Store implementation.
 - Persistence adapters do not self-register with `@Component`, `@Service`, `@Repository`, or component-scanned `@Configuration`.
 - App uses Hibernate `ddl-auto: validate` for relational schema verification.
