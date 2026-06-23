@@ -109,6 +109,12 @@ Do not expose `core.port` Store command records from service contracts. A Store 
 
 Do not create command records mechanically for every one-field or two-field service method. The goal is to make contracts harder to misuse, not to add a DTO layer for every call.
 
+## Enum Input Parsing and Factory Names
+
+Use a reusable domain enum factory only when the enum owns a stable web-neutral token such as code, name, or canonical name. Name the factory by the accepted token when ambiguity matters, such as `fromCode` or `fromName`. Use a generic `from` only when the input contract is obvious and domain-neutral.
+
+Internal-only enums do not need factories just to wrap `valueOf`. Add a domain enum factory when parsing a stable domain-owned canonical code or name is repeated, case-insensitive by domain contract, or part of a stable domain input contract. Keep channel aliases, compatibility tokens, and defaults in app-owned parsers. Lookup maps are optional; when needed, keep them `private static final` and immutable.
+
 ## Service Implementation Names
 
 Service contracts live in domain `api` modules as `*Service` interfaces.

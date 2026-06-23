@@ -83,6 +83,24 @@ dependencies {
 
 If an internal project uses a shared `Paging<T>`, keep the dependency DB-neutral. Do not add `fixel-util-spring4-db` or other DB infrastructure bundles to domain `api`.
 
+For Fixelsoft internal Spring projects, `backend-util` common/json-common usage is recommended but not required; use it only when the user or project chooses it. When the project opts in and a module only calls common utilities or JSON map helpers internally, keep the dependency non-transitive:
+
+```kotlin
+dependencies {
+    implementation("com.fixelsoft.util:fixel-util-json-common:<approved-version>")
+}
+```
+
+Use `api` only when the module intentionally exposes approved `backend-util` public contract types, such as shared paging/search contracts:
+
+```kotlin
+dependencies {
+    api("com.fixelsoft.util:fixel-util-json-common:<approved-version>")
+}
+```
+
+`fixel-util-json-common` exposes common utilities such as `StringUtil`, `NumberUtil`, `DateUtil`, and `ListUtil`, plus `Params` for dynamic JSON/key-value payloads. Do not depend directly on the internal `fixel-util-common` module from consuming projects unless that project explicitly publishes and approves it.
+
 Domain `core` modules:
 
 ```kotlin

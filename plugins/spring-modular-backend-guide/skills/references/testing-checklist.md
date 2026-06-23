@@ -23,6 +23,7 @@ Add architecture tests or equivalent checks when this guideline is used for a sc
 - Do not convert refactoring guidance into broad reflection/source-scan tests. For example, do not add a test that fails every `*Store` write method with more than N scalar parameters, every command record that lacks a preferred suffix, or every split that uses a different class name than the guide's example.
 - Service command and Store command cleanup is verified by compiling the changed contracts and by focused behavior or persistence tests when mapping, validation, SQL, or service behavior can regress. It is not verified by a global style-policing architecture test.
 - Do not add a broad test that forces every controller DTO, service command, Store command, and entity to exist as separate types. Also do not add a broad test that forces them to be shared. Use tests to protect stable forbidden dependencies and behavior; use review judgment for whether a mapping or command split is worthwhile.
+- Do not add broad reflection/source-scan tests that force every enum to have a `from` method, a lookup map, or no direct `valueOf` calls. Where enum parsing policy exists, protect it with focused parser/factory tests and app boundary tests.
 - Cross-cutting policy moved to `app` composition is tested by ownership and affected method set, not every annotation attribute.
 - Architecture rules apply only to modules included in the current migration scope unless the task explicitly broadens the cleanup.
 - Controller tests stay at HTTP contract level; they do not duplicate service policy tests.
@@ -103,6 +104,7 @@ Common test-design failures to reject:
 - Controller success responses use common envelope.
 - Controllers and HTTP-facing workflows depend on `*Service` contracts, not concrete `*ServiceImpl` classes.
 - App request DTOs stay app-local. Tests may protect against HTTP binding types or request-only shapes leaking into reusable domain service, Store, or persistence contracts, but should not police every mapping method, exact command class name, or whether create/update request DTOs are split or shared.
+- String enum input tests verify the app boundary behavior: accepted tokens, invalid input outcome, defaults when the boundary defines them, and no-call behavior when invalid input must stop downstream calls. HTTP controllers verify status/envelope; domain enum factory tests stay focused on web-neutral canonical tokens.
 - Basic exceptions are converted to the common envelope.
 - Tests parse JSON structure instead of only checking string fragments.
 

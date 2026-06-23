@@ -185,6 +185,8 @@ Rules:
 
 ## backend-util
 
+For DB-neutral common/json-common utility usage, see `backend-util.md`. This section covers Spring/DB infrastructure bundles only.
+
 For Spring Boot 4 internal projects:
 
 ```kotlin

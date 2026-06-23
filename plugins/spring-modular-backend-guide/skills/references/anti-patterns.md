@@ -12,6 +12,7 @@ Use this file during code review and scaffold review.
 - Reusable module imports host domain classes such as board/product/notice.
 - `api` depends on Spring Web, DB technology, `core`, or `adapter`.
 - Domain `api/core` depends on DB infrastructure bundles such as Flyway, p6spy, JDBC drivers, or `fixel-util-spring4-db`.
+- Adding `backend-util` everywhere or rewriting local helpers broadly when the Fixelsoft internal Spring project has not opted into it or the change is unrelated.
 - `core` depends on Spring MVC, JPA entity, QueryDSL, jOOQ, app, or web-support.
 - Cross-domain validation is implemented by direct repository access.
 
@@ -45,6 +46,7 @@ Use this file during code review and scaffold review.
 - Controllers inject concrete core implementations such as `*ServiceImpl` instead of `*:api` service contracts.
 - Controllers pass app request DTOs directly into reusable domain services, Store contracts, or persistence adapters.
 - Controllers bind reusable domain `api` command types directly as request bodies when the HTTP shape has request-only validation, defaults, OpenAPI schema, or client compatibility concerns.
+- Controllers or command handlers duplicate enum parsing/default helpers, or push channel-specific aliases, defaults, localization, or user-facing messages into reusable domain enums.
 - Common response contains boolean `success`.
 - 5xx fallback exposes raw exception messages.
 - HTTP-specific response DTOs or web-annotated DTOs are placed in reusable module `api`.
