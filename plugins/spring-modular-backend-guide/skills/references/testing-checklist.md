@@ -18,6 +18,8 @@ Add architecture tests or equivalent checks when this guideline is used for a sc
 - Required tests are present; keeping test scope small is not a reason to skip contract protection.
 - Each new test can name the regression it catches in one sentence.
 - Prefer one small, sufficient architecture rule, dependency check, or focused layer test over several tests that assert the same boundary.
+- Prefer behavior tests for business logic and refactors; use architecture tests only for stable boundaries and forbidden dependencies.
+- Do not add architecture tests that hard-code exact file paths, helper class names, split interface names, command record names, parameter order/count/names, private call order, or proxy/decorator internals unless those are explicit public contracts. Store write boundary checks may still forbid app DTOs, read projections, adapter entities, persistence technology types, and long scalar write inputs.
 - Cross-cutting policy moved to `app` composition is tested by ownership and affected method set, not every annotation attribute.
 - Architecture rules apply only to modules included in the current migration scope unless the task explicitly broadens the cleanup.
 - Controller tests stay at HTTP contract level; they do not duplicate service policy tests.
@@ -73,12 +75,14 @@ Add architecture tests or equivalent checks when this guideline is used for a sc
 
 Common test-design failures to reject:
 
+- Treating every design preference as an architecture-test rule instead of using review judgment and behavior tests.
 - Adding production or test dependencies from `core` to a persistence adapter just to run a convenient service test.
 - Replacing the target MariaDB/MySQL/PostgreSQL behavior with H2 for SQL, constraint, projection, ordering, or dialect-sensitive tests.
 - Hard-coding app migration paths in reusable adapter tests, which hides adapter-owned Flyway migrations.
 - Faking the `*StoreAdapter` class in a persistence adapter test instead of testing the real adapter implementation.
 - Testing Mockito behavior instead of the real `*ServiceImpl` behavior.
 - Freezing cache keys, transaction proxy details, private method order, or other implementation details when ownership and method coverage are the real contract.
+- Freezing package/file layout or exact decomposition names when the stable contract is only dependency direction or behavior preservation.
 - Broadening an architecture rule to unrelated modules and creating failures outside the current cleanup scope.
 - Duplicating one business policy across service, controller, and integration tests without a separate contract at each layer.
 - Mocking `*Store` when a simple fake would better preserve state needed by the service scenario.

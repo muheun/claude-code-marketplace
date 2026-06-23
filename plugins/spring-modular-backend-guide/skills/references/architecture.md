@@ -6,7 +6,7 @@ Prefer small, verifiable architecture changes over one large redesign.
 
 When an area mixes multiple responsibilities, identify the reasons it changes before extracting anything. HTTP representation, use-case orchestration, domain rules, persistence queries, and infrastructure wiring should not be moved as one undifferentiated block.
 
-Separate responsibilities only when the split can be validated. A good split can be protected by module dependencies, package rules, naming rules, persistence rules, web response rules, architecture tests, or focused layer tests.
+Separate responsibilities only when the split can be validated. A good split can be protected by module dependencies, package rules, naming rules, persistence rules, web response rules, architecture tests, or focused layer tests. Prefer checks that protect stable boundaries and behavior without freezing incidental implementation details.
 
 Good change units:
 
@@ -22,25 +22,16 @@ Small changes do not mean creating many classes by default. Split when change re
 
 ## Test Scope Calibration
 
-Do not skip tests. Tests should protect the changed responsibility or boundary with the smallest sufficient check, not mirror every implementation detail. Before adding a test, state the regression it should catch in one sentence.
+Do not skip tests. Tests should protect the changed responsibility or boundary with the smallest sufficient check, not mirror every implementation detail. Use `testing-checklist.md` as the detailed source for layer-specific test rules.
 
-Use the smallest sufficient check that protects the contract:
+Quick calibration:
 
 - If a module boundary moved, add one architecture rule or dependency check for that boundary.
-- If cache, transaction, security, or another cross-cutting policy moved from `core` to `app` composition, verify policy ownership and the affected service method names.
 - If service policy changed, test the real `*ServiceImpl` through inputs, outputs, state changes, and exceptions.
 - If persistence behavior changed, test the real adapter against the target database for projection, ordering, paging, constraints, or dialect-sensitive SQL.
 - If controller behavior changed, test HTTP binding, validation, status, response envelope, security, filters, or interceptors.
 
-Avoid tests that:
-
-- Re-test the same policy through service, controller, and integration layers.
-- Freeze annotation key/value strings, private call order, or other implementation details that are not part of the contract.
-- Verify only mock interactions without asserting service output, state, or exception behavior.
-- Expand architecture rules to modules outside the migration scope.
-- Change production dependencies or add test-only abstractions just to make a test easier.
-
-A good boundary test is narrow but complete for the moved boundary. For example, a cache decorator test can assert the full set of service methods that must carry cache annotations without asserting every cache key. A transaction boundary test can forbid `org.springframework.transaction..` in the `core` packages that were cleaned up while leaving modules that still intentionally own transaction policy out of scope.
+Architecture tests are for stable rules such as dependency direction, forbidden technologies, controller placement, adapter self-registration, and forbidden Store write input types. Behavior tests or review judgment are better for ordinary refactoring choices such as helper names, interface split names, exact command record names, parameter order/count/names, and proxy internals.
 
 ### Interface Granularity
 

@@ -2,6 +2,8 @@
 
 Use these as compact starting points. Adapt package names and module names to the project.
 
+Architecture tests should guard stable architecture, not every design preference. Use these examples for dependency direction, forbidden frameworks, controller placement, adapter self-registration, and build/persistence contracts. See the final avoid list before adding new required checks.
+
 ## Gradle Dependency Checks
 
 ```java
@@ -175,6 +177,8 @@ void domainModulesDoNotOwnHttpAdapters() {
 }
 
 private static boolean isFromDomainModuleSource(JavaClass javaClass) {
+    // Use source URI only as a fallback to distinguish stable Gradle module boundaries.
+    // Prefer package or module metadata when the project exposes it.
     var sourceUri = javaClass.getSource()
             .map(source -> source.getUri().toString())
             .orElse("");
@@ -258,3 +262,10 @@ Required checks:
 - jOOQ-backed adapters keep JPA entities and Hibernate `ddl-auto: validate` schema verification.
 - jOOQ code generation runs after Flyway-migrated schema verification and before `compileJava`/`test`.
 - Paging mutation stays in service code, not Store adapters.
+
+Avoid required checks that:
+
+- Assert exact source file existence or one-off file paths. If source URI checks are needed to distinguish modules, keep them at stable module-boundary segments and prefer package/module metadata when available.
+- Require one exact class/interface name when several role-equivalent decompositions would be acceptable.
+- Assert exact Store write command record names, parameter order/count/names, or method signatures instead of testing service and adapter behavior. Checks may still forbid app DTOs, read projections, JPA entities, jOOQ records, Spring Data types, and long scalar write inputs at Store boundaries.
+- Inspect AOP proxy internals when the contract is only that transaction/cache ownership stays outside `core`.

@@ -56,7 +56,7 @@ This is an opinionated guideline for new scaffolds and architecture reviews. Do 
 - Paging result assembly belongs in service: `countBy`, `calcPaging`, `selectBy`, `setBody`.
 - HTTP response envelope has `status`, `code`, `message`, `data`; no boolean `success` field.
 - Tests follow module dependency direction: core service tests use the real `*ServiceImpl` with fake or Mockito-controlled external boundaries, persistence tests use real adapters with the target DB via Testcontainers when SQL behavior matters, and app tests verify thin HTTP contracts plus composition.
-- Do not skip tests. Test scope follows the changed contract: protect the moved boundary or behavior with the smallest sufficient architecture rule or focused layer test, and do not duplicate implementation details across layers.
+- Do not skip tests. Use the smallest test that protects the changed behavior or stable boundary; keep ordinary implementation details out of architecture tests.
 
 ## Baseline Failures This Skill Prevents
 
@@ -78,7 +78,7 @@ Without this skill, agents commonly place controllers in domain modules, use `Re
 - Hibernate validation is configured with `ddl-auto: validate`.
 - jOOQ adapters wire Flyway migration, schema verification, code generation, compile, and test in that order.
 - Identifier strategy and DDL type mapping match the persistence reference.
-- Architecture tests or equivalent checks protect the important rules.
+- Architecture tests or equivalent checks protect stable boundary rules; behavior tests or review cover ordinary implementation details.
 - Required tests are present or added as needed, proportional to the changed boundary or behavior, and do not duplicate the same policy across layers.
 - Layered tests do not introduce `core -> adapter` or `core -> app` dependencies.
 - `./gradlew test` or the project-specific test command passes.
