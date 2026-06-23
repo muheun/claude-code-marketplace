@@ -44,6 +44,7 @@ Use this file during code review and scaffold review.
 - Reusable modules expose generic HTTP APIs instead of app-owned host workflow endpoints.
 - Controllers inject concrete core implementations such as `*ServiceImpl` instead of `*:api` service contracts.
 - Controllers pass app request DTOs directly into reusable domain services, Store contracts, or persistence adapters.
+- Controllers bind reusable domain `api` command types directly as request bodies when the HTTP shape has request-only validation, defaults, OpenAPI schema, or client compatibility concerns.
 - Common response contains boolean `success`.
 - 5xx fallback exposes raw exception messages.
 - HTTP-specific response DTOs or web-annotated DTOs are placed in reusable module `api`.

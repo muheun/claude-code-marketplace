@@ -100,7 +100,7 @@ Common test-design failures to reject:
 
 - Controller success responses use common envelope.
 - Controllers and HTTP-facing workflows depend on `*Service` contracts, not concrete `*ServiceImpl` classes.
-- App request DTOs stay app-local. Tests may protect against HTTP DTOs leaking into reusable domain service or Store contracts, but should not police every mapping method or exact command class name.
+- App request DTOs stay app-local. Tests may protect against HTTP binding types or request-only shapes leaking into reusable domain service, Store, or persistence contracts, but should not police every mapping method, exact command class name, or whether create/update request DTOs are split or shared.
 - Basic exceptions are converted to the common envelope.
 - Tests parse JSON structure instead of only checking string fragments.
 
