@@ -53,6 +53,27 @@ Prefer separate commands when:
 
 If a command field is ignored by one Store method, first consider merging the methods and applying a clear default in service/domain policy or a command factory. Adapters should translate already-decided values; only persistence-technical defaults such as generated columns or database timestamps belong in adapter/DDL behavior. Split only when the ignored field signals a genuinely different write intent. Treat command granularity as review judgment, not an architecture-test rule.
 
+### Service Command vs Store Command
+
+Service commands represent caller-facing use-case input and live in domain `api`. Store commands represent persistence write input and live in `core.port`. They often look similar, but they are allowed to change for different reasons.
+
+Keep separate commands when:
+
+- The service applies policy, defaults, actor information, authorization context, audit metadata, generated values, or derived fields before persistence.
+- The Store write shape is tied to one table, SQL operation, optimistic-lock version, upsert key, batch behavior, or adapter-specific persistence concern.
+- A caller should not know fields that persistence needs, or persistence should not receive fields that belong only to the use case.
+- The service command is also consumed by app workflows, batch jobs, or other domain-facing callers and should remain persistence-neutral.
+
+Reusing a service command as Store input is acceptable only when all of these are true:
+
+- The type lives in domain `api`, not in app or `core.port`.
+- It is free of HTTP, web, adapter, JPA, jOOQ, Spring Data, and DB-specific concerns.
+- The service use case and Store write have the exact same write intent, required fields, validation, and caller knowledge.
+- The command does not contain actor-only, audit-only, generated, derived, or response/read-model fields.
+- Future changes are expected to evolve together rather than independently.
+
+Do not pass a `core.port` Store command upward into a `*:api` service contract or app controller just to avoid mapping. If the two inputs only differ by naming, consider whether one web-neutral `api` command is enough; if they differ by policy or persistence meaning, keep the mapping explicit.
+
 ## Identifier Strategy
 
 Default to database-generated `BIGINT` identity primary keys for ordinary single-primary relational systems unless the project has a clear reason to generate globally unique IDs outside the database.

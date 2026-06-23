@@ -26,6 +26,8 @@ Use this file during code review and scaffold review.
 
 - Store write methods mirror database columns as long scalar parameter lists.
 - Store write methods reuse read projections, app request DTOs, JPA entities, jOOQ records, Spring Data types, or other adapter entities as write commands.
+- `core.port` Store command records are exposed upward through `*:api` service contracts or app controllers.
+- DTO, service command, Store command, and entity types are created mechanically for every method even when there is no distinct boundary, validation, policy, or persistence reason.
 - Splitting Store write commands only because of a nullable/default field when the write intent and validation are the same.
 - Query reads fetch entities and map every row through `toDomain()` by default.
 - List/search queries lack stable ordering.
@@ -41,6 +43,7 @@ Use this file during code review and scaffold review.
 
 - Reusable modules expose generic HTTP APIs instead of app-owned host workflow endpoints.
 - Controllers inject concrete core implementations such as `*ServiceImpl` instead of `*:api` service contracts.
+- Controllers pass app request DTOs directly into reusable domain services, Store contracts, or persistence adapters.
 - Common response contains boolean `success`.
 - 5xx fallback exposes raw exception messages.
 - HTTP-specific response DTOs or web-annotated DTOs are placed in reusable module `api`.

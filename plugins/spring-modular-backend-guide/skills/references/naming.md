@@ -83,6 +83,32 @@ FileAttachmentService.attach(command)
 FileAttachmentService.get(search)
 ```
 
+## Service Input Names
+
+Service contracts live in domain `api`, so their inputs must describe use-case intent instead of HTTP request shape or database columns.
+
+Scalar parameters are fine for simple reads, existence checks, deletes, and tiny state changes when the meaning is obvious:
+
+```java
+AlertScheduleService.get(id)
+AlertScheduleService.exists(name)
+AlertScheduleService.remove(id)
+AlertScheduleService.modifyStatus(id, status)
+```
+
+Use a `*:api` command/value record for non-trivial write use cases, especially when a method has several fields, repeats primitive/String types, owns validation/defaulting, is likely to grow, or would otherwise pass controller request fields straight through the service layer:
+
+```java
+AlertScheduleService.save(AlertScheduleSave command)
+AlertScheduleService.modify(AlertScheduleModify command)
+```
+
+Service command names should express the use case, not the adapter action. Prefer `LeaveApprovalRequest`, `AlertScheduleSave`, or `MemberInvite` over names that mirror one SQL table or persistence method. Keep service commands web-neutral: no Spring MVC, servlet, Jackson-only, Swagger/OpenAPI, JPA, jOOQ, or Spring Data dependencies.
+
+Do not expose `core.port` Store command records from service contracts. A Store command belongs to persistence write intent; a service command belongs to caller-facing use-case intent. Sharing one input type is acceptable only when that type lives in `api`, is web-neutral and persistence-neutral, and the service use case and Store write have the exact same required fields, validation, and caller knowledge.
+
+Do not create command records mechanically for every one-field or two-field service method. The goal is to make contracts harder to misuse, not to add a DTO layer for every call.
+
 ## Service Implementation Names
 
 Service contracts live in domain `api` modules as `*Service` interfaces.

@@ -21,6 +21,7 @@ This is an opinionated guideline for new scaffolds and architecture reviews. Do 
 | New project, scaffold, or module structure | `references/architecture.md`, `references/build-setup.md`, and `references/testing-checklist.md` |
 | Architecture design, responsibility separation, or refactoring strategy | `references/architecture.md`, `references/anti-patterns.md`, and `references/testing-checklist.md` |
 | Service, Store, SPI, Reader, or Notifier contract granularity | `references/architecture.md` and `references/testing-checklist.md` |
+| Controller DTO, Service command, or Store command boundary | `references/web-and-app.md`, `references/naming.md`, `references/persistence.md`, `references/testing-checklist.md`, and `references/anti-patterns.md` |
 | Store write input design or review | `references/naming.md`, `references/persistence.md`, `references/testing-checklist.md`, and `references/anti-patterns.md` |
 | Service, Store, adapter names, Java import ordering, or Java test helper formatting | `references/naming.md` |
 | JPA, QueryDSL, jOOQ, Flyway, paging, identifier strategy | `references/persistence.md` |
@@ -45,6 +46,7 @@ This is an opinionated guideline for new scaffolds and architecture reviews. Do 
 - Reusable modules expose SPI contracts from `api`; app or host composition implements them.
 - Service contracts are `*Service` interfaces in `api`; concrete core implementations use `*ServiceImpl`.
 - Service methods use application verbs: `get`, `save`, `modify`, `remove`, `exists`, plus explicit domain verbs like `attach`.
+- Controller request DTOs are app-owned HTTP contracts. Service write commands live in `*:api` when a use case has non-trivial input. Store write commands live in `core.port` and represent persistence write intent. Do not expose `core.port` Store commands as service API input, and share a command only when it is web-neutral, persistence-neutral, and has the exact same write intent.
 - Persistence ports use `*Store`; Store methods use query verbs: `select`, `insert`, `update`, `delete`, `upsert`, `exists`, `count`.
 - Persistence implementations use technology-explicit names such as `JpaPostStoreAdapter`, `JooqPostStoreAdapter`, `InMemoryPostStoreAdapter`.
 - Java imports follow the repository/IntelliJ import layout groups, then sort by fully qualified name inside each group; do not add same-package imports or invent package-type groups such as event/model/service unless the existing formatter already does so.
@@ -61,7 +63,7 @@ This is an opinionated guideline for new scaffolds and architecture reviews. Do 
 
 ## Baseline Failures This Skill Prevents
 
-Without this skill, agents commonly place controllers in domain modules, use `Repository/JpaRepository/find/save/create` as defaults, expose reusable modules as HTTP modules, perform big-bang architecture rewrites, split classes only because they are long, create one-method contracts with no distinct role or change reason, extract abstractions with no protecting test, architecture rule, dependency check, package rule, or focused layer test, over-expand tests into duplicated implementation checks, flatten Java import layout groups into one global alphabetical list, push service field lists down into Store write ports, reuse read projections, app DTOs, JPA entities, jOOQ records, or Spring Data types as write commands, put Flyway migrations only in app, generate jOOQ classes from stale local schemas, drop Hibernate validation when jOOQ is selected, wire compile before codegen, return a boolean `success` field, or put paging mutation inside persistence. Treat those as architecture violations unless the user explicitly overrides the guideline.
+Without this skill, agents commonly place controllers in domain modules, use `Repository/JpaRepository/find/save/create` as defaults, expose reusable modules as HTTP modules, perform big-bang architecture rewrites, split classes only because they are long, create one-method contracts with no distinct role or change reason, extract abstractions with no protecting test, architecture rule, dependency check, package rule, or focused layer test, over-expand tests into duplicated implementation checks, flatten Java import layout groups into one global alphabetical list, pass app request DTOs or `core.port` Store commands through service contracts, mechanically create DTO/command/entity variants with no distinct reason, push service field lists down into Store write ports, reuse read projections, app DTOs, JPA entities, jOOQ records, or Spring Data types as write commands, put Flyway migrations only in app, generate jOOQ classes from stale local schemas, drop Hibernate validation when jOOQ is selected, wire compile before codegen, return a boolean `success` field, or put paging mutation inside persistence. Treat those as architecture violations unless the user explicitly overrides the guideline.
 
 ## Completion Checklist
 
@@ -71,6 +73,7 @@ Without this skill, agents commonly place controllers in domain modules, use `Re
 - Gradle includes and dependencies match the selected modules and adapters.
 - Controllers and HTTP DTOs are in app packages.
 - App controllers and workflows depend on `*:api` `*Service` contracts, not `*:core` `*ServiceImpl` classes.
+- Controller DTOs, service commands, Store commands, and entities are split by boundary and change reason. Do not pass app request DTOs into domain service/store contracts, do not expose `core.port` Store commands as service API inputs, and do not create extra command types when scalar parameters or an existing web-neutral command are clearer.
 - Cross-domain calls use SPI or app composition, not direct domain dependencies.
 - Persistence naming and service naming follow the vocabulary rules.
 - Non-trivial Store write inputs are reviewed and refactored toward purpose-specific domain records or value objects where it improves readability and contract stability; domain-contract validation is enforced in those inputs or service policy, and adapter entity annotations are not sufficient alone.
