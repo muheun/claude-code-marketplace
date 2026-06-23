@@ -51,6 +51,7 @@ Add architecture tests or equivalent checks when this guideline is used for a sc
 
 - Store write methods do not use app request DTOs, read projections, JPA entities, jOOQ records, Spring Data types, or other adapter entities as write commands.
 - Non-trivial Store write inputs should move toward purpose-specific command/value records instead of long scalar parameter lists when the change improves readability, validation, or contract stability.
+- Store command granularity is reviewed by write intent, validation, state transition, audit/event behavior, concurrency policy, and caller knowledge. Do not split commands just because one field is nullable, defaulted, or method-specific.
 - Write input validation is covered by focused value-object or service tests when validation is part of the domain contract.
 - JPA adapters do not depend on `JpaRepository` for standard Store implementation.
 - Persistence adapters do not self-register with `@Component`, `@Service`, `@Repository`, or component-scanned `@Configuration`.

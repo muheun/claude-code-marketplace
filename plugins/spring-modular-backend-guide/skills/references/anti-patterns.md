@@ -26,6 +26,7 @@ Use this file during code review and scaffold review.
 
 - Store write methods mirror database columns as long scalar parameter lists.
 - Store write methods reuse read projections, app request DTOs, JPA entities, jOOQ records, Spring Data types, or other adapter entities as write commands.
+- Splitting Store write commands only because of a nullable/default field when the write intent and validation are the same.
 - Query reads fetch entities and map every row through `toDomain()` by default.
 - List/search queries lack stable ordering.
 - Store mutates paging result state with `calcPaging` or `setBody`.

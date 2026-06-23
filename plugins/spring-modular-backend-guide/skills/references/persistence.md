@@ -34,6 +34,25 @@ Store write inputs are persistence-neutral domain commands or value objects. For
 
 Do not pass JPA entities, jOOQ records, Spring Data types, app request DTOs, or other adapter entities through `Store` contracts. Do not reuse read projections as write commands. If an existing domain type is intentionally reused as a write model, it must not carry generated IDs, timestamps, derived flags, or fields outside the write intent.
 
+### Command Granularity
+
+Split Store write commands by write intent, policy, and validation differences, not by every optional field. A nullable field, default value, or one method-specific override is not enough reason to create another command type.
+
+Prefer one command when:
+
+- The operation is the same write intent and only a default differs, such as omitted status meaning `PENDING`.
+- The same fields are persisted and the same validation rules apply.
+- Splitting would only add files, wiring, and fake updates without hiding a concept from callers.
+
+Prefer separate commands when:
+
+- Required fields differ in a way callers must understand.
+- Validation, state-transition policy, audit/event behavior, concurrency expectations, or ownership differs.
+- One caller should not know or set fields that another caller needs.
+- A read projection or persisted row shape would otherwise be reused as a write model.
+
+If a command field is ignored by one Store method, first consider merging the methods and applying a clear default in service/domain policy or a command factory. Adapters should translate already-decided values; only persistence-technical defaults such as generated columns or database timestamps belong in adapter/DDL behavior. Split only when the ignored field signals a genuinely different write intent. Treat command granularity as review judgment, not an architecture-test rule.
+
 ## Identifier Strategy
 
 Default to database-generated `BIGINT` identity primary keys for ordinary single-primary relational systems unless the project has a clear reason to generate globally unique IDs outside the database.

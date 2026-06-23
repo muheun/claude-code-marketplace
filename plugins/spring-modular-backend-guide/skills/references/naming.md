@@ -131,6 +131,8 @@ interface CommentStore {
 
 Store write methods should communicate write intent through the input type, not a long column-shaped parameter list. Use a purpose-specific command/value record such as `CommentCreate` or `CommentUpdate` when an `insert`, `update`, or `upsert` needs more than a few fields, repeats primitive/String types, or has validation rules.
 
+Do not split command records only because one field is nullable, has a default, or is used by only one overload. Split by meaning: different required fields, validation, state transition, audit/event behavior, concurrency policy, or caller knowledge. When the write intent is the same, prefer one command and make defaults explicit.
+
 Do not use app request DTOs, read projections, adapter entities, JPA entities, jOOQ records, or Spring Data types as Store write commands. A domain model may be reused only when it is explicitly the write model and does not carry generated IDs, timestamps, derived flags, or fields outside the write intent; this exception does not apply to app request DTOs, read projections, adapter entities, JPA entities, jOOQ records, or Spring Data types.
 
 ## Adapter Names
