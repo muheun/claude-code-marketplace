@@ -39,7 +39,7 @@ This is an opinionated guideline for new scaffolds and architecture reviews. Do 
 - Domain modules use `api`, `core`, and `adapter:persistence-*`; app owns web controllers and host-specific DTOs.
 - Prefer small, verifiable architecture changes: identify mixed responsibilities, split by change reason, and protect the split with tests, architecture rules, module dependency checks, package rules, or focused layer tests; checklist-only notes do not count as protection.
 - Split `Service`, `Store`, SPI, Reader, and Notifier contracts by role and change reason, not by method count; avoid one-method interfaces that only add files and wiring.
-- Store write methods do not pass app DTOs, adapter entities, JPA/jOOQ/Spring Data types, or read projections as write commands; non-trivial write inputs use purpose-specific domain command/value records instead of long scalar field lists.
+- Store write methods do not pass app DTOs, adapter entities, JPA/jOOQ/Spring Data types, or read projections as write commands. Non-trivial write inputs should be reviewed and refactored toward purpose-specific domain command/value records instead of long scalar field lists, but do not enforce this style preference with broad reflection/source-scan tests.
 - Domain `api/core` modules do not depend on other bounded contexts, app, web-support, persistence adapters, Spring MVC, JPA, or DB technology.
 - Domain `api` may expose only DB-neutral paging/search contracts; DB infrastructure bundles stay in app or selected persistence adapters.
 - Reusable modules expose SPI contracts from `api`; app or host composition implements them.
@@ -56,7 +56,8 @@ This is an opinionated guideline for new scaffolds and architecture reviews. Do 
 - Paging result assembly belongs in service: `countBy`, `calcPaging`, `selectBy`, `setBody`.
 - HTTP response envelope has `status`, `code`, `message`, `data`; no boolean `success` field.
 - Tests follow module dependency direction: core service tests use the real `*ServiceImpl` with fake or Mockito-controlled external boundaries, persistence tests use real adapters with the target DB via Testcontainers when SQL behavior matters, and app tests verify thin HTTP contracts plus composition.
-- Do not skip tests. Use the smallest test that protects the changed behavior or stable boundary; keep ordinary implementation details out of architecture tests.
+- Do not skip tests. Use the smallest test that protects the changed behavior or stable boundary; keep ordinary implementation details and refactoring preferences out of architecture tests.
+- Architecture tests protect stable module boundaries and forbidden dependency/type rules. They must not police ordinary design cleanup such as exact command record names, Store method parameter counts, scalar-vs-command style migration, helper class names, split interface names, or concrete Java file paths.
 
 ## Baseline Failures This Skill Prevents
 
@@ -72,13 +73,13 @@ Without this skill, agents commonly place controllers in domain modules, use `Re
 - App controllers and workflows depend on `*:api` `*Service` contracts, not `*:core` `*ServiceImpl` classes.
 - Cross-domain calls use SPI or app composition, not direct domain dependencies.
 - Persistence naming and service naming follow the vocabulary rules.
-- Non-trivial Store write inputs are purpose-specific domain records or value objects; domain-contract validation is enforced in those inputs or service policy, and adapter entity annotations are not sufficient alone.
+- Non-trivial Store write inputs are reviewed and refactored toward purpose-specific domain records or value objects where it improves readability and contract stability; domain-contract validation is enforced in those inputs or service policy, and adapter entity annotations are not sufficient alone.
 - Java imports remain sorted by fully qualified name within the repository import layout groups, with no new same-package imports added.
 - JPA/QueryDSL/jOOQ/Flyway choices match the persistence reference.
 - Hibernate validation is configured with `ddl-auto: validate`.
 - jOOQ adapters wire Flyway migration, schema verification, code generation, compile, and test in that order.
 - Identifier strategy and DDL type mapping match the persistence reference.
-- Architecture tests or equivalent checks protect stable boundary rules; behavior tests or review cover ordinary implementation details.
+- Architecture tests or equivalent checks protect stable boundary rules; behavior tests, compiler contract changes, and review cover ordinary implementation details and Store command cleanup.
 - Required tests are present or added as needed, proportional to the changed boundary or behavior, and do not duplicate the same policy across layers.
 - Layered tests do not introduce `core -> adapter` or `core -> app` dependencies.
 - `./gradlew test` or the project-specific test command passes.

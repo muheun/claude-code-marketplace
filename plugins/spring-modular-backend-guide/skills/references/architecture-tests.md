@@ -267,5 +267,6 @@ Avoid required checks that:
 
 - Assert exact source file existence or one-off file paths. If source URI checks are needed to distinguish modules, keep them at stable module-boundary segments and prefer package/module metadata when available.
 - Require one exact class/interface name when several role-equivalent decompositions would be acceptable.
-- Assert exact Store write command record names, parameter order/count/names, or method signatures instead of testing service and adapter behavior. Checks may still forbid app DTOs, read projections, JPA entities, jOOQ records, Spring Data types, and long scalar write inputs at Store boundaries.
+- Assert exact Store write command record names, parameter order/count/names, or method signatures instead of testing service and adapter behavior. Checks may still forbid app DTOs, read projections, adapter entities, JPA entities, jOOQ records, and Spring Data types at Store boundaries, but must not fail scalar parameter lists only because a command record would be cleaner.
+- Enforce cleanup preferences with reflection/source-scan tests, such as "every Store write method must take exactly one command record" or "every command must use this exact suffix." Treat those as review/refactoring guidance unless the project has explicitly made them public contracts.
 - Inspect AOP proxy internals when the contract is only that transaction/cache ownership stays outside `core`.

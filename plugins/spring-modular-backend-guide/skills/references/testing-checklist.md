@@ -19,7 +19,9 @@ Add architecture tests or equivalent checks when this guideline is used for a sc
 - Each new test can name the regression it catches in one sentence.
 - Prefer one small, sufficient architecture rule, dependency check, or focused layer test over several tests that assert the same boundary.
 - Prefer behavior tests for business logic and refactors; use architecture tests only for stable boundaries and forbidden dependencies.
-- Do not add architecture tests that hard-code exact file paths, helper class names, split interface names, command record names, parameter order/count/names, private call order, or proxy/decorator internals unless those are explicit public contracts. Store write boundary checks may still forbid app DTOs, read projections, adapter entities, persistence technology types, and long scalar write inputs.
+- Do not add architecture tests that hard-code exact file paths, helper class names, split interface names, command record names, parameter order/count/names, private call order, or proxy/decorator internals unless those are explicit public contracts. Store write boundary checks may still forbid app DTOs, read projections, adapter entities, and persistence technology types, but they must not fail ordinary scalar parameter lists just because a command record would be cleaner.
+- Do not convert refactoring guidance into broad reflection/source-scan tests. For example, do not add a test that fails every `*Store` write method with more than N scalar parameters, every command record that lacks a preferred suffix, or every split that uses a different class name than the guide's example.
+- Store command cleanup is verified by compiling the changed contracts and by focused behavior or persistence tests when mapping, validation, SQL, or service behavior can regress. It is not verified by a global style-policing architecture test.
 - Cross-cutting policy moved to `app` composition is tested by ownership and affected method set, not every annotation attribute.
 - Architecture rules apply only to modules included in the current migration scope unless the task explicitly broadens the cleanup.
 - Controller tests stay at HTTP contract level; they do not duplicate service policy tests.
@@ -48,7 +50,7 @@ Add architecture tests or equivalent checks when this guideline is used for a sc
 ## Persistence Rules
 
 - Store write methods do not use app request DTOs, read projections, JPA entities, jOOQ records, Spring Data types, or other adapter entities as write commands.
-- Non-trivial Store write inputs use purpose-specific command/value records instead of long scalar parameter lists.
+- Non-trivial Store write inputs should move toward purpose-specific command/value records instead of long scalar parameter lists when the change improves readability, validation, or contract stability.
 - Write input validation is covered by focused value-object or service tests when validation is part of the domain contract.
 - JPA adapters do not depend on `JpaRepository` for standard Store implementation.
 - Persistence adapters do not self-register with `@Component`, `@Service`, `@Repository`, or component-scanned `@Configuration`.
@@ -76,6 +78,7 @@ Add architecture tests or equivalent checks when this guideline is used for a sc
 Common test-design failures to reject:
 
 - Treating every design preference as an architecture-test rule instead of using review judgment and behavior tests.
+- Blocking normal development with broad tests that enforce cleanup preferences, such as failing all Store write methods with scalar parameter lists or exact command naming rules.
 - Adding production or test dependencies from `core` to a persistence adapter just to run a convenient service test.
 - Replacing the target MariaDB/MySQL/PostgreSQL behavior with H2 for SQL, constraint, projection, ordering, or dialect-sensitive tests.
 - Hard-coding app migration paths in reusable adapter tests, which hides adapter-owned Flyway migrations.

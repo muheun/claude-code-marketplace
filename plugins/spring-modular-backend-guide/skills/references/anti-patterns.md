@@ -47,6 +47,7 @@ Use this file during code review and scaffold review.
 ## Tests
 
 - Architecture tests that hard-code exact file paths, helper class names, split interface names, Store command record names, parameter order/count/names, private call order, or proxy/decorator internals when those details are not public contracts.
+- Broad reflection/source-scan tests that turn cleanup guidance into a development blocker, such as failing every Store write method with scalar parameters or enforcing exact command record suffixes.
 - Service tests verify only Mockito interactions without asserting service output, state changes, or exceptions from the real `*ServiceImpl`.
 - Service tests mock stateful `*Store` flows so heavily that count, paging, or saved-then-read behavior is no longer realistic.
 - Persistence tests replace the real database with H2 for dialect-sensitive SQL, constraints, ordering, or projection behavior.

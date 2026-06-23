@@ -31,7 +31,9 @@ Quick calibration:
 - If persistence behavior changed, test the real adapter against the target database for projection, ordering, paging, constraints, or dialect-sensitive SQL.
 - If controller behavior changed, test HTTP binding, validation, status, response envelope, security, filters, or interceptors.
 
-Architecture tests are for stable rules such as dependency direction, forbidden technologies, controller placement, adapter self-registration, and forbidden Store write input types. Behavior tests or review judgment are better for ordinary refactoring choices such as helper names, interface split names, exact command record names, parameter order/count/names, and proxy internals.
+Architecture tests are for stable rules such as dependency direction, forbidden technologies, controller placement, adapter self-registration, and forbidden Store write input types such as app DTOs, read projections, adapter entities, JPA entities, jOOQ records, and Spring Data types. Behavior tests, compiler contract changes, and review judgment are better for ordinary refactoring choices such as helper names, interface split names, exact command record names, scalar-vs-command migration, parameter order/count/names, and proxy internals.
+
+Store write commands are a design improvement target, not a global test target. Refactor the touched Store contracts when the scalar list is harming readability, validation, or mapping safety, then rely on compilation plus focused service/persistence tests for changed behavior. Do not add a broad architecture test that fails all Store write methods because they have more than a chosen number of parameters.
 
 ### Interface Granularity
 
