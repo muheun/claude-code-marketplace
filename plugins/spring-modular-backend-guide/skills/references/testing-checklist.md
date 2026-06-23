@@ -66,8 +66,8 @@ Add architecture tests or equivalent checks when this guideline is used for a sc
 
 - Core service tests instantiate the real `*ServiceImpl` and replace only external boundaries such as `*Store`, SPI, readers, recorders, notifiers, senders, or publishers.
 - Mockito is acceptable in service tests for controlling boundary return values, exceptions, or verifying side-effect calls. The mock is not the test subject.
-- Prefer hand-written fakes when state matters: storing then reading, count plus paging, accumulated changes, or scenarios where Mockito setup becomes longer than the behavior under test.
-- Prefer Mockito mocks for stateless external-boundary readers, validators, policies, notifiers, senders, publishers, and one-off exception paths. Core business policy collaborators stay real unless they are the unit under test in a separate focused test.
+- Prefer hand-written fakes when state matters: save-then-read, insert-then-select, count-plus-paging, ordering, accumulated changes, multi-step Store interactions, or scenarios where Mockito setup becomes longer than the behavior under test.
+- Prefer Mockito mocks when the boundary is stateless, the test only needs one or two methods, a fake would be longer than the test intent, or the scenario is a one-off return value, exception, no-call, or side-effect verification. Core business policy collaborators stay real unless they are the unit under test in a separate focused test.
 - Core service tests do not use real persistence adapters and must not add `core -> adapter` or `core -> app` dependencies for testing.
 - Persistence adapter tests exercise the real `Jpa*StoreAdapter`, `Jooq*StoreAdapter`, or `InMemory*StoreAdapter`; do not fake the adapter under test.
 - jOOQ-backed adapter tests verify JPA entities and Hibernate validation exist, while Store reads/writes go through the real jOOQ adapter.
@@ -75,6 +75,7 @@ Add architecture tests or equivalent checks when this guideline is used for a sc
 - Persistence integration tests apply Flyway migrations from the runtime classpath, such as `classpath:db/migration`, so adapter-owned migrations are included. Do not hard-code `app/src/main/resources/db/migration` unless the test is specifically for app-only migrations.
 - App tests cover thin controller HTTP contracts, security, common response envelopes, module composition, selected adapter imports, and bean wiring.
 - Controller tests may mock service contracts, but they must verify HTTP concerns such as binding, validation, status codes, response envelopes, exception handling, security, filters, or interceptors. Do not retest service business logic through controllers.
+- Thin controller HTTP tests may use Mockito for service contracts when they only verify request mapping, binding, validation, status/envelope behavior, or no-call behavior. Thin app workflow forwarding tests may use Mockito when they only verify no-call behavior or a single delegated call. Do not build hand-written fakes for these tests unless stateful behavior is part of the contract.
 - Service plus real adapter tests live in an adapter or app test source set and are integration tests, not core unit tests.
 
 Common test-design failures to reject:
@@ -91,6 +92,7 @@ Common test-design failures to reject:
 - Broadening an architecture rule to unrelated modules and creating failures outside the current cleanup scope.
 - Duplicating one business policy across service, controller, and integration tests without a separate contract at each layer.
 - Mocking `*Store` when a simple fake would better preserve state needed by the service scenario.
+- Building a hand-written fake for a controller or thin app workflow test when a service-contract mock would express request validation, no-call behavior, or one delegated call more clearly.
 - Expanding controller tests into duplicated service policy tests instead of keeping them focused on HTTP contracts.
 - Running jOOQ code generation from a stale manual database or after `test` has already started.
 - Adding only `test.dependsOn(generateJooq)` while leaving `compileJava` free to run before generated sources exist.
