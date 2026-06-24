@@ -25,7 +25,7 @@ This is an opinionated guideline for new scaffolds and architecture reviews. Do 
 | Store write input design or review | `references/naming.md`, `references/persistence.md`, `references/testing-checklist.md`, and `references/anti-patterns.md` |
 | Service, Store, adapter names, Java import ordering, or Java test helper formatting | `references/naming.md` |
 | Fixelsoft internal backend-util dependencies, common utilities, `StringUtil`, `NumberUtil`, `DateUtil`, `ListUtil`, or `Params` | `references/build-setup.md` and `references/backend-util.md` |
-| JPA, QueryDSL, jOOQ, Flyway, paging, identifier strategy | `references/persistence.md` |
+| JPA, QueryDSL, jOOQ, Flyway, paging, identifier strategy | `references/persistence.md` and `references/build-setup.md` |
 | Controllers, DTOs, string enum input parsing, app composition, response envelope | `references/web-and-app.md` |
 | Reusable comment/file-like modules or cross-domain validation | `references/spi-and-reuse.md` |
 | Gradle dependencies, build plugin placement, or jOOQ codegen setup | `references/build-setup.md` and `references/persistence.md` |
@@ -34,7 +34,8 @@ This is an opinionated guideline for new scaffolds and architecture reviews. Do 
 | Code review or readiness check | `references/anti-patterns.md`, `references/testing-checklist.md`, and any changed-area references above |
 
 3. Apply the non-negotiable rules below before writing or reviewing code.
-4. Verify with targeted tests first, then the full available build/test command.
+4. Before writing persistence adapter code, make the selected technology contract explicit from `references/persistence.md` and `references/build-setup.md`. In this guide, choosing JPA means using JPA with QueryDSL for Store reads: include QueryDSL dependency/annotation processing and use QueryDSL projection reads. Do not substitute Criteria, JPQL, `JpaRepository`, or entity fetch reads unless the user explicitly rejects QueryDSL for the project.
+5. Verify with targeted tests first, then the full available build/test command.
 
 ## Non-Negotiable Rules
 

@@ -147,6 +147,8 @@ dependencies {
 }
 ```
 
+Treat this as the required JPA adapter baseline for projects using this guide, not an optional embellishment. When scaffolding a `persistence-jpa` module or `Jpa*StoreAdapter`, include QueryDSL dependencies and annotation processors before writing read-side adapter code. If the user explicitly rejects QueryDSL for the project, stop and ask for the selected persistence-read alternative instead of silently falling back to Criteria, JPQL string queries, entity fetch mapping, or `JpaRepository`.
+
 jOOQ adapter modules:
 
 ```kotlin
