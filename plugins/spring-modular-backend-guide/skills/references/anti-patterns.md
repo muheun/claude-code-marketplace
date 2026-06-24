@@ -30,6 +30,7 @@ Use this file during code review and scaffold review.
 - `core.port` Store command records are exposed upward through `*:api` service contracts or app controllers.
 - DTO, service command, Store command, and entity types are created mechanically for every method even when there is no distinct boundary, validation, policy, or persistence reason.
 - Splitting Store write commands only because of a nullable/default field when the write intent and validation are the same.
+- Persistence row mappers call `Enum.valueOf(...)` directly for stored strings instead of using an adapter mapper or domain enum factory.
 - Query reads fetch entities and map every row through `toDomain()` by default.
 - List/search queries lack stable ordering.
 - Store mutates paging result state with `calcPaging` or `setBody`.
@@ -46,6 +47,7 @@ Use this file during code review and scaffold review.
 - Controllers inject concrete core implementations such as `*ServiceImpl` instead of `*:api` service contracts.
 - Controllers pass app request DTOs directly into reusable domain services, Store contracts, or persistence adapters.
 - Controllers bind reusable domain `api` command types directly as request bodies when the HTTP shape has request-only validation, defaults, OpenAPI schema, or client compatibility concerns.
+- Controllers, command handlers, or batch input adapters call `Enum.valueOf(...)` directly for external strings instead of using an app parser or domain enum factory.
 - Controllers or command handlers duplicate enum parsing/default helpers, or push channel-specific aliases, defaults, localization, or user-facing messages into reusable domain enums.
 - Common response contains boolean `success`.
 - 5xx fallback exposes raw exception messages.
@@ -57,6 +59,7 @@ Use this file during code review and scaffold review.
 - Adding an ArchUnit rule that forbids a cohesive read contract such as `FooRoleReader` only because the current refactor introduced `FooAuthorizationReader`; this freezes a decomposition choice instead of protecting a stable boundary.
 - Adding a broad rule that selected app packages must use the exact newly extracted Reader or SPI name, such as `FooDisplayNameReader`, when the stable rule is only avoiding write-capable service dependencies that cross ownership boundaries and expose mutation methods to consumers that should only read or compose.
 - Broad reflection/source-scan tests that turn cleanup guidance into a development blocker, such as failing every Store write method with scalar parameters or enforcing exact command record suffixes.
+- Broad reflection/source-scan tests that force every enum to have a `from` method or lookup map even when the enum has no string parsing contract.
 - Service tests verify only Mockito interactions without asserting service output, state changes, or exceptions from the real `*ServiceImpl`.
 - Service tests mock stateful `*Store` flows so heavily that count, paging, or saved-then-read behavior is no longer realistic.
 - Persistence tests replace the real database with H2 for dialect-sensitive SQL, constraints, ordering, or projection behavior.

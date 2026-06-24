@@ -111,9 +111,13 @@ Do not create command records mechanically for every one-field or two-field serv
 
 ## Enum Input Parsing and Factory Names
 
+Do not call `Enum.valueOf(...)` directly when converting a `String` from a user, API, database row, file, Slack/LLM command, batch job, or integration payload into a domain enum. Route that conversion through a boundary-owned parser/mapper or a domain enum factory so trimming, case policy, invalid-token errors, and compatibility aliases stay centralized.
+
 Use a reusable domain enum factory only when the enum owns a stable web-neutral token such as code, name, or canonical name. Name the factory by the accepted token when ambiguity matters, such as `fromCode` or `fromName`. Use a generic `from` only when the input contract is obvious and domain-neutral.
 
-Internal-only enums do not need factories just to wrap `valueOf`. Add a domain enum factory when parsing a stable domain-owned canonical code or name is repeated, case-insensitive by domain contract, or part of a stable domain input contract. Keep channel aliases, compatibility tokens, and defaults in app-owned parsers. Lookup maps are optional; when needed, keep them `private static final` and immutable.
+Internal-only enums do not need factories just because they exist. Add a domain enum factory when parsing a stable domain-owned canonical code or name is repeated, case-insensitive by domain contract, or part of a stable domain input contract. Keep channel aliases, compatibility tokens, and defaults in app-owned parsers. Lookup maps are optional for tiny one-off internal checks; prefer a `private static final` immutable lookup map when parsing is repeated, the enum is large enough that scanning hurts readability, or the factory accepts explicit codes/aliases that would otherwise become scattered conditionals.
+
+`enum -> String` serialization is a separate decision. Calling `.name()` in a persistence adapter or event mapper is acceptable when the stored token is intentionally the enum constant name. Use an explicit `code` plus `fromCode` when stored or public tokens must remain stable across enum renames.
 
 ## Service Implementation Names
 
