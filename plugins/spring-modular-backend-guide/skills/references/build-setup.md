@@ -140,14 +140,14 @@ plugins {
 dependencies {
     implementation(project(":board:core"))
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-    implementation("com.querydsl:querydsl-jpa:5.1.0:jakarta")
-    annotationProcessor("com.querydsl:querydsl-apt:5.1.0:jakarta")
+    implementation("io.github.openfeign.querydsl:querydsl-jpa:7.4.0")
+    annotationProcessor("io.github.openfeign.querydsl:querydsl-apt:7.4.0:jakarta")
     annotationProcessor("jakarta.persistence:jakarta.persistence-api")
     annotationProcessor("jakarta.annotation:jakarta.annotation-api")
 }
 ```
 
-Treat this as the required JPA adapter baseline for projects using this guide, not an optional embellishment. When scaffolding a `persistence-jpa` module or `Jpa*StoreAdapter`, include QueryDSL dependencies and annotation processors before writing read-side adapter code. If the user explicitly rejects QueryDSL for the project, stop and ask for the selected persistence-read alternative instead of silently falling back to Criteria, JPQL string queries, entity fetch mapping, or `JpaRepository`.
+Treat this as the required JPA adapter baseline for projects using this guide, not an optional embellishment. Use the OpenFeign-maintained QueryDSL artifacts under `io.github.openfeign.querydsl`; do not use legacy `com.querydsl` coordinates for new scaffolds. When scaffolding a `persistence-jpa` module or `Jpa*StoreAdapter`, include QueryDSL dependencies and annotation processors before writing read-side adapter code. If the user explicitly rejects QueryDSL for the project, stop and ask for the selected persistence-read alternative instead of silently falling back to Criteria, JPQL string queries, entity fetch mapping, or `JpaRepository`.
 
 jOOQ adapter modules:
 
@@ -217,7 +217,7 @@ dependencies {
 - Put Spring Boot executable plugin on `app`.
 - Import the Spring Boot BOM from the root build before using versionless Spring, Jakarta, test, or annotation processor dependencies.
 - Put `shared:web-support` on `spring-web` and `spring-context`, or the matching Boot web starter if the team intentionally accepts starter dependencies there.
-- Put QueryDSL dependencies and annotation processor only in JPA adapter modules.
+- Put OpenFeign QueryDSL dependencies and annotation processor only in JPA adapter modules.
 - Add `jakarta.persistence-api` and `jakarta.annotation-api` to the QueryDSL annotation processor path when JPA Q-class generation needs Jakarta types.
 - Put jOOQ plugin and generated table dependencies only in jOOQ adapter modules.
 - Put DB infrastructure bundles such as Flyway/p6spy helpers in `app` or selected persistence adapters, not domain `api/core`.

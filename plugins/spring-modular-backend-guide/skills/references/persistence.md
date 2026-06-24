@@ -113,7 +113,7 @@ JPA/QueryDSL-backed Store read side:
 - Choosing JPA for a project that uses this guide means using QueryDSL for Store reads.
 - Use QueryDSL projection for single-item reads and list/search reads.
 - Add stable ordering for pageable lists.
-- Before implementing a `persistence-jpa` module or `Jpa*StoreAdapter`, verify that the module build declares `querydsl-jpa`, `querydsl-apt`, and Jakarta annotation/persistence processors, and that the adapter can receive or create a `JPAQueryFactory`.
+- Before implementing a `persistence-jpa` module or `Jpa*StoreAdapter`, verify that the module build declares OpenFeign QueryDSL artifacts under `io.github.openfeign.querydsl` for `querydsl-jpa` and `querydsl-apt`, plus Jakarta annotation/persistence processors, and that the adapter can receive or create a `JPAQueryFactory`.
 - Criteria API and JPQL string queries are not the default fallback for Store reads. Use them only after the user explicitly rejects QueryDSL for the project; capture the chosen exception in the plan, review response, or project architecture note instead of source-code comments.
 - Do not use entity fetch plus `toDomain()` as the default read pattern.
 - Do not use `JpaRepository` as the standard Store implementation.
