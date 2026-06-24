@@ -59,7 +59,7 @@ This is an opinionated guideline for new scaffolds and architecture reviews. Do 
 - jOOQ-backed adapters keep JPA entities only for Hibernate validation; Store reads and writes use jOOQ DSL, not JPA/Spring Data APIs.
 - jOOQ generated sources come from a Flyway-migrated schema before compile/test, not from a stale manual database.
 - Paging result assembly belongs in service: `countBy`, `calcPaging`, `selectBy`, `setBody`.
-- HTTP response envelope has `status`, `code`, `message`, `data`; no boolean `success` field.
+- For new scaffolds, HTTP response envelope defaults to `status`, `message`, and `data`; in existing projects, preserve the established common envelope unless the task explicitly includes a response-contract migration. Do not use boolean `success`. Add or preserve `code`/message-key only when the project has an explicit centralized client-code or i18n/message-key strategy.
 - Tests follow module dependency direction: core service tests use the real `*ServiceImpl` with fake or Mockito-controlled external boundaries, persistence tests use real adapters with the target DB via Testcontainers when SQL behavior matters, and app tests verify thin HTTP contracts plus composition.
 - Do not skip tests. Use the smallest test that protects the changed behavior or stable boundary; keep ordinary implementation details and refactoring preferences out of architecture tests.
 - Architecture tests protect stable module boundaries and forbidden dependency/type rules. They must not police ordinary design cleanup such as exact command record names, Store method parameter counts, scalar-vs-command style migration, helper class names, split interface names, or concrete Java file paths.

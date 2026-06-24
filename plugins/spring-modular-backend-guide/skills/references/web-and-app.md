@@ -50,7 +50,6 @@ Use `shared:web-support` for a common envelope:
 ```json
 {
   "status": 200,
-  "code": "common.ok",
   "message": "success",
   "data": {}
 }
@@ -58,9 +57,10 @@ Use `shared:web-support` for a common envelope:
 
 Rules:
 
+- For new scaffolds, default to `status`, `message`, and `data`. In existing projects, preserve the established common envelope unless the task explicitly includes a response-contract migration.
 - No boolean `success` field. HTTP status expresses success/failure.
 - `status` must match the real HTTP status code.
-- `code` is for client branching and future message keys.
+- Add a `code` or message-key field only when the project has an explicit centralized client-code or i18n/message-key strategy. Do not require it by default.
 - `message` may be fixed text or a safe exception message.
 - `data` is the success payload. For empty or error responses, use `{}`.
 - Add `errors` only when validation error handling is intentionally designed.
