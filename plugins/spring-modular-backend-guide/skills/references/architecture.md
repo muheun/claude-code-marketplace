@@ -39,6 +39,18 @@ Store write commands are a design improvement target, not a global test target. 
 
 Split `Service`, `Store`, SPI, Reader, and Notifier contracts by role and change reason, not by method count.
 
+#### Interface Split Gate
+
+Before introducing a new contract or moving consumers to it, pass this gate:
+
+- Name the consumer knowledge being hidden, or the dependency direction, reuse boundary, lifecycle, exception policy, cache policy, or implementation possibility the split protects.
+- Name the real change reason that makes this boundary useful now.
+- Confirm the split protects a dependency direction, reuse boundary, or consumer knowledge boundary, not only a shorter method list.
+- Check whether the existing contract would still be cohesive enough; if yes, keep it unless a clearer boundary is needed now.
+- Prefer compiler contract changes, focused wiring tests, or behavior tests over architecture rules that freeze the exact new interface name.
+
+A small interface is useful when it hides knowledge a consumer should not have. A new interface name alone does not create a stable boundary.
+
 Prefer separate contracts when:
 
 - Consumers belong to different use cases.

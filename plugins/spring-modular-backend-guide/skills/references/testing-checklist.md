@@ -19,6 +19,15 @@ Add architecture tests or equivalent checks when this guideline is used for a sc
 - Each new test can name the regression it catches in one sentence.
 - Prefer one small, sufficient architecture rule, dependency check, or focused layer test over several tests that assert the same boundary.
 - Prefer behavior tests for business logic and refactors; use architecture tests only for stable boundaries and forbidden dependencies.
+
+#### Architecture Test Gate
+
+Before adding an ArchUnit or broad source-scan test, pass this gate:
+
+- The rule must protect a stable boundary such as dependency direction, forbidden technology, controller ownership, adapter registration, forbidden write-capable service dependencies across ownership boundaries, or forbidden DTO/entity/persistence types. A write-capable service dependency is forbidden when it crosses an ownership boundary and exposes mutation authority to a consumer that should only read or compose.
+- The failure message should describe a regression that would still be invalid if the interface or helper names changed.
+- The rule must not force one freshly extracted Reader, SPI, Store, command, helper, or DTO name when another cohesive split would also be valid.
+- If compilation, focused wiring tests, behavior tests, or code review can protect the refactor without freezing decomposition, use those instead.
 - Do not add architecture tests that hard-code exact file paths, helper class names, split interface names, command record names, parameter order/count/names, private call order, or proxy/decorator internals unless those are explicit public contracts. Store write boundary checks may still forbid app DTOs, read projections, adapter entities, and persistence technology types, but they must not fail ordinary scalar parameter lists just because a command record would be cleaner.
 - Do not convert refactoring guidance into broad reflection/source-scan tests. For example, do not add a test that fails every `*Store` write method with more than N scalar parameters, every command record that lacks a preferred suffix, or every split that uses a different class name than the guide's example.
 - Service command and Store command cleanup is verified by compiling the changed contracts and by focused behavior or persistence tests when mapping, validation, SQL, or service behavior can regress. It is not verified by a global style-policing architecture test.

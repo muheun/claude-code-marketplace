@@ -54,6 +54,8 @@ Use this file during code review and scaffold review.
 ## Tests
 
 - Architecture tests that hard-code exact file paths, helper class names, split interface names, Store command record names, parameter order/count/names, private call order, or proxy/decorator internals when those details are not public contracts.
+- Adding an ArchUnit rule that forbids a cohesive read contract such as `FooRoleReader` only because the current refactor introduced `FooAuthorizationReader`; this freezes a decomposition choice instead of protecting a stable boundary.
+- Adding a broad rule that selected app packages must use the exact newly extracted Reader or SPI name, such as `FooDisplayNameReader`, when the stable rule is only avoiding write-capable service dependencies that cross ownership boundaries and expose mutation methods to consumers that should only read or compose.
 - Broad reflection/source-scan tests that turn cleanup guidance into a development blocker, such as failing every Store write method with scalar parameters or enforcing exact command record suffixes.
 - Service tests verify only Mockito interactions without asserting service output, state changes, or exceptions from the real `*ServiceImpl`.
 - Service tests mock stateful `*Store` flows so heavily that count, paging, or saved-then-read behavior is no longer realistic.
