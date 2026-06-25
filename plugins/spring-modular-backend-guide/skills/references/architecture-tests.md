@@ -2,11 +2,15 @@
 
 Use these as compact starting points. Adapt package names and module names to the project.
 
-Architecture tests should guard stable architecture, not every design preference. Start with the baseline modularization checks: selected modules exist and dependency direction is correct. Add broad source/bytecode checks for technology bans, controller placement, adapter self-registration, and build/persistence policies only when the project already treats that static enforcement as stable policy, the current task touches the boundary, or the user asks to enforce it.
+Architecture tests should guard stable architecture, not every design preference. Start and usually stop with baseline modularization checks: selected modules exist and dependency direction is correct. Add broad source/bytecode checks for technology bans, controller placement, adapter self-registration, and build/persistence policies only when the project already treats that static enforcement as stable policy, the current task touches the boundary, or the user asks to enforce it.
+
+Do not add architecture tests for service method prefixes, Store method prefixes, exact interface names, command names, helper names, or file layout. Those are guide/review concerns unless the project explicitly makes them enforced policy.
 
 ## Baseline Gradle Checks
 
-Use Gradle/build-file checks for stable internal project boundaries: selected modules exist, `core` depends on its own `api`, `api` does not depend on its own `core`, selected `adapter:persistence-*` modules depend on their own `core`, `app` composes selected domain modules, `api/core` do not depend on `app`, adapters, web-support, or other bounded contexts, and persistence adapters do not depend on `app`, web-support, or other bounded contexts. The compact example below only checks selected module inclusion; add build dependency checks when the build file is the right enforcement point for dependency direction.
+Use Gradle/build-file checks only for stable internal project boundaries: selected modules exist, `core` depends on its own `api`, `api` does not depend on its own `core`, selected `adapter:persistence-*` modules depend on their own `core`, `app` composes selected domain modules, `api/core` do not depend on `app`, adapters, web-support, or other bounded contexts, and persistence adapters do not depend on `app`, web-support, or other bounded contexts. The compact example below only checks selected module inclusion; add build dependency checks when the build file is the smallest reliable enforcement point for dependency direction.
+
+Keep custom parsers modest. If parsing Gradle accurately becomes larger than the boundary being protected, reduce the check to selected module inclusion and rely on Gradle compilation plus review for the rest.
 
 Do not build broad external Maven-coordinate blacklists for DB/web libraries. External artifacts change by Spring Boot version, starter choice, plugin convention, and vendor; if a project opts into technology bans, verify actual package/type usage with a narrow source or bytecode check.
 
@@ -156,6 +160,7 @@ The guide can still make a design rule mandatory while keeping broad static enfo
 
 - Assert exact source file existence or one-off file paths. If source URI checks are needed to distinguish modules, keep them at stable module-boundary segments and prefer package/module metadata when available.
 - Require one exact class/interface name when several role-equivalent decompositions would be acceptable.
+- Require service method prefixes such as `remove` instead of `delete`, Store method prefixes, exact suffixes, or other naming rules that should be enforced during implementation and review unless naming enforcement is an explicit project policy.
 - Maintain an exhaustive list of forbidden external Maven coordinates for web, DB, JDBC drivers, QueryDSL, jOOQ, Flyway, or Spring starters.
 - Promote every code review note into a global architecture test. First decide whether the rule is baseline modularization, opt-in project policy, or review-only guidance.
 - Assert exact Store write command record names, parameter order/count/names, or method signatures instead of testing service and adapter behavior.

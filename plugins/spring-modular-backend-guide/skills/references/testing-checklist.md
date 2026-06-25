@@ -1,12 +1,14 @@
 # Testing Checklist
 
-Add architecture tests or equivalent checks when this guideline is used for a scaffold. Keep the default gate small: module existence and dependency direction first. Use `architecture-tests.md` for compact ArchUnit examples.
+Add tests for changed behavior and stable module boundaries. Keep architecture tests small: selected module existence and dependency direction first. Use `architecture-tests.md` for compact ArchUnit examples.
+
+The skill guides implementation and review judgment. Tests are guardrails for regressions that are cheap and stable to detect; they are not a substitute for reading the guide.
 
 ## Change Strategy Checks
 
 - Responsibility splits have a clear reason to change, not only a cosmetic class-length concern.
 - Architecture changes are small enough to review without also changing unrelated behavior, naming, and persistence strategy.
-- A split leaves a verification point: architecture test, module dependency check, package rule, or focused layer test.
+- A split leaves a verification point: compilation, behavior test, wiring test, module dependency check, package rule, or focused layer test. Use architecture tests only when they are the smallest stable protection.
 - Checklist-only documentation does not count as boundary protection.
 - Mixed HTTP, use-case orchestration, domain rule, persistence query, and infrastructure wiring concerns are separated at the appropriate `app`, `api`, `core`, or `adapter` boundary.
 - Refactoring does not add direct bounded-context dependencies or make `core` depend on `adapter`/`app`.
@@ -15,11 +17,12 @@ Add architecture tests or equivalent checks when this guideline is used for a sc
 
 ## Test Scope Checks
 
-- Required tests are present; keeping test scope small is not a reason to skip contract protection.
+- Required behavior and boundary tests are present; keeping test scope small is not a reason to skip contract protection.
 - Each new test can name the regression it catches in one sentence.
 - Prefer one small, sufficient architecture rule, dependency check, or focused layer test over several tests that assert the same boundary.
 - Prefer behavior tests for business logic and refactors; use architecture tests only for stable boundaries and forbidden dependencies.
 - Validation effort must stay proportional to the change. If an architecture test needs more code than the implementation it protects, first reduce it to the baseline modularization rule or keep the finding as review guidance.
+- Do not add tests because the guide could be ignored. The agent using the guide must apply review-only rules during implementation and review.
 
 #### Architecture Test Gate
 
@@ -33,6 +36,7 @@ Before adding an ArchUnit or broad source-scan test, pass this gate:
 - The failure message should describe a regression that would still be invalid if the interface or helper names changed.
 - The rule must not force one freshly extracted Reader, SPI, Store, command, helper, or DTO name when another cohesive split would also be valid.
 - If compilation, focused wiring tests, behavior tests, or code review can protect the refactor without freezing decomposition, use those instead.
+- If the rule is about naming, vocabulary, method prefixes, suffixes, helper names, file layout, or decomposition style, enforce it during implementation and review by default. For example, require `remove` instead of `delete` in service APIs during review, but do not add a global architecture test that fails service methods using `delete` unless naming enforcement is an explicit project policy.
 - For Gradle/build-file checks, prefer stable internal project boundaries: `api/core` must not depend on `app`, web-support, persistence adapters, or other bounded contexts. Do not maintain broad external Maven-coordinate blacklists for future DB/web libraries. Validate forbidden technology through actual source/bytecode package or type dependencies only when that technology boundary is explicitly in scope.
 - Do not add architecture tests that hard-code exact file paths, helper class names, split interface names, command record names, parameter order/count/names, private call order, or proxy/decorator internals unless those are explicit public contracts. Store write boundary checks may still forbid app DTOs, read projections, adapter entities, and persistence technology types, but they must not fail ordinary scalar parameter lists just because a command record would be cleaner.
 - Do not convert refactoring guidance into broad reflection/source-scan tests. For example, do not add a test that fails every `*Store` write method with more than N scalar parameters, every command record that lacks a preferred suffix, or every split that uses a different class name than the guide's example.
@@ -70,13 +74,15 @@ The design rules below may be mandatory for this guide or for the project. What 
 
 ## Naming Rules
 
-Use these for review and focused tests. Do not turn them into global architecture tests unless naming is an explicit project policy.
+Use these as design rules during implementation and review. Do not turn them into global architecture tests unless naming is an explicit project policy.
 
-- Service methods start with allowed application prefixes.
-- Service contracts are `*Service`; concrete core implementations, including decorators and variants, are `*ServiceImpl`.
-- Store methods start with allowed persistence prefixes.
+- Service methods start with application verbs such as `get`, `save`, `modify`, `remove`, `exists`, or explicit domain verbs. Avoid data-access or CRUD prefixes such as `find`, `select`, `insert`, `update`, `delete`, `list`, `create`, and `add` in service interfaces.
+- Service contracts are named `*Service`; concrete core implementations, including decorators and variants, are named `*ServiceImpl`.
+- Store methods start with persistence verbs such as `select`, `insert`, `update`, `delete`, `upsert`, `exists`, `count`.
 - Persistence ports end with `Store`.
-- Persistence adapter implementations match `(Jpa|Jooq|InMemory)*StoreAdapter`.
+- Persistence adapter implementations include the technology, such as `(Jpa|Jooq|Mybatis|InMemory)*StoreAdapter`.
+
+Do not block development with broad architecture tests for these naming rules unless the project explicitly adopts naming enforcement. If a touched name violates the rule, fix it in the change or call it out in review.
 
 ## Persistence Rules
 
@@ -112,7 +118,8 @@ Use these when the selected persistence adapter or Store contract is in scope. T
 
 Common test-design failures to reject:
 
-- Treating every design preference as an architecture-test rule instead of using review judgment and behavior tests.
+- Treating every design rule as an architecture-test rule instead of using review judgment and behavior tests where static enforcement would be brittle.
+- Adding architecture tests for service method prefixes, Store method prefixes, class suffixes, DTO/command naming, or helper names when the stable issue is only style guidance.
 - Blocking normal development with broad tests that enforce cleanup preferences, such as failing all Store write methods with scalar parameter lists or exact command naming rules.
 - Blocking normal dependency evolution with external library-coordinate blacklists in architecture tests. New libraries, renamed artifacts, starters, or convention plugins should not require constant test edits when no forbidden type is used by `api/core`.
 - Adding production or test dependencies from `core` to a persistence adapter just to run a convenient service test.

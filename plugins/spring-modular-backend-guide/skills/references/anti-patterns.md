@@ -18,7 +18,7 @@ Use this file during code review and scaffold review.
 
 ## Naming
 
-- Service methods use `find`, `select`, `insert`, `update`, `delete`, `list`, `create`, or `add`.
+- Service interfaces use data-access or CRUD verbs such as `find`, `select`, `insert`, `update`, `delete`, `list`, `create`, or `add` instead of application verbs like `get`, `save`, `modify`, `remove`, `exists`, or explicit domain verbs.
 - Persistence ports are named `Repository` when they are core ports.
 - Store implementation names hide technology, such as `PostStoreImpl`.
 - JPA implementation uses Spring Data `JpaRepository` as the standard Store.
@@ -58,6 +58,8 @@ Use this file during code review and scaffold review.
 - Architecture tests that hard-code exact file paths, helper class names, split interface names, Store command record names, parameter order/count/names, private call order, or proxy/decorator internals when those details are not public contracts.
 - Architecture tests whose implementation or maintenance cost is larger than the module boundary or behavior they protect.
 - Escalating every code review finding into another global architecture rule instead of classifying it as baseline modularization, opt-in project policy, or review-only guidance.
+- Adding architecture tests for service method prefixes, Store method prefixes, class suffixes, helper names, or exact DTO/command names when the issue is only naming or style guidance.
+- Adding custom parsers or broad scans whose complexity is larger than the architecture boundary they protect.
 - Adding an ArchUnit rule that forbids a cohesive read contract such as `FooRoleReader` only because the current refactor introduced `FooAuthorizationReader`; this freezes a decomposition choice instead of protecting a stable boundary.
 - Adding a broad rule that selected app packages must use the exact newly extracted Reader or SPI name, such as `FooDisplayNameReader`, when the stable rule is only avoiding write-capable service dependencies that cross ownership boundaries and expose mutation methods to consumers that should only read or compose.
 - Broad reflection/source-scan tests that turn cleanup guidance into a development blocker, such as failing every Store write method with scalar parameters or enforcing exact command record suffixes.
