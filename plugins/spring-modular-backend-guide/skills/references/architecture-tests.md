@@ -6,6 +6,8 @@ Architecture tests should guard stable architecture, not every design preference
 
 ## Gradle Dependency Checks
 
+Use Gradle/build-file checks for stable internal project boundaries: selected modules exist, `api/core` do not depend on `app`, web-support, persistence adapters, or other bounded contexts, and test-support modules stay in the intended scope. Do not build broad external Maven-coordinate blacklists for DB/web libraries. External artifacts change by Spring Boot version, starter choice, plugin convention, and vendor; instead, verify forbidden technology by actual package/type usage in source or bytecode checks.
+
 ```java
 @Test
 void sharedModuleNamesAreStable() throws Exception {
@@ -251,7 +253,7 @@ Required checks:
 - Architecture tests fail when expected `api/core/adapter.persistence` packages are absent.
 - Domain `api/core` modules do not depend on app or adapter packages.
 - Domain `api/core` modules do not depend on other bounded contexts.
-- Domain `api/core` modules do not depend on JPA, Hibernate, QueryDSL, jOOQ, Flyway, Spring Data/JDBC/ORM/transaction, or SQL APIs.
+- Domain `api/core` source or bytecode does not depend on JPA, Hibernate, QueryDSL, jOOQ, Flyway, Spring Web, Spring Data/JDBC/ORM/transaction, or SQL APIs.
 - Persistence adapters do not depend on `shared:web-support`.
 - Persistence adapters do not self-register with `@Component`, `@Service`, `@Repository`, or component-scanned `@Configuration`.
 - Service contracts use `*Service`; concrete core implementations, including decorators and variants, use `*ServiceImpl`.
@@ -267,6 +269,7 @@ Avoid required checks that:
 
 - Assert exact source file existence or one-off file paths. If source URI checks are needed to distinguish modules, keep them at stable module-boundary segments and prefer package/module metadata when available.
 - Require one exact class/interface name when several role-equivalent decompositions would be acceptable.
+- Maintain an exhaustive list of forbidden external Maven coordinates for web, DB, JDBC drivers, QueryDSL, jOOQ, Flyway, or Spring starters. If the stable boundary is "domain code must not use this technology," test package/type usage instead of dependency coordinate strings.
 - Assert exact Store write command record names, parameter order/count/names, or method signatures instead of testing service and adapter behavior. Checks may still forbid app DTOs, read projections, adapter entities, JPA entities, jOOQ records, and Spring Data types at Store boundaries, but must not fail scalar parameter lists only because a command record would be cleaner.
 - Enforce cleanup preferences with reflection/source-scan tests, such as "every Store write method must take exactly one command record" or "every command must use this exact suffix." Treat those as review/refactoring guidance unless the project has explicitly made them public contracts.
 - Inspect AOP proxy internals when the contract is only that transaction/cache ownership stays outside `core`.

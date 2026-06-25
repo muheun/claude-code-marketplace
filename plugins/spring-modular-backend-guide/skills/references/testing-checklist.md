@@ -28,6 +28,7 @@ Before adding an ArchUnit or broad source-scan test, pass this gate:
 - The failure message should describe a regression that would still be invalid if the interface or helper names changed.
 - The rule must not force one freshly extracted Reader, SPI, Store, command, helper, or DTO name when another cohesive split would also be valid.
 - If compilation, focused wiring tests, behavior tests, or code review can protect the refactor without freezing decomposition, use those instead.
+- For Gradle/build-file checks, prefer stable internal project boundaries: `api/core` must not depend on `app`, web-support, persistence adapters, or other bounded contexts. Do not maintain broad external Maven-coordinate blacklists for future DB/web libraries. Validate forbidden technology through actual source/bytecode package or type dependencies such as JPA, QueryDSL, jOOQ, Flyway, Spring Web, Spring Data, JDBC, SQL, or transaction APIs.
 - Do not add architecture tests that hard-code exact file paths, helper class names, split interface names, command record names, parameter order/count/names, private call order, or proxy/decorator internals unless those are explicit public contracts. Store write boundary checks may still forbid app DTOs, read projections, adapter entities, and persistence technology types, but they must not fail ordinary scalar parameter lists just because a command record would be cleaner.
 - Do not convert refactoring guidance into broad reflection/source-scan tests. For example, do not add a test that fails every `*Store` write method with more than N scalar parameters, every command record that lacks a preferred suffix, or every split that uses a different class name than the guide's example.
 - Service command and Store command cleanup is verified by compiling the changed contracts and by focused behavior or persistence tests when mapping, validation, SQL, or service behavior can regress. It is not verified by a global style-policing architecture test.
@@ -43,7 +44,7 @@ Before adding an ArchUnit or broad source-scan test, pass this gate:
 
 - `shared:domain` and `shared:web-support` are separate modules.
 - Domain `api/core` modules do not depend on `shared:web-support`.
-- Domain `api/core` modules do not depend on DB infrastructure bundles.
+- Domain `api/core` modules do not depend on DB infrastructure bundles. Guard this with internal project dependency checks and source/bytecode package rules, not an exhaustive list of external dependency coordinates.
 - Domain `api/core` modules do not depend on app or adapter packages.
 - Persistence adapters do not depend on `shared:web-support`.
 - `api/core` modules do not directly depend on other bounded contexts.
@@ -92,6 +93,7 @@ Common test-design failures to reject:
 
 - Treating every design preference as an architecture-test rule instead of using review judgment and behavior tests.
 - Blocking normal development with broad tests that enforce cleanup preferences, such as failing all Store write methods with scalar parameter lists or exact command naming rules.
+- Blocking normal dependency evolution with external library-coordinate blacklists in architecture tests. New libraries, renamed artifacts, starters, or convention plugins should not require constant test edits when no forbidden type is used by `api/core`.
 - Adding production or test dependencies from `core` to a persistence adapter just to run a convenient service test.
 - Replacing the target MariaDB/MySQL/PostgreSQL behavior with H2 for SQL, constraint, projection, ordering, or dialect-sensitive tests.
 - Hard-coding app migration paths in reusable adapter tests, which hides adapter-owned Flyway migrations.

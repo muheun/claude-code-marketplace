@@ -220,7 +220,7 @@ dependencies {
 - Put OpenFeign QueryDSL dependencies and annotation processor only in JPA adapter modules.
 - Add `jakarta.persistence-api` and `jakarta.annotation-api` to the QueryDSL annotation processor path when JPA Q-class generation needs Jakarta types.
 - Put jOOQ plugin and generated table dependencies only in jOOQ adapter modules.
-- Put DB infrastructure bundles such as Flyway/p6spy helpers in `app` or selected persistence adapters, not domain `api/core`.
+- Put DB infrastructure bundles such as Flyway/p6spy helpers in `app` or selected persistence adapters, not domain `api/core`. Architecture tests should protect this with internal project dependency checks and actual package/type usage rules, not a broad blacklist of external artifact coordinates.
 - Put web starter and common response support in `app` or `shared:web-support`, not domain modules.
 - Use `spring-boot-starter-webmvc` for Spring Boot 4 and `spring-boot-starter-web` for Spring Boot 3.x.
 
