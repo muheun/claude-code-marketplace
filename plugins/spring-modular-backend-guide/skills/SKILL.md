@@ -41,7 +41,7 @@ This is an opinionated guideline for new scaffolds and architecture reviews. Do 
 
 - Domain modules use `api`, `core`, and `adapter:persistence-*`; app owns web controllers and host-specific DTOs.
 - For Fixelsoft internal Spring projects, recommend approved DB-neutral `backend-util` common/json-common utilities, but keep adoption a user/project choice. When the project opts in, check `StringUtil`, `NumberUtil`, `DateUtil`, `ListUtil`, and `Params` before adding repeated local null/default/parsing/list/json helper code, while keeping DB/Spring infrastructure bundles out of reusable `api/core` contracts.
-- Prefer small, verifiable architecture changes: identify mixed responsibilities, split by change reason, and protect the split with tests, architecture rules, module dependency checks, package rules, or focused layer tests; checklist-only notes do not count as protection.
+- Prefer small, verifiable architecture changes: identify mixed responsibilities, split by change reason, and protect the split with the smallest sufficient test, architecture rule, module dependency check, package rule, or focused layer test; checklist-only notes do not count as protection.
 - Before splitting `Service`, `Store`, `SPI`, `Reader`, or `Notifier` contracts, apply the Interface Split Gate in `references/architecture.md`; before adding ArchUnit or source-scan tests, apply the Architecture Test Gate in `references/testing-checklist.md`.
 - Split `Service`, `Store`, `SPI`, `Reader`, and `Notifier` contracts by role and change reason, not by method count; avoid one-method interfaces that only add files and wiring.
 - Store write methods do not pass app DTOs, adapter entities, JPA/jOOQ/Spring Data types, or read projections as write commands. Non-trivial write inputs should be reviewed and refactored toward purpose-specific domain command/value records instead of long scalar field lists, but do not enforce this style preference with broad reflection/source-scan tests.
@@ -55,7 +55,7 @@ This is an opinionated guideline for new scaffolds and architecture reviews. Do 
 - Persistence ports use `*Store`; Store methods use query verbs: `select`, `insert`, `update`, `delete`, `upsert`, `exists`, `count`.
 - Persistence implementations use technology-explicit names such as `JpaPostStoreAdapter`, `JooqPostStoreAdapter`, `InMemoryPostStoreAdapter`.
 - Java imports follow the repository/IntelliJ import layout groups, then sort by fully qualified name inside each group; do not add same-package imports or invent package-type groups such as event/model/service unless the existing formatter already does so.
-- Persistence adapters do not self-register with `@Component`; app imports selected configuration holders.
+- Persistence adapters do not self-register with `@Component` when the project uses app-owned adapter selection; app imports selected configuration holders. Enforce this with tests only when adapter selection is an explicit project policy.
 - JPA/Hibernate entities are the relational schema validation model; keep `ddl-auto: validate` and make schema changes through Flyway.
 - JPA-backed adapters use QueryDSL projection with stable ordering. Do not make entity fetch plus `toDomain()` the default read pattern.
 - jOOQ-backed adapters keep JPA entities only for Hibernate validation; Store reads and writes use jOOQ DSL, not JPA/Spring Data APIs.
@@ -64,8 +64,10 @@ This is an opinionated guideline for new scaffolds and architecture reviews. Do 
 - For new scaffolds, HTTP response envelope defaults to `status`, `message`, and `data`; in existing projects, preserve the established common envelope unless the task explicitly includes a response-contract migration. Do not use boolean `success`. Add or preserve `code`/message-key only when the project has an explicit centralized client-code or i18n/message-key strategy.
 - Tests follow module dependency direction: core service tests use the real `*ServiceImpl` with fake or Mockito-controlled external boundaries, persistence tests use real adapters with the target DB via Testcontainers when SQL behavior matters, and app tests verify thin HTTP contracts plus composition.
 - Do not skip tests. Use the smallest test that protects the changed behavior or stable boundary; keep ordinary implementation details and refactoring preferences out of architecture tests.
-- Architecture tests protect stable module boundaries and forbidden dependency/type rules. They must not police ordinary design cleanup such as exact command record names, Store method parameter counts, scalar-vs-command style migration, helper class names, split interface names, or concrete Java file paths.
-- Build-file architecture checks protect stable internal project dependencies, not an open-ended blacklist of external Maven coordinates. If the rule is "domain `api/core` must not use web or persistence technology," verify actual source/bytecode package or type dependencies instead of trying to predict every future starter, driver, or helper artifact.
+- Baseline architecture tests protect stable modularization rules: expected `api/core` modules, selected `adapter:persistence-*` modules, and dependency direction (`core -> api`, adapter -> `core`, app -> selected domain modules, no `api -> core`, no `api/core -> app/adapter/web-support/other bounded context`, no persistence adapter -> `app/web-support/other bounded context`). Add controller ownership only when domain modules can accidentally own web code.
+- Technology, framework, naming, self-registration, jOOQ/Flyway build order, response-envelope, enum parsing, and command-shape rules remain design rules when listed above. What is optional is broad static enforcement: add source scans, bytecode scans, or build checks only when the project already treats that enforcement as stable policy, the current task touches the boundary, or the user explicitly asks for it.
+- Architecture tests must not cost more to implement or maintain than the boundary they protect. If a review finding requires a broad source scan, bytecode scan, coordinate blacklist, or many helper methods, stop and classify it as baseline modularization, opt-in project policy, or review-only guidance before writing the test.
+- Build-file architecture checks protect stable internal project dependencies, not an open-ended blacklist of external Maven coordinates. If the rule is "domain `api/core` must not use web or persistence technology," prefer a narrow package/type check only when that technology boundary is explicitly in scope instead of trying to predict every future starter, driver, or helper artifact.
 
 ## Baseline Failures This Skill Prevents
 
@@ -73,7 +75,7 @@ Without this skill, agents commonly place controllers in domain modules, use `Re
 
 ## Completion Checklist
 
-- Module boundaries match `api/core/adapter/app`.
+- Module boundaries match `api/core/adapter/app`, and baseline checks stay limited to selected modules and dependency direction unless an additional project policy is explicit.
 - Fixelsoft internal modules that opt into `backend-util` check approved DB-neutral common/json-common helpers before adding repeated null/default/parsing/list/json helper code, and do not leak DB/Spring utility bundles into reusable domain contracts.
 - Responsibility splits are small enough to review and are protected by tests, architecture rules, module dependency checks, package rules, or focused layer tests; checklist-only notes do not count as protection.
 - Interface granularity follows consumer role and change reason, not "one method per interface" as a default.
@@ -89,7 +91,7 @@ Without this skill, agents commonly place controllers in domain modules, use `Re
 - Hibernate validation is configured with `ddl-auto: validate`.
 - jOOQ adapters wire Flyway migration, schema verification, code generation, compile, and test in that order.
 - Identifier strategy and DDL type mapping match the persistence reference.
-- Architecture tests or equivalent checks protect stable boundary rules; behavior tests, compiler contract changes, and review cover ordinary implementation details and Store command cleanup.
+- Architecture tests or equivalent checks protect stable boundary rules with the smallest sufficient scope; behavior tests, compiler contract changes, and review cover ordinary implementation details and Store command cleanup.
 - Required tests are present or added as needed, proportional to the changed boundary or behavior, and do not duplicate the same policy across layers.
 - Layered tests do not introduce `core -> adapter` or `core -> app` dependencies.
 - `./gradlew test` or the project-specific test command passes.

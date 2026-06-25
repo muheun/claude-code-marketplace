@@ -56,10 +56,13 @@ Use this file during code review and scaffold review.
 ## Tests
 
 - Architecture tests that hard-code exact file paths, helper class names, split interface names, Store command record names, parameter order/count/names, private call order, or proxy/decorator internals when those details are not public contracts.
+- Architecture tests whose implementation or maintenance cost is larger than the module boundary or behavior they protect.
+- Escalating every code review finding into another global architecture rule instead of classifying it as baseline modularization, opt-in project policy, or review-only guidance.
 - Adding an ArchUnit rule that forbids a cohesive read contract such as `FooRoleReader` only because the current refactor introduced `FooAuthorizationReader`; this freezes a decomposition choice instead of protecting a stable boundary.
 - Adding a broad rule that selected app packages must use the exact newly extracted Reader or SPI name, such as `FooDisplayNameReader`, when the stable rule is only avoiding write-capable service dependencies that cross ownership boundaries and expose mutation methods to consumers that should only read or compose.
 - Broad reflection/source-scan tests that turn cleanup guidance into a development blocker, such as failing every Store write method with scalar parameters or enforcing exact command record suffixes.
 - Broad build-file tests that try to ban every possible external Maven coordinate for web, DB, QueryDSL, jOOQ, Flyway, JDBC drivers, or Spring starters instead of checking stable internal project boundaries and actual forbidden package/type usage.
+- Broad bytecode/source scans for technology packages when the project only asked to verify `api/core/adapter/app` module separation and dependency direction.
 - Broad reflection/source-scan tests that force every enum to have a `from` method or lookup map even when the enum has no string parsing contract.
 - Service tests verify only Mockito interactions without asserting service output, state changes, or exceptions from the real `*ServiceImpl`.
 - Service tests mock stateful `*Store` flows so heavily that count, paging, or saved-then-read behavior is no longer realistic.

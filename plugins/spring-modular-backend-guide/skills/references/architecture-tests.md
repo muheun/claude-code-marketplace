@@ -2,23 +2,31 @@
 
 Use these as compact starting points. Adapt package names and module names to the project.
 
-Architecture tests should guard stable architecture, not every design preference. Use these examples for dependency direction, forbidden frameworks, controller placement, adapter self-registration, and build/persistence contracts. See the final avoid list before adding new required checks.
+Architecture tests should guard stable architecture, not every design preference. Start with the baseline modularization checks: selected modules exist and dependency direction is correct. Add broad source/bytecode checks for technology bans, controller placement, adapter self-registration, and build/persistence policies only when the project already treats that static enforcement as stable policy, the current task touches the boundary, or the user asks to enforce it.
 
-## Gradle Dependency Checks
+## Baseline Gradle Checks
 
-Use Gradle/build-file checks for stable internal project boundaries: selected modules exist, `api/core` do not depend on `app`, web-support, persistence adapters, or other bounded contexts, and test-support modules stay in the intended scope. Do not build broad external Maven-coordinate blacklists for DB/web libraries. External artifacts change by Spring Boot version, starter choice, plugin convention, and vendor; instead, verify forbidden technology by actual package/type usage in source or bytecode checks.
+Use Gradle/build-file checks for stable internal project boundaries: selected modules exist, `core` depends on its own `api`, `api` does not depend on its own `core`, selected `adapter:persistence-*` modules depend on their own `core`, `app` composes selected domain modules, `api/core` do not depend on `app`, adapters, web-support, or other bounded contexts, and persistence adapters do not depend on `app`, web-support, or other bounded contexts. The compact example below only checks selected module inclusion; add build dependency checks when the build file is the right enforcement point for dependency direction.
+
+Do not build broad external Maven-coordinate blacklists for DB/web libraries. External artifacts change by Spring Boot version, starter choice, plugin convention, and vendor; if a project opts into technology bans, verify actual package/type usage with a narrow source or bytecode check.
 
 ```java
 @Test
-void sharedModuleNamesAreStable() throws Exception {
+void selectedDomainModulesAreIncluded() throws Exception {
     var settings = Files.readString(Path.of("..", "settings.gradle.kts"));
 
-    assertThat(settings).contains("\"shared:domain\"", "\"shared:web-support\"");
-    assertThat(settings).doesNotContain("\"shared:kernel\"");
+    assertThat(settings).contains(
+            "\"leave:api\"",
+            "\"leave:core\"",
+            "\"leave:adapter:persistence-jooq\"",
+            "\"member:api\"",
+            "\"member:core\"",
+            "\"member:adapter:persistence-jpa\"",
+            "\"app\"");
 }
 ```
 
-## API And Core Boundary Checks
+## Baseline API/Core Boundary Checks
 
 ```java
 @Test
@@ -27,116 +35,92 @@ void expectedModulePackagesExist() {
             .withImportOption(new ImportOption.DoNotIncludeTests())
             .importPackages("com.example");
 
-    assertPackageExists(classes, ".board.api.");
-    assertPackageExists(classes, ".board.core.");
-    assertPackageExists(classes, ".board.adapter.persistence.");
-    assertPackageExists(classes, ".comment.api.");
-    assertPackageExists(classes, ".comment.core.");
-    assertPackageExists(classes, ".comment.adapter.persistence.");
-    assertPackageExists(classes, ".file.api.");
-    assertPackageExists(classes, ".file.core.");
-    assertPackageExists(classes, ".file.adapter.persistence.");
+    assertPackageExists(classes, ".leave.api.");
+    assertPackageExists(classes, ".leave.core.");
+    assertPackageExists(classes, ".leave.adapter.persistence.");
+    assertPackageExists(classes, ".member.api.");
+    assertPackageExists(classes, ".member.core.");
+    assertPackageExists(classes, ".member.adapter.persistence.");
 }
 
 @Test
-void apiModulesStayAsPublicContracts() {
+void apiModulesDoNotDependOnCoreAdaptersAppWebSupportOrOtherContexts() {
     var classes = new ClassFileImporter()
             .withImportOption(new ImportOption.DoNotIncludeTests())
             .importPackages("com.example");
 
     noClasses()
-            .that().resideInAnyPackage("..board.api..", "..comment.api..", "..file.api..")
+            .that().resideInAnyPackage("..leave.api..")
             .should().dependOnClassesThat().resideInAnyPackage(
-                    "org.springframework..",
-                    "..core..",
+                    "..leave.core..",
+                    "..app..",
                     "..adapter..",
                     "..websupport..",
-                    "..web.support..")
+                    "..web.support..",
+                    "..member..")
+            .check(classes);
+
+    noClasses()
+            .that().resideInAnyPackage("..member.api..")
+            .should().dependOnClassesThat().resideInAnyPackage(
+                    "..member.core..",
+                    "..app..",
+                    "..adapter..",
+                    "..websupport..",
+                    "..web.support..",
+                    "..leave..")
             .check(classes);
 }
 
 @Test
-void apiAndCoreModulesDoNotDependOnAppOrAdapters() {
+void coreModulesDoNotDependOnAppAdaptersWebSupportOrOtherContexts() {
     var classes = new ClassFileImporter()
             .withImportOption(new ImportOption.DoNotIncludeTests())
             .importPackages("com.example");
 
     noClasses()
-            .that().resideInAnyPackage(
-                    "..board.api..", "..board.core..",
-                    "..comment.api..", "..comment.core..",
-                    "..file.api..", "..file.core..")
+            .that().resideInAnyPackage("..leave.core..")
             .should().dependOnClassesThat().resideInAnyPackage(
                     "..app..",
-                    "..adapter..")
-            .check(classes);
-}
-
-@Test
-void domainAndPersistenceModulesDoNotDependOnWebSupport() {
-    var classes = new ClassFileImporter()
-            .withImportOption(new ImportOption.DoNotIncludeTests())
-            .importPackages("com.example");
-
-    noClasses()
-            .that().resideInAnyPackage(
-                    "..board.api..", "..board.core..", "..board.adapter.persistence..",
-                    "..comment.api..", "..comment.core..", "..comment.adapter.persistence..",
-                    "..file.api..", "..file.core..", "..file.adapter.persistence..")
-            .should().dependOnClassesThat().resideInAnyPackage(
+                    "..adapter..",
                     "..websupport..",
-                    "..web.support..")
-            .check(classes);
-}
-
-@Test
-void apiAndCoreModulesDoNotDependOnOtherBoundedContexts() {
-    var classes = new ClassFileImporter()
-            .withImportOption(new ImportOption.DoNotIncludeTests())
-            .importPackages("com.example");
-
-    noClasses()
-            .that().resideInAnyPackage("..board.api..", "..board.core..")
-            .should().dependOnClassesThat().resideInAnyPackage("..comment..", "..file..")
+                    "..web.support..",
+                    "..member..")
             .check(classes);
 
     noClasses()
-            .that().resideInAnyPackage("..comment.api..", "..comment.core..")
-            .should().dependOnClassesThat().resideInAnyPackage("..board..", "..file..")
-            .check(classes);
-
-    noClasses()
-            .that().resideInAnyPackage("..file.api..", "..file.core..")
-            .should().dependOnClassesThat().resideInAnyPackage("..board..", "..comment..")
-            .check(classes);
-}
-
-@Test
-void apiAndCoreModulesDoNotDependOnPersistenceTechnology() {
-    var classes = new ClassFileImporter()
-            .withImportOption(new ImportOption.DoNotIncludeTests())
-            .importPackages("com.example");
-
-    noClasses()
-            .that().resideInAnyPackage(
-                    "..board.api..", "..board.core..",
-                    "..comment.api..", "..comment.core..",
-                    "..file.api..", "..file.core..")
+            .that().resideInAnyPackage("..member.core..")
             .should().dependOnClassesThat().resideInAnyPackage(
-                    "jakarta.persistence..",
-                    "javax.persistence..",
-                    "com.querydsl..",
-                    "org.hibernate..",
-                    "org.jooq..",
-                    "org.flywaydb..",
-                    "org.springframework.data..",
-                    "org.springframework.jdbc..",
-                    "org.springframework.orm..",
-                    "org.springframework.transaction..",
-                    "jakarta.transaction..",
-                    "javax.transaction..",
-                    "java.sql..",
-                    "javax.sql..")
+                    "..app..",
+                    "..adapter..",
+                    "..websupport..",
+                    "..web.support..",
+                    "..leave..")
+            .check(classes);
+}
+
+@Test
+void selectedPersistenceAdaptersDoNotDependOnAppWebSupportOrOtherContexts() {
+    var classes = new ClassFileImporter()
+            .withImportOption(new ImportOption.DoNotIncludeTests())
+            .importPackages("com.example");
+
+    noClasses()
+            .that().resideInAnyPackage("..leave.adapter.persistence..")
+            .should().dependOnClassesThat().resideInAnyPackage(
+                    "..app..",
+                    "..websupport..",
+                    "..web.support..",
+                    "..member..")
+            .check(classes);
+
+    noClasses()
+            .that().resideInAnyPackage("..member.adapter.persistence..")
+            .should().dependOnClassesThat().resideInAnyPackage(
+                    "..app..",
+                    "..websupport..",
+                    "..web.support..",
+                    "..leave..")
             .check(classes);
 }
 
@@ -152,109 +136,12 @@ private static void assertPackageExists(JavaClasses classes, String packagePart)
 }
 ```
 
-## Web And Persistence Checks
+## Conditional Static Enforcement Checks
 
-```java
-@Test
-void domainModulesDoNotOwnHttpAdapters() {
-    var classes = new ClassFileImporter()
-            .withImportOption(new ImportOption.DoNotIncludeTests())
-            .importPackages("com.example");
-
-    var webAdapterPackages = classes.stream()
-            .filter(javaClass -> javaClass.getPackageName().contains(".adapter.web"))
-            .map(JavaClass::getName)
-            .toList();
-
-    assertThat(webAdapterPackages).isEmpty();
-
-    var domainControllers = classes.stream()
-            .filter(javaClass -> javaClass.isAnnotatedWith("org.springframework.web.bind.annotation.RestController")
-                    || javaClass.isAnnotatedWith("org.springframework.stereotype.Controller"))
-            .filter(ArchitectureTest::isFromDomainModuleSource)
-            .map(JavaClass::getName)
-            .toList();
-
-    assertThat(domainControllers).isEmpty();
-}
-
-private static boolean isFromDomainModuleSource(JavaClass javaClass) {
-    // Use source URI only as a fallback to distinguish stable Gradle module boundaries.
-    // Prefer package or module metadata when the project exposes it.
-    var sourceUri = javaClass.getSource()
-            .map(source -> source.getUri().toString())
-            .orElse("");
-    return sourceUri.contains("/board/api/")
-            || sourceUri.contains("/board/core/")
-            || sourceUri.contains("/board/adapter/")
-            || sourceUri.contains("/comment/api/")
-            || sourceUri.contains("/comment/core/")
-            || sourceUri.contains("/comment/adapter/")
-            || sourceUri.contains("/file/api/")
-            || sourceUri.contains("/file/core/")
-            || sourceUri.contains("/file/adapter/");
-}
-
-@Test
-void jpaAdaptersDoNotUseSpringDataRepositoryAsStoreImplementation() {
-    var classes = new ClassFileImporter()
-            .withImportOption(new ImportOption.DoNotIncludeTests())
-            .importPackages("com.example");
-
-    noClasses()
-            .that().resideInAnyPackage("..adapter.persistence..")
-            .should().dependOnClassesThat()
-            .haveFullyQualifiedName("org.springframework.data.jpa.repository.JpaRepository")
-            .check(classes);
-}
-
-@Test
-void persistenceAdaptersDoNotSelfRegisterWithComponentScanning() {
-    var classes = new ClassFileImporter()
-            .withImportOption(new ImportOption.DoNotIncludeTests())
-            .importPackages("com.example");
-
-    var componentRegisteredAdapters = classes.stream()
-            .filter(javaClass -> javaClass.getPackageName().contains(".adapter.persistence"))
-            .filter(javaClass -> javaClass.isAnnotatedWith("org.springframework.stereotype.Component")
-                    || javaClass.isAnnotatedWith("org.springframework.stereotype.Service")
-                    || javaClass.isAnnotatedWith("org.springframework.stereotype.Repository"))
-            .map(JavaClass::getName)
-            .toList();
-
-    assertThat(componentRegisteredAdapters).isEmpty();
-
-    var componentScannedConfigurations = classes.stream()
-            .filter(javaClass -> javaClass.getPackageName().contains(".adapter.persistence"))
-            .filter(javaClass -> javaClass.getSimpleName().endsWith("Configuration"))
-            .filter(javaClass -> javaClass.isAnnotatedWith("org.springframework.context.annotation.Configuration"))
-            .map(JavaClass::getName)
-            .toList();
-
-    assertThat(componentScannedConfigurations).isEmpty();
-}
-```
-
-## Configuration Checks
-
-```java
-@Test
-void scaffoldUsesFlywayAndValidateDdl() throws Exception {
-    var applicationYaml = Files.readString(Path.of("src", "main", "resources", "application.yml"));
-
-    assertThat(applicationYaml).contains("ddl-auto: validate");
-    assertThat(applicationYaml).doesNotContain("ddl-auto: create", "ddl-auto: create-drop", "ddl-auto: update");
-}
-```
-
-Required checks:
+The guide can still make a design rule mandatory while keeping broad static enforcement proportional. Add these checks only when the rule is already a project standard, the current task touches that boundary, or the user asks to enforce it:
 
 - Domain modules do not contain controllers or `adapter:web`.
-- Architecture tests fail when expected `api/core/adapter.persistence` packages are absent.
-- Domain `api/core` modules do not depend on app or adapter packages.
-- Domain `api/core` modules do not depend on other bounded contexts.
-- Domain `api/core` source or bytecode does not depend on JPA, Hibernate, QueryDSL, jOOQ, Flyway, Spring Web, Spring Data/JDBC/ORM/transaction, or SQL APIs.
-- Persistence adapters do not depend on `shared:web-support`.
+- Domain `api/core` source or bytecode does not use JPA, Hibernate, QueryDSL, jOOQ, Flyway, Spring Web, Spring Data/JDBC/ORM/transaction, or SQL APIs.
 - Persistence adapters do not self-register with `@Component`, `@Service`, `@Repository`, or component-scanned `@Configuration`.
 - Service contracts use `*Service`; concrete core implementations, including decorators and variants, use `*ServiceImpl`.
 - App web/controller code depends on `*:api` service contracts, not concrete `*ServiceImpl` classes.
@@ -265,11 +152,12 @@ Required checks:
 - jOOQ code generation runs after Flyway-migrated schema verification and before `compileJava`/`test`.
 - Paging mutation stays in service code, not Store adapters.
 
-Avoid required checks that:
+## Avoid Required Checks That
 
 - Assert exact source file existence or one-off file paths. If source URI checks are needed to distinguish modules, keep them at stable module-boundary segments and prefer package/module metadata when available.
 - Require one exact class/interface name when several role-equivalent decompositions would be acceptable.
-- Maintain an exhaustive list of forbidden external Maven coordinates for web, DB, JDBC drivers, QueryDSL, jOOQ, Flyway, or Spring starters. If the stable boundary is "domain code must not use this technology," test package/type usage instead of dependency coordinate strings.
-- Assert exact Store write command record names, parameter order/count/names, or method signatures instead of testing service and adapter behavior. Checks may still forbid app DTOs, read projections, adapter entities, JPA entities, jOOQ records, and Spring Data types at Store boundaries, but must not fail scalar parameter lists only because a command record would be cleaner.
-- Enforce cleanup preferences with reflection/source-scan tests, such as "every Store write method must take exactly one command record" or "every command must use this exact suffix." Treat those as review/refactoring guidance unless the project has explicitly made them public contracts.
+- Maintain an exhaustive list of forbidden external Maven coordinates for web, DB, JDBC drivers, QueryDSL, jOOQ, Flyway, or Spring starters.
+- Promote every code review note into a global architecture test. First decide whether the rule is baseline modularization, opt-in project policy, or review-only guidance.
+- Assert exact Store write command record names, parameter order/count/names, or method signatures instead of testing service and adapter behavior.
+- Enforce cleanup preferences with reflection/source-scan tests, such as "every Store write method must take exactly one command record" or "every command must use this exact suffix."
 - Inspect AOP proxy internals when the contract is only that transaction/cache ownership stays outside `core`.
