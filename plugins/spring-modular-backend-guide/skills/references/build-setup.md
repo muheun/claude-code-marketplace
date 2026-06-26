@@ -1,5 +1,17 @@
 # Build Setup Reference
 
+## Contents
+
+- [settings.gradle.kts](#settingsgradlekts)
+- [Root build.gradle.kts](#root-buildgradlekts)
+- [Dependency Shape](#dependency-shape)
+  - [JPA/QueryDSL Adapter Modules](#jpaquerydsl-adapter-modules)
+  - [jOOQ Adapter Modules](#jooq-adapter-modules)
+  - [jOOQ Codegen Order](#jooq-codegen-order)
+  - [App Module Dependencies](#app-module-dependencies)
+- [Plugin Placement](#plugin-placement)
+- [Migration Resources](#migration-resources)
+
 Use Gradle Kotlin DSL for new scaffolds unless the existing project already uses another build style.
 
 ## settings.gradle.kts
@@ -130,7 +142,7 @@ dependencies {
 
 Use granular Spring Framework dependencies when this module only provides `ApiResponse`, `ResponseEntity` helpers, and `@RestControllerAdvice`. Use a Boot starter only when the project intentionally standardizes shared web infrastructure on starter dependencies.
 
-Persistence adapter modules:
+### JPA/QueryDSL Adapter Modules
 
 ```kotlin
 plugins {
@@ -149,7 +161,7 @@ dependencies {
 
 Treat this as the required JPA adapter baseline for projects using this guide, not an optional embellishment. Use the OpenFeign-maintained QueryDSL artifacts under `io.github.openfeign.querydsl`; do not use legacy `com.querydsl` coordinates for new scaffolds. When scaffolding a `persistence-jpa` module or `Jpa*StoreAdapter`, include QueryDSL dependencies and annotation processors before writing read-side adapter code. If the user explicitly rejects QueryDSL for the project, stop and ask for the selected persistence-read alternative instead of silently falling back to Criteria, JPQL string queries, entity fetch mapping, or `JpaRepository`.
 
-jOOQ adapter modules:
+### jOOQ Adapter Modules
 
 ```kotlin
 plugins {
@@ -167,6 +179,8 @@ dependencies {
 ```
 
 jOOQ-backed adapters still keep JPA entity declarations and `ddl-auto: validate` for schema verification. Do not add Spring Data repositories or use `EntityManager` for Store reads/writes in the jOOQ-backed Store.
+
+### jOOQ Codegen Order
 
 jOOQ adapters must generate sources from a Flyway-migrated schema before Java compilation and tests. Use project-specific task names, but keep this dependency order:
 
@@ -189,6 +203,8 @@ Gradle wiring must make `generateJooq` depend on the migration and schema verifi
 - The codegen database product or dialect differs from the target runtime database.
 
 Do not generate jOOQ classes from a manually prepared developer-local database. Keep the codegen database separate from integration-test runtime databases where practical.
+
+### App Module Dependencies
 
 The `app` module selects concrete adapters:
 

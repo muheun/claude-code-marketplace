@@ -1,5 +1,17 @@
 # Testing Checklist
 
+## Contents
+
+- [Change Strategy Checks](#change-strategy-checks)
+- [Test Scope Checks](#test-scope-checks)
+  - [Architecture Test Gate](#architecture-test-gate)
+- [Module Boundary Rules](#module-boundary-rules)
+- [Naming Rules](#naming-rules)
+- [Persistence Rules](#persistence-rules)
+- [Layered Test Strategy](#layered-test-strategy)
+- [Web Rules](#web-rules)
+- [Verification Commands](#verification-commands)
+
 Add tests for changed behavior and stable module boundaries. Keep architecture tests small: selected module existence and dependency direction first. Use `architecture-tests.md` for compact ArchUnit examples.
 
 The skill guides implementation and review judgment. Tests are guardrails for regressions that are cheap and stable to detect; they are not a substitute for reading the guide.
@@ -24,7 +36,7 @@ The skill guides implementation and review judgment. Tests are guardrails for re
 - Validation effort must stay proportional to the change. If an architecture test needs more code than the implementation it protects, first reduce it to the baseline modularization rule or keep the finding as review guidance.
 - Do not add tests because the guide could be ignored. The agent using the guide must apply review-only rules during implementation and review.
 
-#### Architecture Test Gate
+### Architecture Test Gate
 
 Before adding an ArchUnit or broad source-scan test, pass this gate:
 

@@ -1,5 +1,16 @@
 # Naming Reference
 
+## Contents
+
+- [Java Import Ordering](#java-import-ordering)
+- [Java Test Helper Formatting](#java-test-helper-formatting)
+- [Service Method Names](#service-method-names)
+- [Service Input Names](#service-input-names)
+- [Enum Input Parsing and Factory Names](#enum-input-parsing-and-factory-names)
+- [Service Implementation Names](#service-implementation-names)
+- [Persistence Port Names](#persistence-port-names)
+- [Adapter Names](#adapter-names)
+
 ## Java Import Ordering
 
 Follow the IntelliJ import layout used by the project, then sort alphabetically

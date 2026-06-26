@@ -1,5 +1,18 @@
 # Persistence Reference
 
+## Contents
+
+- [Search And Paging](#search-and-paging)
+- [Projection And Mapping](#projection-and-mapping)
+- [Store Write Inputs](#store-write-inputs)
+  - [Command Granularity](#command-granularity)
+  - [Service Command vs Store Command](#service-command-vs-store-command)
+- [Identifier Strategy](#identifier-strategy)
+- [JPA And QueryDSL](#jpa-and-querydsl)
+- [jOOQ](#jooq)
+- [Flyway And DDL](#flyway-and-ddl)
+- [backend-util](#backend-util)
+
 ## Search And Paging
 
 For internal Fixelsoft projects, Search DTOs may extend a DB-neutral `backend-util` `Paging<T>` only when that artifact is approved as a public API contract. Do not make domain `api` depend on Spring DB bundles, Flyway, p6spy, JDBC drivers, or persistence helper packages. For general or open projects, create a local paging contract instead.

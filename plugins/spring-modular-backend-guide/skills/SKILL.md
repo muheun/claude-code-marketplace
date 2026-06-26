@@ -33,66 +33,29 @@ This is an opinionated guideline for new scaffolds and architecture reviews. Do 
 | Layered service, persistence, or app test strategy | `references/testing-checklist.md` and `references/persistence.md` |
 | Code review or readiness check | `references/anti-patterns.md`, `references/testing-checklist.md`, and any changed-area references above |
 
-3. Apply the non-negotiable rules below before writing or reviewing code.
-4. Before writing persistence adapter code, make the selected technology contract explicit from `references/persistence.md` and `references/build-setup.md`. In this guide, choosing JPA means using JPA with QueryDSL for Store reads: include QueryDSL dependency/annotation processing and use QueryDSL projection reads. Do not substitute Criteria, JPQL, `JpaRepository`, or entity fetch reads unless the user explicitly rejects QueryDSL for the project.
-5. Verify with targeted tests first, then the full available build/test command.
+3. Apply the core guardrails below, then follow the loaded references for detailed judgment.
+4. Before writing persistence adapter code, make the selected technology contract explicit from `references/persistence.md` and `references/build-setup.md`. In this guide, choosing JPA means using JPA with QueryDSL for Store reads unless the user explicitly rejects QueryDSL for the project.
+5. Verify with focused behavior, wiring, build, layer, or architecture checks that match the changed boundary; then run the full available build/test command.
 
-## Non-Negotiable Rules
+## Core Guardrails
 
 - Domain modules use `api`, `core`, and `adapter:persistence-*`; app owns web controllers and host-specific DTOs.
-- For Fixelsoft internal Spring projects, recommend approved DB-neutral `backend-util` common/json-common utilities, but keep adoption a user/project choice. When the project opts in, check `StringUtil`, `NumberUtil`, `DateUtil`, `ListUtil`, and `Params` before adding repeated local null/default/parsing/list/json helper code, while keeping DB/Spring infrastructure bundles out of reusable `api/core` contracts.
-- Prefer small, verifiable architecture changes: identify mixed responsibilities, split by change reason, and protect real behavior or stable module boundaries with the smallest sufficient check. Do not turn every review guideline into an automated test.
-- Before splitting `Service`, `Store`, `SPI`, `Reader`, or `Notifier` contracts, apply the Interface Split Gate in `references/architecture.md`; before adding or expanding ArchUnit, source-scan, reflection, or build-file tests, apply the Architecture Test Gate in `references/testing-checklist.md`.
-- Split `Service`, `Store`, `SPI`, `Reader`, and `Notifier` contracts by role and change reason, not by method count; avoid one-method interfaces that only add files and wiring.
-- Store write methods do not pass app DTOs, adapter entities, JPA/jOOQ/Spring Data types, or read projections as write commands. Non-trivial write inputs should be reviewed and refactored toward purpose-specific domain command/value records instead of long scalar field lists, but do not enforce this style preference with broad reflection/source-scan tests.
-- Domain `api/core` modules do not depend on other bounded contexts, app, web-support, persistence adapters, Spring MVC, JPA, or DB technology.
-- Domain `api` may expose only DB-neutral paging/search or explicitly approved backend-util public contracts; utility helper classes stay implementation details, and DB infrastructure bundles stay in app or selected persistence adapters.
-- Reusable modules expose SPI contracts from `api`; app or host composition implements them.
-- Service contracts are `*Service` interfaces in `api`; concrete core implementations use `*ServiceImpl`.
-- Service methods use application verbs: `get`, `save`, `modify`, `remove`, `exists`, plus explicit domain verbs like `attach`. Avoid data-access or CRUD vocabulary such as `find`, `select`, `insert`, `update`, `delete`, `list`, `create`, or `add` in service interfaces; enforce this during implementation and review, not with broad global architecture tests unless the project explicitly adopts naming enforcement.
-- Controller request DTOs are app-owned HTTP contracts. Service write commands live in `*:api` when a use case has non-trivial input. Store write commands live in `core.port` and represent persistence write intent. Do not expose `core.port` Store commands as service API input, and share a command only when it is web-neutral, persistence-neutral, and has the exact same write intent.
-- External and stored string enum inputs are parsed at their owning boundary. Do not call `Enum.valueOf(...)` directly for user/API/integration strings or database rows; use an app-owned parser, adapter mapper, or domain enum factory. Use reusable domain enum factories only for web-neutral canonical tokens; keep channel-specific aliases, defaults, localization, and response messages out of reusable domain enums.
-- Persistence ports use `*Store`; Store methods use query verbs: `select`, `insert`, `update`, `delete`, `upsert`, `exists`, `count`. Enforce Store vocabulary during implementation and review, not with broad global architecture tests unless the project explicitly adopts naming enforcement.
-- Persistence implementations use technology-explicit names such as `JpaPostStoreAdapter`, `JooqPostStoreAdapter`, `InMemoryPostStoreAdapter`.
-- Java imports follow the repository/IntelliJ import layout groups, then sort by fully qualified name inside each group; do not add same-package imports or invent package-type groups such as event/model/service unless the existing formatter already does so.
-- Persistence adapters do not self-register with `@Component` when the project uses app-owned adapter selection; app imports selected configuration holders. Enforce this with tests only when adapter selection is an explicit project policy.
-- JPA/Hibernate entities are the relational schema validation model; keep `ddl-auto: validate` and make schema changes through Flyway.
-- JPA-backed adapters use QueryDSL projection with stable ordering. Do not make entity fetch plus `toDomain()` the default read pattern.
-- jOOQ-backed adapters keep JPA entities only for Hibernate validation; Store reads and writes use jOOQ DSL, not JPA/Spring Data APIs.
-- jOOQ generated sources come from a Flyway-migrated schema before compile/test, not from a stale manual database.
-- Paging result assembly belongs in service: `countBy`, `calcPaging`, `selectBy`, `setBody`.
-- For new scaffolds, HTTP response envelope defaults to `status`, `message`, and `data`; in existing projects, preserve the established common envelope unless the task explicitly includes a response-contract migration. Do not use boolean `success`. Add or preserve `code`/message-key only when the project has an explicit centralized client-code or i18n/message-key strategy.
-- Tests follow module dependency direction: core service tests use the real `*ServiceImpl` with fake or Mockito-controlled external boundaries, persistence tests use real adapters with the target DB via Testcontainers when SQL behavior matters, and app tests verify thin HTTP contracts plus composition.
-- Do not skip tests for changed behavior. Use focused behavior, wiring, build, or layer tests first; use architecture tests only when they protect a stable boundary that compilation and ordinary tests cannot protect cheaply.
-- Baseline architecture tests protect only stable modularization rules: selected `api/core` modules, selected `adapter:persistence-*` modules, and dependency direction (`core -> api`, adapter -> `core`, app -> selected domain modules, no `api -> core`, no `api/core -> app/adapter/web-support/other bounded context`, no persistence adapter -> `app/web-support/other bounded context`). Add controller ownership only when domain modules have actually leaked or are likely to leak web code.
-- Technology, framework, naming, self-registration, jOOQ/Flyway build order, response-envelope, enum parsing, and command-shape rules remain design rules when listed above. What is optional is broad static enforcement: add source scans, bytecode scans, or build checks only when the project already treats that enforcement as stable policy, the current task touches the boundary, or the user explicitly asks for it.
-- Architecture tests must not cost more to implement or maintain than the boundary they protect. If a review finding requires a broad source scan, bytecode scan, coordinate blacklist, custom parser, or many helper methods, stop and classify it as baseline modularization, opt-in project policy, or review-only guidance before writing the test.
-- The skill is responsible for guiding implementation and review judgment. Do not compensate for an agent failing to read or apply the guide by adding brittle tests for naming rules, exact decomposition, helper names, DTO/command shapes, or future library coordinates.
-- Build-file architecture checks protect stable internal project dependencies, not an open-ended blacklist of external Maven coordinates. If the rule is "domain `api/core` must not use web or persistence technology," prefer a narrow package/type check only when that technology boundary is explicitly in scope instead of trying to predict every future starter, driver, or helper artifact.
+- Domain `api/core` modules do not depend on app, web-support, persistence adapters, Spring MVC, JPA, DB technology, or other bounded contexts unless a reference explicitly allows it.
+- Reusable modules expose service APIs and SPI contracts; app or host composition owns HTTP endpoints, adapter selection, and cross-domain wiring.
+- Controller request DTOs are app-owned HTTP contracts. Service commands live in `*:api`; Store commands live in `core.port`. Share command types only when the boundary and write intent are truly identical.
+- Store write methods do not receive app DTOs, adapter entities, JPA/jOOQ/Spring Data types, read projections, or HTTP contracts.
+- Persistence choices are explicit: JPA means QueryDSL projection reads by default; jOOQ keeps JPA entities for Hibernate validation but uses jOOQ DSL for reads/writes; schema changes go through Flyway.
+- Naming, enum parsing, response envelopes, adapter registration, and import ordering are design/review rules first. Add static enforcement only when the project treats the policy as stable or the task explicitly touches that boundary.
+- Tests follow dependency direction. Prefer focused behavior, wiring, layer, and build checks; use architecture tests only for stable boundaries ordinary tests cannot protect cheaply.
+- For Fixelsoft internal projects, recommend approved DB-neutral `backend-util` common/json-common utilities when the project opts in, but keep DB/Spring utility bundles out of reusable domain contracts.
 
-## Baseline Failures This Skill Prevents
+## Frequent Failure Signals
 
-Without this skill, agents commonly place controllers in domain modules, use `Repository/JpaRepository/find/save/create` as defaults, expose reusable modules as HTTP modules, perform big-bang architecture rewrites, split classes only because they are long, create one-method contracts with no distinct role or change reason, extract abstractions with no protecting test, architecture rule, dependency check, package rule, or focused layer test, over-expand tests into duplicated implementation checks, turn build-file architecture tests into brittle external coordinate blacklists, flatten Java import layout groups into one global alphabetical list, pass app request DTOs or `core.port` Store commands through service contracts, mechanically create DTO/command/entity variants with no distinct reason, push service field lists down into Store write ports, reuse read projections, app DTOs, JPA entities, jOOQ records, or Spring Data types as write commands, scatter direct `Enum.valueOf(...)` parsing across app/adapters instead of using parsers or enum factories, add repeated null-safe string/date/number/list/json helper code without checking approved `backend-util` utilities when the project has opted in, put Flyway migrations only in app, generate jOOQ classes from stale local schemas, drop Hibernate validation when jOOQ is selected, wire compile before codegen, return a boolean `success` field, or put paging mutation inside persistence. Treat those as architecture violations unless the user explicitly overrides the guideline.
+If you see controllers in domain modules, app DTOs passed into service/store contracts, one-method interfaces with no distinct role, JPA entity fetch reads used as the default Store read model, direct `Enum.valueOf(...)` parsing at boundaries, broad source scans for review-only preferences, or build checks that blacklist open-ended external coordinates, read `references/anti-patterns.md` plus the changed-area references from the routing table before editing.
 
 ## Completion Checklist
 
-- Module boundaries match `api/core/adapter/app`, and baseline checks stay limited to selected modules and dependency direction unless an additional project policy is explicit.
-- Fixelsoft internal modules that opt into `backend-util` check approved DB-neutral common/json-common helpers before adding repeated null/default/parsing/list/json helper code, and do not leak DB/Spring utility bundles into reusable domain contracts.
-- Responsibility splits are small enough to review and are protected by tests, architecture rules, module dependency checks, package rules, or focused layer tests; checklist-only notes do not count as protection.
-- Interface granularity follows consumer role and change reason, not "one method per interface" as a default.
-- Gradle includes and dependencies match the selected modules and adapters.
-- Controllers and HTTP DTOs are in app packages.
-- App controllers and workflows depend on `*:api` `*Service` contracts, not `*:core` `*ServiceImpl` classes.
-- Controller DTOs, service commands, Store commands, and entities are split by boundary and change reason. Do not pass app request DTOs into domain service/store contracts, do not expose `core.port` Store commands as service API inputs, and do not create extra command types when scalar parameters or an existing web-neutral command are clearer.
-- Cross-domain calls use SPI or app composition, not direct domain dependencies.
-- Persistence naming and service naming follow the vocabulary rules.
-- Non-trivial Store write inputs are reviewed and refactored toward purpose-specific domain records or value objects where it improves readability and contract stability; domain-contract validation is enforced in those inputs or service policy, and adapter entity annotations are not sufficient alone.
-- Java imports remain sorted by fully qualified name within the repository import layout groups, with no new same-package imports added.
-- JPA/QueryDSL/jOOQ/Flyway choices match the persistence reference.
-- Hibernate validation is configured with `ddl-auto: validate`.
-- jOOQ adapters wire Flyway migration, schema verification, code generation, compile, and test in that order.
-- Identifier strategy and DDL type mapping match the persistence reference.
-- Architecture tests or equivalent checks protect stable boundary rules with the smallest sufficient scope; behavior tests, compiler contract changes, and review cover ordinary implementation details and Store command cleanup.
-- Required tests are present or added as needed, proportional to the changed boundary or behavior, and do not duplicate the same policy across layers. Review-only guidance is documented or handled during review, not frozen into architecture tests.
-- Layered tests do not introduce `core -> adapter` or `core -> app` dependencies.
-- `./gradlew test` or the project-specific test command passes.
+- Loaded every reference required by the work type and any changed-area reference.
+- Module boundaries, command/DTO ownership, persistence technology, and test scope match the relevant references.
+- New or changed enforcement checks protect stable boundaries rather than incidental naming, helper shape, or future library coordinates.
+- Focused verification passed before the full available build/test command.

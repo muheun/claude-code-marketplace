@@ -1,5 +1,17 @@
 # Architecture Reference
 
+## Contents
+
+- [Change Strategy](#change-strategy)
+- [Test Scope Calibration](#test-scope-calibration)
+  - [Interface Granularity](#interface-granularity)
+  - [Interface Split Gate](#interface-split-gate)
+- [Module Structure](#module-structure)
+- [Module Roles](#module-roles)
+- [Java Package Convention](#java-package-convention)
+- [Dependency Direction](#dependency-direction)
+- [App Package Shape](#app-package-shape)
+
 ## Change Strategy
 
 Prefer small, verifiable architecture changes over one large redesign.

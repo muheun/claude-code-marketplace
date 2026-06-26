@@ -1,5 +1,12 @@
 # Architecture Test Examples
 
+## Contents
+
+- [Baseline Gradle Checks](#baseline-gradle-checks)
+- [Baseline API/Core Boundary Checks](#baseline-apicore-boundary-checks)
+- [Conditional Static Enforcement Checks](#conditional-static-enforcement-checks)
+- [Avoid Required Checks That](#avoid-required-checks-that)
+
 Use these as compact starting points. Adapt package names and module names to the project.
 
 Architecture tests should guard stable architecture, not every design preference. Start and usually stop with baseline modularization checks: selected modules exist and dependency direction is correct. Add broad source/bytecode checks for technology bans, controller placement, adapter self-registration, and build/persistence policies only when the project already treats that static enforcement as stable policy, the current task touches the boundary, or the user asks to enforce it.
