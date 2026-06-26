@@ -149,6 +149,8 @@ Use granular Spring Framework dependencies when this module only provides `ApiRe
 
 For reusable relational bounded contexts, create `*:adapter:persistence-schema` by default. This module owns Flyway migrations under `src/main/resources/db/migration` and keeps schema ownership independent from JPA, jOOQ, MyBatis, or any later adapter swap. Adapter count is not the ownership criterion; use this module even when the project has only one relational technology adapter today. Use `persistence-schema`, not `persistence-flyway`, because the responsibility is schema resources and Flyway is only the migration mechanism.
 
+When schema ownership cannot be split cleanly by bounded context, add a shared resource module such as `shared:db-schema`. Use it for legacy baseline DDL, strongly cross-domain existing tables, shared foundation tables, or transitional migrations whose owning context is not yet clear. Do not use `shared:db-schema` as the default destination for new domain-owned tables. Once ownership is clear, place future or unreleased domain-owned migrations in the owning `*:adapter:persistence-schema`; relocate already-applied migrations only with explicit Flyway history, checksum, classpath, and duplicate-version verification.
+
 ```kotlin
 plugins {
     `java-library`
@@ -162,23 +164,26 @@ Do not declare consumer dependencies in `persistence-schema` itself. Add the sch
 ```kotlin
 // app/build.gradle.kts
 dependencies {
+    runtimeOnly(project(":shared:db-schema")) // if the runtime needs shared or legacy migrations
     runtimeOnly(project(":board:adapter:persistence-schema"))
 }
 
 // board:adapter:persistence-jpa or board:adapter:persistence-jooq build.gradle.kts
 dependencies {
+    testRuntimeOnly(project(":shared:db-schema")) // if tests need shared or legacy migrations
     testRuntimeOnly(project(":board:adapter:persistence-schema"))
 }
 
 // jOOQ code generation convention; use the project's actual configuration name.
 dependencies {
+    jooqCodegenMigration(project(":shared:db-schema")) // if codegen needs shared or legacy migrations
     jooqCodegenMigration(project(":board:adapter:persistence-schema"))
 }
 ```
 
 Treat `persistence-schema` as a schema resource module, not as a sibling technology adapter. Architecture or build-file checks that forbid `persistence-jooq`/`persistence-jpa`/`persistence-mybatis` from depending on sibling adapters must still allow the same-domain schema module on test or codegen configurations. Continue to forbid dependencies on sibling technology adapters, app/web-support modules, and other bounded contexts.
 
-If the root build keeps a manual Flyway migration source list or code generation migration input list, verify that it stays in sync with the selected schema modules. Every selected relational adapter should have its corresponding `*:adapter:persistence-schema/src/main/resources/db/migration` location available to each consumer that needs it: app runtime, adapter integration test runtime, and jOOQ code generation when present.
+If the root build keeps a manual Flyway migration source list or code generation migration input list, verify that it stays in sync with the selected schema modules. Every selected relational adapter should have its corresponding `*:adapter:persistence-schema/src/main/resources/db/migration` location available to each consumer that needs it: app runtime, adapter integration test runtime, and jOOQ code generation when present. Include `shared/db-schema/src/main/resources/db/migration` in the same lists when the project uses shared or legacy migrations.
 
 ### JPA/QueryDSL Adapter Modules
 
@@ -282,12 +287,13 @@ dependencies {
 
 ## Migration Resources
 
-Reusable relational modules keep migrations in `persistence-schema`:
+Schema resource locations usually include bounded-context `persistence-schema`; optional shared, legacy, or transitional schema uses `shared:db-schema`:
 
 ```text
+shared/db-schema/src/main/resources/db/migration/VyyyyMMddHHmm__baseline_create_shared_tables.sql
 board/adapter/persistence-schema/src/main/resources/db/migration/VyyyyMMddHHmm__board_create_posts.sql
 comment/adapter/persistence-schema/src/main/resources/db/migration/VyyyyMMddHHmm__comment_create_comments.sql
 ```
 
-App-only composition tables may use app migrations. Technology adapters consume schema resources; they do not own duplicate table DDL. Migration versions must be unique across the runtime classpath.
+App-only composition tables may use app migrations. Use `shared:db-schema` only for shared, legacy, or transitional schema that cannot yet be assigned to one bounded context. Technology adapters consume schema resources; they do not own duplicate table DDL. Migration versions must be unique across the runtime classpath.
 Use the actual creation date/time for `VyyyyMMddHHmm`; do not create new versions by incrementing the previous migration timestamp. If multiple migrations are created in the same minute, use the actual seconds in `VyyyyMMddHHmmss` or regenerate at the real later creation time, then verify no runtime classpath duplicate remains.

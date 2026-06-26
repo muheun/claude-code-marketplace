@@ -71,11 +71,12 @@ Baseline checks:
 - `*:api` does not depend on its own `*:core`.
 - Persistence technology adapters depend on their own `*:core`.
 - `*:adapter:persistence-schema` is resource-only by default and is consumed by app runtime, adapter test runtime, and codegen classpaths.
+- `shared:db-schema` is allowed for legacy baseline DDL, strongly cross-domain existing tables, shared foundation tables, or transitional migrations that cannot yet be assigned to one bounded context. Treat it as resource-only and consume it through runtime/test/codegen classpaths.
 - `app` depends on selected `*:api`, `*:core`, persistence technology adapters, and schema resource modules for composition.
 - Domain `api/core` modules do not depend on `app`, adapters, `shared:web-support`, or other bounded contexts.
 - Persistence technology adapters do not depend on `app`, `shared:web-support`, or other bounded contexts.
 - Build-file checks that forbid persistence technology adapter sibling dependencies must not classify same-domain `persistence-schema` as a forbidden technology adapter; forbid dependencies on sibling `persistence-jooq`/`persistence-jpa`/`persistence-mybatis` modules instead.
-- If the project keeps root-level Flyway migration source lists or code generation migration input lists, verify they include the selected `*:adapter:persistence-schema/src/main/resources/db/migration` locations.
+- If the project keeps root-level Flyway migration source lists or code generation migration input lists, verify they include the selected `*:adapter:persistence-schema/src/main/resources/db/migration` locations and `shared/db-schema/src/main/resources/db/migration` when shared or legacy migrations are used.
 
 Conditional static enforcement checks:
 
@@ -111,7 +112,7 @@ Use these when the selected persistence adapter or Store contract is in scope. T
 - Persistence adapters do not self-register with `@Component`, `@Service`, `@Repository`, or component-scanned `@Configuration`.
 - App uses Hibernate `ddl-auto: validate` for relational schema verification.
 - Reusable relational modules have Flyway migrations in `*:adapter:persistence-schema`, not duplicated inside `persistence-jpa`, `persistence-jooq`, or `persistence-mybatis`.
-- Each consumer's selected schema modules are available on app runtime, adapter integration test runtime, and jOOQ code generation migration inputs when present.
+- Each consumer's selected schema modules, including `shared:db-schema` when used, are available on app runtime, adapter integration test runtime, and jOOQ code generation migration inputs when present.
 - jOOQ adapters wire build tasks so Flyway-migrated schema verification runs before jOOQ code generation, and `compileJava` depends on generated sources before tests run.
 - Selected identifier strategy has matching DDL type, public ID `NOT NULL`/`UNIQUE` lookup constraints when used, ID converter, and ordering expectations.
 - Paged search tests assert count, paging metadata, stable order, and result body.
@@ -126,7 +127,7 @@ Use these when the selected persistence adapter or Store contract is in scope. T
 - Persistence adapter tests exercise the real `Jpa*StoreAdapter`, `Jooq*StoreAdapter`, or `InMemory*StoreAdapter`; do not fake the adapter under test.
 - jOOQ-backed adapter tests verify JPA entities and Hibernate validation exist, while Store reads/writes go through the real jOOQ adapter.
 - SQL, join, projection, unique constraint, ordering, paging, and dialect behavior tests use the real target database product, preferably with Testcontainers.
-- Persistence integration tests apply Flyway migrations from the runtime classpath, such as `classpath:db/migration`, so selected `persistence-schema` modules are included. Do not hard-code `app/src/main/resources/db/migration` unless the test is specifically for app-only migrations.
+- Persistence integration tests apply Flyway migrations from the runtime classpath, such as `classpath:db/migration`, so selected `persistence-schema` modules and `shared:db-schema` are included when used. Do not hard-code `app/src/main/resources/db/migration` unless the test is specifically for app-only migrations.
 - App tests cover thin controller HTTP contracts, security, common response envelopes, module composition, selected adapter imports, and bean wiring.
 - Controller tests may mock service contracts, but they must verify HTTP concerns such as binding, validation, status codes, response envelopes, exception handling, security, filters, or interceptors. Do not retest service business logic through controllers.
 - Thin controller HTTP tests may use Mockito for service contracts when they only verify request mapping, binding, validation, status/envelope behavior, or no-call behavior. Thin app workflow forwarding tests may use Mockito when they only verify no-call behavior or a single delegated call. Do not build hand-written fakes for these tests unless stateful behavior is part of the contract.

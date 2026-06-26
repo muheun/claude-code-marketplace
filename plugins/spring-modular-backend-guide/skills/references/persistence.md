@@ -191,6 +191,7 @@ Rules:
 
 - Schema changes belong to Flyway migrations.
 - Reusable relational bounded contexts own migrations in `*:adapter:persistence-schema/src/main/resources/db/migration` by default, even when only one persistence technology exists today.
+- If existing or shared schema cannot be assigned to one bounded context, keep those migrations in a shared schema resource module such as `shared:db-schema`, with files under `shared/db-schema/src/main/resources/db/migration`. Use it for legacy baseline DDL, strongly cross-domain existing tables, shared foundation tables, or transitional migrations; do not make it the default for new domain-owned tables.
 - Use `persistence-schema`, not `persistence-flyway`: the module owns schema resources; Flyway is the current migration tool.
 - Technology adapters such as `persistence-jpa`, `persistence-jooq`, and `persistence-mybatis` consume the schema module and must not duplicate table DDL migrations.
 - App-only composition tables or deployment-only schema changes may live in app migrations.
@@ -199,7 +200,7 @@ Rules:
 - The version timestamp is the actual creation date/time of the migration file.
 - Do not derive a new migration version by adding one minute to the previous migration.
 - If multiple migrations are created in the same minute, use actual seconds with `VyyyyMMddHHmmss__module_action.sql` or regenerate at the real later creation time. Always verify there is no duplicate version across the runtime classpath.
-- Persistence integration tests should apply migrations from the runtime classpath, such as `classpath:db/migration`, so selected schema modules are included. Adapter module tests, app tests, and jOOQ code generation must include the matching `persistence-schema` resources. Avoid hard-coding `app/src/main/resources/db/migration` unless the test is specifically for app-only migrations.
+- Persistence integration tests should apply migrations from the runtime classpath, such as `classpath:db/migration`, so selected schema modules are included. Adapter module tests, app tests, and jOOQ code generation must include the matching `persistence-schema` resources and `shared:db-schema` when shared or legacy migrations are used. Avoid hard-coding `app/src/main/resources/db/migration` unless the test is specifically for app-only migrations.
 
 ## backend-util
 

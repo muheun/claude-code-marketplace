@@ -39,6 +39,7 @@ Use this file during code review and scaffold review.
 - Gradle runs compile/test before Flyway migration and jOOQ code generation are complete.
 - jOOQ selection removes JPA entity declarations or Hibernate `ddl-auto: validate` schema verification.
 - Flyway migrations are only in app or a technology adapter even though reusable relational schema should live in `*:adapter:persistence-schema`.
+- New domain-owned table DDL is placed in `shared:db-schema` even though a bounded-context `*:adapter:persistence-schema` owner is clear.
 - A consumer's selected schema modules are missing from app runtime, adapter integration test runtime, root-level Flyway migration source lists, or jOOQ code generation migration inputs when present.
 - `ddl-auto` is `create`, `create-drop`, or `update` in the scaffold.
 
