@@ -41,7 +41,7 @@ The skill guides implementation and review judgment. Tests are guardrails for re
 Before adding an ArchUnit or broad source-scan test, pass this gate:
 
 - Classify the check before coding it:
-  - Baseline modularization: selected modules exist and dependency direction is correct, including no `api -> core`, no `api/core -> app/adapter/web-support/other bounded context`, and no persistence adapter -> `app/web-support/other bounded context`.
+  - Baseline modularization: selected modules exist and dependency direction is correct, including no `api -> core`, no `api/core -> app/adapter/web-support/other bounded context`, and no persistence technology adapter -> `app/web-support/other bounded context`.
   - Opt-in project-policy enforcement: broad static checks for technology bans, adapter registration, naming, jOOQ/Flyway build order, response envelope, enum parsing, and forbidden DTO/entity/persistence types.
   - Review-only guidance: cleanup preferences, exact decomposition names, command-shape preference, scalar-vs-command migration, helper names, and file layout details.
 - The rule must protect a stable boundary. Baseline checks are dependency direction and selected module existence. Optional static enforcement needs an existing project standard, a touched boundary, or an explicit user request; it does not make the underlying design rule optional.
@@ -66,13 +66,14 @@ Before adding an ArchUnit or broad source-scan test, pass this gate:
 Baseline checks:
 
 - Each migrated bounded context has `*:api` and `*:core`.
-- Only selected adapter modules are required, such as `*:adapter:persistence-jooq`, `*:adapter:persistence-jpa`, `*:adapter:persistence-mybatis`, or `*:adapter:persistence-memory`.
+- Only selected persistence modules are required. Reusable relational modules usually include `*:adapter:persistence-schema` plus the selected relational technology adapter such as `*:adapter:persistence-jooq`, `*:adapter:persistence-jpa`, or `*:adapter:persistence-mybatis`. Memory-only modules do not need schema resources unless they are paired with a relational runtime.
 - `*:core` depends on its own `*:api`.
 - `*:api` does not depend on its own `*:core`.
-- `*:adapter:persistence-*` depends on its own `*:core`.
-- `app` depends on selected `*:api`, `*:core`, and persistence adapter modules for composition.
+- Persistence technology adapters depend on their own `*:core`.
+- `*:adapter:persistence-schema` is resource-only by default and is consumed by app runtime, adapter test runtime, and codegen classpaths.
+- `app` depends on selected `*:api`, `*:core`, persistence technology adapters, and schema resource modules for composition.
 - Domain `api/core` modules do not depend on `app`, adapters, `shared:web-support`, or other bounded contexts.
-- Persistence adapters do not depend on `app`, `shared:web-support`, or other bounded contexts.
+- Persistence technology adapters do not depend on `app`, `shared:web-support`, or other bounded contexts.
 
 Conditional static enforcement checks:
 
@@ -107,7 +108,7 @@ Use these when the selected persistence adapter or Store contract is in scope. T
 - JPA adapters do not depend on `JpaRepository` for standard Store implementation.
 - Persistence adapters do not self-register with `@Component`, `@Service`, `@Repository`, or component-scanned `@Configuration`.
 - App uses Hibernate `ddl-auto: validate` for relational schema verification.
-- Adapter-local Flyway migrations exist for adapter-owned tables.
+- Reusable relational modules have Flyway migrations in `*:adapter:persistence-schema`, not duplicated inside `persistence-jpa`, `persistence-jooq`, or `persistence-mybatis`.
 - jOOQ adapters wire build tasks so Flyway-migrated schema verification runs before jOOQ code generation, and `compileJava` depends on generated sources before tests run.
 - Selected identifier strategy has matching DDL type, public ID `NOT NULL`/`UNIQUE` lookup constraints when used, ID converter, and ordering expectations.
 - Paged search tests assert count, paging metadata, stable order, and result body.
@@ -122,7 +123,7 @@ Use these when the selected persistence adapter or Store contract is in scope. T
 - Persistence adapter tests exercise the real `Jpa*StoreAdapter`, `Jooq*StoreAdapter`, or `InMemory*StoreAdapter`; do not fake the adapter under test.
 - jOOQ-backed adapter tests verify JPA entities and Hibernate validation exist, while Store reads/writes go through the real jOOQ adapter.
 - SQL, join, projection, unique constraint, ordering, paging, and dialect behavior tests use the real target database product, preferably with Testcontainers.
-- Persistence integration tests apply Flyway migrations from the runtime classpath, such as `classpath:db/migration`, so adapter-owned migrations are included. Do not hard-code `app/src/main/resources/db/migration` unless the test is specifically for app-only migrations.
+- Persistence integration tests apply Flyway migrations from the runtime classpath, such as `classpath:db/migration`, so selected `persistence-schema` modules are included. Do not hard-code `app/src/main/resources/db/migration` unless the test is specifically for app-only migrations.
 - App tests cover thin controller HTTP contracts, security, common response envelopes, module composition, selected adapter imports, and bean wiring.
 - Controller tests may mock service contracts, but they must verify HTTP concerns such as binding, validation, status codes, response envelopes, exception handling, security, filters, or interceptors. Do not retest service business logic through controllers.
 - Thin controller HTTP tests may use Mockito for service contracts when they only verify request mapping, binding, validation, status/envelope behavior, or no-call behavior. Thin app workflow forwarding tests may use Mockito when they only verify no-call behavior or a single delegated call. Do not build hand-written fakes for these tests unless stateful behavior is part of the contract.
@@ -136,7 +137,7 @@ Common test-design failures to reject:
 - Blocking normal dependency evolution with external library-coordinate blacklists in architecture tests. New libraries, renamed artifacts, starters, or convention plugins should not require constant test edits when no forbidden type is used by `api/core`.
 - Adding production or test dependencies from `core` to a persistence adapter just to run a convenient service test.
 - Replacing the target MariaDB/MySQL/PostgreSQL behavior with H2 for SQL, constraint, projection, ordering, or dialect-sensitive tests.
-- Hard-coding app migration paths in reusable adapter tests, which hides adapter-owned Flyway migrations.
+- Hard-coding app migration paths in reusable adapter tests, which hides selected `persistence-schema` migrations.
 - Faking the `*StoreAdapter` class in a persistence adapter test instead of testing the real adapter implementation.
 - Testing Mockito behavior instead of the real `*ServiceImpl` behavior.
 - Freezing cache keys, transaction proxy details, private method order, or other implementation details when ownership and method coverage are the real contract.
@@ -147,6 +148,7 @@ Common test-design failures to reject:
 - Building a hand-written fake for a controller or thin app workflow test when a service-contract mock would express request validation, no-call behavior, or one delegated call more clearly.
 - Expanding controller tests into duplicated service policy tests instead of keeping them focused on HTTP contracts.
 - Running jOOQ code generation from a stale manual database or after `test` has already started.
+- Keeping Flyway DDL only in `persistence-jooq` or another technology adapter, which makes schema ownership depend on the selected adapter.
 - Adding only `test.dependsOn(generateJooq)` while leaving `compileJava` free to run before generated sources exist.
 - Using JPA, Spring Data, or `EntityManager` for jOOQ-backed Store reads/writes instead of limiting JPA to entity declaration and validation.
 

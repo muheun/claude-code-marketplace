@@ -38,7 +38,7 @@ Use this file during code review and scaffold review.
 - jOOQ generated sources come from a manually prepared or stale developer-local database.
 - Gradle runs compile/test before Flyway migration and jOOQ code generation are complete.
 - jOOQ selection removes JPA entity declarations or Hibernate `ddl-auto: validate` schema verification.
-- Flyway migrations are only in app even though a reusable adapter owns the table.
+- Flyway migrations are only in app or a technology adapter even though reusable relational schema should live in `*:adapter:persistence-schema`.
 - `ddl-auto` is `create`, `create-drop`, or `update` in the scaffold.
 
 ## Web
@@ -73,4 +73,4 @@ Use this file during code review and scaffold review.
 
 ## Skill-Specific Failure Signals
 
-If a proposed answer says "keep controllers inside each feature/domain module", "use JpaRepository for simple CRUD", "service create/find/list", or "put all migrations in app by default", stop and realign with this skill.
+If a proposed answer says "keep controllers inside each feature/domain module", "use JpaRepository for simple CRUD", "service create/find/list", or "put all migrations in app or a technology adapter by default", stop and realign with this skill.

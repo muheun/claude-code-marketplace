@@ -43,7 +43,7 @@ Quick calibration:
 - If persistence behavior changed, test the real adapter against the target database for projection, ordering, paging, constraints, or dialect-sensitive SQL.
 - If controller behavior changed, test HTTP binding, validation, status, response envelope, security, filters, or interceptors.
 
-Baseline architecture tests are for stable modularization rules: selected `api/core/adapter:persistence-*` modules exist and dependency direction is correct, including no `api -> core`, no `api/core -> app/adapter/web-support/other bounded context`, and no persistence adapter -> `app/web-support/other bounded context`. Technology bans, controller placement, adapter self-registration, jOOQ/Flyway build order, response envelope, enum parsing, and forbidden DTO/entity/persistence-type rules can still be mandatory design rules; broad static enforcement for them is an opt-in project-policy check, not the default baseline. Behavior tests, compiler contract changes, and review judgment are better for ordinary refactoring choices such as helper names, interface split names, exact command record names, scalar-vs-command migration, parameter order/count/names, and proxy internals.
+Baseline architecture tests are for stable modularization rules: selected `api/core`, persistence technology adapter, and schema resource modules exist and dependency direction is correct. Technology adapters such as `persistence-jpa`, `persistence-jooq`, `persistence-mybatis`, and `persistence-memory` depend on their own `core`; `persistence-schema` is resource-only by default and is consumed through app runtime, adapter test runtime, or codegen classpaths. Also protect no `api -> core`, no `api/core -> app/adapter/web-support/other bounded context`, and no persistence technology adapter -> `app/web-support/other bounded context`. Technology bans, controller placement, adapter self-registration, jOOQ/Flyway build order, response envelope, enum parsing, and forbidden DTO/entity/persistence-type rules can still be mandatory design rules; broad static enforcement for them is an opt-in project-policy check, not the default baseline. Behavior tests, compiler contract changes, and review judgment are better for ordinary refactoring choices such as helper names, interface split names, exact command record names, scalar-vs-command migration, parameter order/count/names, and proxy internals.
 
 If a proposed architecture test needs a broad source scan, bytecode scan, dependency-coordinate blacklist, or many helper methods, stop and classify it before coding it: baseline modularization, opt-in project policy, or review-only guidance. The validation should not cost more to build or maintain than the boundary it protects.
 
@@ -93,6 +93,7 @@ shared:web-support
 
 <domain>:api
 <domain>:core
+<domain>:adapter:persistence-schema
 <domain>:adapter:persistence-memory
 <domain>:adapter:persistence-jpa
 <domain>:adapter:persistence-jooq
@@ -100,7 +101,7 @@ shared:web-support
 app
 ```
 
-Include only the adapter modules actually needed by the project.
+Include only the schema resource modules and technology adapters actually needed by the project.
 
 ## Module Roles
 
@@ -112,7 +113,9 @@ Include only the adapter modules actually needed by the project.
 
 `*:core` is the default implementation module. Put service implementations, domain models, persistence ports, and core business rules here. It must not contain Spring MVC, JPA, web request/response DTOs, or persistence technology.
 
-`*:adapter:persistence-*` implements core persistence ports with a specific technology. JPA entities, QueryDSL, jOOQ, memory stores, and generated tables stay inside adapters.
+`*:adapter:persistence-schema` owns reusable relational schema resources such as Flyway migrations. It is resource-only by default and should not depend on `*:core` unless a project-specific schema convention explicitly requires code.
+
+Technology adapters such as `*:adapter:persistence-jpa`, `*:adapter:persistence-jooq`, `*:adapter:persistence-mybatis`, and `*:adapter:persistence-memory` implement core persistence ports. JPA entities, QueryDSL, jOOQ, memory stores, and generated tables stay inside technology adapters.
 
 `app` is the executable composition module. Put controllers, app request/response DTOs, selected adapter imports, global web behavior, and host-domain SPI implementations here.
 
@@ -136,10 +139,11 @@ Arrows point from the depending module to the module it depends on:
 
 ```text
 *:core -> *:api
-*:adapter:persistence-* -> *:core
+*:adapter:persistence-jpa|jooq|mybatis|memory -> *:core
 app -> *:api
 app -> *:core
-app -> selected *:adapter:persistence-*
+app -> selected *:adapter:persistence-schema
+app -> selected *:adapter:persistence-jpa|jooq|mybatis|memory
 app -> shared:web-support
 ```
 

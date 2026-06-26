@@ -190,14 +190,16 @@ jOOQ projects use Flyway migrations as the schema source for both code generatio
 Rules:
 
 - Schema changes belong to Flyway migrations.
-- Reusable persistence adapters place owned migrations under `src/main/resources/db/migration`.
+- Reusable relational bounded contexts own migrations in `*:adapter:persistence-schema/src/main/resources/db/migration` by default, even when only one persistence technology exists today.
+- Use `persistence-schema`, not `persistence-flyway`: the module owns schema resources; Flyway is the current migration tool.
+- Technology adapters such as `persistence-jpa`, `persistence-jooq`, and `persistence-mybatis` consume the schema module and must not duplicate table DDL migrations.
 - App-only composition tables or deployment-only schema changes may live in app migrations.
 - Migration versions must be unique across the runtime classpath.
 - Prefer `VyyyyMMddHHmm__module_action.sql` style names.
 - The version timestamp is the actual creation date/time of the migration file.
 - Do not derive a new migration version by adding one minute to the previous migration.
 - If multiple migrations are created in the same minute, use actual seconds with `VyyyyMMddHHmmss__module_action.sql` or regenerate at the real later creation time. Always verify there is no duplicate version across the runtime classpath.
-- Persistence integration tests should apply migrations from the runtime classpath, such as `classpath:db/migration`, so adapter-owned migrations are included. Adapter module tests include their own resources; app tests include selected adapter resources through dependencies. Avoid hard-coding `app/src/main/resources/db/migration` unless the test is specifically for app-only migrations.
+- Persistence integration tests should apply migrations from the runtime classpath, such as `classpath:db/migration`, so selected schema modules are included. Adapter module tests, app tests, and jOOQ code generation must include the matching `persistence-schema` resources. Avoid hard-coding `app/src/main/resources/db/migration` unless the test is specifically for app-only migrations.
 
 ## backend-util
 
@@ -209,4 +211,4 @@ For Spring Boot 4 internal projects:
 implementation("com.fixelsoft.util:fixel-util-spring4-db:20260517")
 ```
 
-Use this for Flyway, p6spy, and related DB infrastructure in `app` or selected persistence adapters. Do not expose this dependency from reusable domain `api/core` modules. For H2 sample projects, exclude MariaDB/MySQL driver modules brought by DB bundles and add H2 explicitly.
+Use this for Flyway, p6spy, and related DB infrastructure in `app` or selected persistence technology adapters. Do not expose this dependency from reusable domain `api/core` modules or resource-only `persistence-schema` modules. For H2 sample projects, exclude MariaDB/MySQL driver modules brought by DB bundles and add H2 explicitly.

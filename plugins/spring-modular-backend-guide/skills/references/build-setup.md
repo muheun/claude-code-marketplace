@@ -5,6 +5,7 @@
 - [settings.gradle.kts](#settingsgradlekts)
 - [Root build.gradle.kts](#root-buildgradlekts)
 - [Dependency Shape](#dependency-shape)
+  - [Persistence Schema Modules](#persistence-schema-modules)
   - [JPA/QueryDSL Adapter Modules](#jpaquerydsl-adapter-modules)
   - [jOOQ Adapter Modules](#jooq-adapter-modules)
   - [jOOQ Codegen Order](#jooq-codegen-order)
@@ -26,10 +27,12 @@ include(
     "shared:web-support",
     "board:api",
     "board:core",
+    "board:adapter:persistence-schema",
     "board:adapter:persistence-jpa",
     // "board:adapter:persistence-jooq",
     "comment:api",
     "comment:core",
+    "comment:adapter:persistence-schema",
     "comment:adapter:persistence-jpa",
     // "comment:adapter:persistence-jooq",
     "file:api",
@@ -142,6 +145,37 @@ dependencies {
 
 Use granular Spring Framework dependencies when this module only provides `ApiResponse`, `ResponseEntity` helpers, and `@RestControllerAdvice`. Use a Boot starter only when the project intentionally standardizes shared web infrastructure on starter dependencies.
 
+### Persistence Schema Modules
+
+For reusable relational bounded contexts, create `*:adapter:persistence-schema` by default. This module owns Flyway migrations under `src/main/resources/db/migration` and keeps schema ownership independent from JPA, jOOQ, MyBatis, or any later adapter swap. Adapter count is not the ownership criterion; use this module even when the project has only one relational technology adapter today. Use `persistence-schema`, not `persistence-flyway`, because the responsibility is schema resources and Flyway is only the migration mechanism.
+
+```kotlin
+plugins {
+    `java-library`
+}
+```
+
+Do not put duplicate table DDL migrations in `persistence-jpa`, `persistence-jooq`, or `persistence-mybatis`. App modules, adapter integration tests, and jOOQ code generation must include the selected schema module resources.
+
+Do not declare consumer dependencies in `persistence-schema` itself. Add the schema module to each consumer classpath that must see Flyway migrations. In Spring Boot apps, `runtimeOnly` keeps schema resources off the compile classpath while `bootJar` still packages the schema jar under `BOOT-INF/lib`; plain `jar` deployments must carry the runtime classpath.
+
+```kotlin
+// app/build.gradle.kts
+dependencies {
+    runtimeOnly(project(":board:adapter:persistence-schema"))
+}
+
+// board:adapter:persistence-jpa or board:adapter:persistence-jooq build.gradle.kts
+dependencies {
+    testRuntimeOnly(project(":board:adapter:persistence-schema"))
+}
+
+// jOOQ code generation convention; use the project's actual configuration name.
+dependencies {
+    jooqCodegenMigration(project(":board:adapter:persistence-schema"))
+}
+```
+
 ### JPA/QueryDSL Adapter Modules
 
 ```kotlin
@@ -199,14 +233,14 @@ Gradle wiring must make `generateJooq` depend on the migration and schema verifi
 
 - Flyway migrations were not applied to the codegen database.
 - The expected schema is empty.
-- Required adapter-owned tables are missing.
+- Required schema-module tables are missing.
 - The codegen database product or dialect differs from the target runtime database.
 
 Do not generate jOOQ classes from a manually prepared developer-local database. Keep the codegen database separate from integration-test runtime databases where practical.
 
 ### App Module Dependencies
 
-The `app` module selects concrete adapters:
+The `app` module selects schema resources and concrete technology adapters. Schema modules are runtime dependencies; technology adapters remain compile/runtime dependencies:
 
 ```kotlin
 plugins {
@@ -217,9 +251,11 @@ dependencies {
     implementation(project(":shared:web-support"))
     implementation(project(":board:api"))
     implementation(project(":board:core"))
+    runtimeOnly(project(":board:adapter:persistence-schema"))
     implementation(project(":board:adapter:persistence-jpa"))
     implementation(project(":comment:api"))
     implementation(project(":comment:core"))
+    runtimeOnly(project(":comment:adapter:persistence-schema"))
     implementation(project(":comment:adapter:persistence-jpa"))
     implementation("org.springframework.boot:spring-boot-starter-webmvc") // Spring Boot 4
     // implementation("org.springframework.boot:spring-boot-starter-web") // Spring Boot 3.x
@@ -236,18 +272,18 @@ dependencies {
 - Put OpenFeign QueryDSL dependencies and annotation processor only in JPA adapter modules.
 - Add `jakarta.persistence-api` and `jakarta.annotation-api` to the QueryDSL annotation processor path when JPA Q-class generation needs Jakarta types.
 - Put jOOQ plugin and generated table dependencies only in jOOQ adapter modules.
-- Put DB infrastructure bundles such as Flyway/p6spy helpers in `app` or selected persistence adapters, not domain `api/core`. Architecture tests should protect this with internal project dependency checks and actual package/type usage rules, not a broad blacklist of external artifact coordinates.
+- Put DB infrastructure bundles such as Flyway/p6spy helpers in `app` or selected persistence technology adapters, not domain `api/core` or the schema resource module. Architecture tests should protect this with internal project dependency checks and actual package/type usage rules, not a broad blacklist of external artifact coordinates.
 - Put web starter and common response support in `app` or `shared:web-support`, not domain modules.
 - Use `spring-boot-starter-webmvc` for Spring Boot 4 and `spring-boot-starter-web` for Spring Boot 3.x.
 
 ## Migration Resources
 
-Adapter-owned tables keep migrations in the adapter:
+Reusable relational modules keep migrations in `persistence-schema`:
 
 ```text
-board/adapter/persistence-jpa/src/main/resources/db/migration/VyyyyMMddHHmm__board_create_posts.sql
-comment/adapter/persistence-jpa/src/main/resources/db/migration/VyyyyMMddHHmm__comment_create_comments.sql
+board/adapter/persistence-schema/src/main/resources/db/migration/VyyyyMMddHHmm__board_create_posts.sql
+comment/adapter/persistence-schema/src/main/resources/db/migration/VyyyyMMddHHmm__comment_create_comments.sql
 ```
 
-App-only composition tables may use app migrations. Migration versions must be unique across the runtime classpath.
+App-only composition tables may use app migrations. Technology adapters consume schema resources; they do not own duplicate table DDL. Migration versions must be unique across the runtime classpath.
 Use the actual creation date/time for `VyyyyMMddHHmm`; do not create new versions by incrementing the previous migration timestamp. If multiple migrations are created in the same minute, use the actual seconds in `VyyyyMMddHHmmss` or regenerate at the real later creation time, then verify no runtime classpath duplicate remains.

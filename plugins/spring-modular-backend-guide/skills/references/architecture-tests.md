@@ -15,7 +15,7 @@ Do not add architecture tests for service method prefixes, Store method prefixes
 
 ## Baseline Gradle Checks
 
-Use Gradle/build-file checks only for stable internal project boundaries: selected modules exist, `core` depends on its own `api`, `api` does not depend on its own `core`, selected `adapter:persistence-*` modules depend on their own `core`, `app` composes selected domain modules, `api/core` do not depend on `app`, adapters, web-support, or other bounded contexts, and persistence adapters do not depend on `app`, web-support, or other bounded contexts. The compact example below only checks selected module inclusion; add build dependency checks when the build file is the smallest reliable enforcement point for dependency direction.
+Use Gradle/build-file checks only for stable internal project boundaries: selected modules exist, `core` depends on its own `api`, `api` does not depend on its own `core`, selected persistence technology adapters such as `persistence-jpa`, `persistence-jooq`, `persistence-mybatis`, or `persistence-memory` depend on their own `core`, `persistence-schema` stays resource-only by default, `app` composes selected domain modules, selected persistence technology adapters, and selected schema resources, `api/core` do not depend on `app`, adapters, web-support, or other bounded contexts, and persistence technology adapters do not depend on `app`, web-support, or other bounded contexts. The compact example below only checks selected module inclusion; add build dependency checks when the build file is the smallest reliable enforcement point for dependency direction.
 
 Keep custom parsers modest. If parsing Gradle accurately becomes larger than the boundary being protected, reduce the check to selected module inclusion and rely on Gradle compilation plus review for the rest.
 
@@ -29,9 +29,11 @@ void selectedDomainModulesAreIncluded() throws Exception {
     assertThat(settings).contains(
             "\"leave:api\"",
             "\"leave:core\"",
+            "\"leave:adapter:persistence-schema\"",
             "\"leave:adapter:persistence-jooq\"",
             "\"member:api\"",
             "\"member:core\"",
+            "\"member:adapter:persistence-schema\"",
             "\"member:adapter:persistence-jpa\"",
             "\"app\"");
 }
