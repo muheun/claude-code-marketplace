@@ -39,6 +39,7 @@ Use this file during code review and scaffold review.
 - Gradle runs compile/test before Flyway migration and jOOQ code generation are complete.
 - jOOQ selection removes JPA entity declarations or Hibernate `ddl-auto: validate` schema verification.
 - Flyway migrations are only in app or a technology adapter even though reusable relational schema should live in `*:adapter:persistence-schema`.
+- A consumer's selected schema modules are missing from app runtime, adapter integration test runtime, root-level Flyway migration source lists, or jOOQ code generation migration inputs when present.
 - `ddl-auto` is `create`, `create-drop`, or `update` in the scaffold.
 
 ## Web
@@ -64,6 +65,7 @@ Use this file during code review and scaffold review.
 - Adding a broad rule that selected app packages must use the exact newly extracted Reader or SPI name, such as `FooDisplayNameReader`, when the stable rule is only avoiding write-capable service dependencies that cross ownership boundaries and expose mutation methods to consumers that should only read or compose.
 - Broad reflection/source-scan tests that turn cleanup guidance into a development blocker, such as failing every Store write method with scalar parameters or enforcing exact command record suffixes.
 - Broad build-file tests that try to ban every possible external Maven coordinate for web, DB, QueryDSL, jOOQ, Flyway, JDBC drivers, or Spring starters instead of checking stable internal project boundaries and actual forbidden package/type usage.
+- Build or architecture tests that treat same-domain `persistence-schema` as a forbidden sibling technology adapter.
 - Broad bytecode/source scans for technology packages when the project only asked to verify `api/core/adapter/app` module separation and dependency direction.
 - Broad reflection/source-scan tests that force every enum to have a `from` method or lookup map even when the enum has no string parsing contract.
 - Service tests verify only Mockito interactions without asserting service output, state changes, or exceptions from the real `*ServiceImpl`.

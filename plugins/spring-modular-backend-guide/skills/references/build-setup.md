@@ -176,6 +176,10 @@ dependencies {
 }
 ```
 
+Treat `persistence-schema` as a schema resource module, not as a sibling technology adapter. Architecture or build-file checks that forbid `persistence-jooq`/`persistence-jpa`/`persistence-mybatis` from depending on sibling adapters must still allow the same-domain schema module on test or codegen configurations. Continue to forbid dependencies on sibling technology adapters, app/web-support modules, and other bounded contexts.
+
+If the root build keeps a manual Flyway migration source list or code generation migration input list, verify that it stays in sync with the selected schema modules. Every selected relational adapter should have its corresponding `*:adapter:persistence-schema/src/main/resources/db/migration` location available to each consumer that needs it: app runtime, adapter integration test runtime, and jOOQ code generation when present.
+
 ### JPA/QueryDSL Adapter Modules
 
 ```kotlin

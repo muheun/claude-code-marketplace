@@ -74,6 +74,8 @@ Baseline checks:
 - `app` depends on selected `*:api`, `*:core`, persistence technology adapters, and schema resource modules for composition.
 - Domain `api/core` modules do not depend on `app`, adapters, `shared:web-support`, or other bounded contexts.
 - Persistence technology adapters do not depend on `app`, `shared:web-support`, or other bounded contexts.
+- Build-file checks that forbid persistence technology adapter sibling dependencies must not classify same-domain `persistence-schema` as a forbidden technology adapter; forbid dependencies on sibling `persistence-jooq`/`persistence-jpa`/`persistence-mybatis` modules instead.
+- If the project keeps root-level Flyway migration source lists or code generation migration input lists, verify they include the selected `*:adapter:persistence-schema/src/main/resources/db/migration` locations.
 
 Conditional static enforcement checks:
 
@@ -109,6 +111,7 @@ Use these when the selected persistence adapter or Store contract is in scope. T
 - Persistence adapters do not self-register with `@Component`, `@Service`, `@Repository`, or component-scanned `@Configuration`.
 - App uses Hibernate `ddl-auto: validate` for relational schema verification.
 - Reusable relational modules have Flyway migrations in `*:adapter:persistence-schema`, not duplicated inside `persistence-jpa`, `persistence-jooq`, or `persistence-mybatis`.
+- Each consumer's selected schema modules are available on app runtime, adapter integration test runtime, and jOOQ code generation migration inputs when present.
 - jOOQ adapters wire build tasks so Flyway-migrated schema verification runs before jOOQ code generation, and `compileJava` depends on generated sources before tests run.
 - Selected identifier strategy has matching DDL type, public ID `NOT NULL`/`UNIQUE` lookup constraints when used, ID converter, and ordering expectations.
 - Paged search tests assert count, paging metadata, stable order, and result body.
