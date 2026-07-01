@@ -1,6 +1,6 @@
 ---
 name: spring-modular-backend-guide
-description: Use when working on Java Spring Boot backend architecture, scaffolding, reviewing, or modifying DDD-style multi-module projects that need api/core/adapter boundaries, app-owned web composition, controller DTOs, enum input parsing, QueryDSL/jOOQ/Flyway persistence, identifier strategy, Java import ordering, layered tests, Mockito/fakes, Testcontainers, response envelopes, or backend-util common utilities.
+description: Use when working on Java Spring Boot DDD-style multi-module architecture, scaffolding, review, or modification involving api/core/adapter boundaries, app-owned web composition, controller DTOs, enum input parsing, QueryDSL/jOOQ/Flyway persistence, identifier strategy, Java import ordering, layered tests, Mockito/fakes, Testcontainers, response envelopes, helper class extraction review, one-consumer Spring bean review, app-local helper review, or backend-util common utilities.
 ---
 
 # Spring Modular Backend Guide
@@ -21,6 +21,7 @@ This is an opinionated guideline for new scaffolds and architecture reviews. Do 
 | New project, scaffold, or module structure | `references/architecture.md`, `references/build-setup.md`, and `references/testing-checklist.md` |
 | Architecture design, responsibility separation, or refactoring strategy | `references/architecture.md`, `references/anti-patterns.md`, and `references/testing-checklist.md` |
 | Service, Store, SPI, Reader, or Notifier contract granularity | `references/architecture.md` and `references/testing-checklist.md` |
+| Helper class extraction, one-consumer Spring bean, or app-local helper review | `references/architecture.md`, `references/anti-patterns.md`, and `references/testing-checklist.md` |
 | Controller DTO, Service command, or Store command boundary | `references/web-and-app.md`, `references/naming.md`, `references/persistence.md`, `references/testing-checklist.md`, and `references/anti-patterns.md` |
 | Store write input design or review | `references/naming.md`, `references/persistence.md`, `references/testing-checklist.md`, and `references/anti-patterns.md` |
 | Service, Store, adapter names, Java import ordering, or Java test helper formatting | `references/naming.md` |
@@ -51,11 +52,13 @@ This is an opinionated guideline for new scaffolds and architecture reviews. Do 
 
 ## Frequent Failure Signals
 
-If you see controllers in domain modules, app DTOs passed into service/store contracts, one-method interfaces with no distinct role, JPA entity fetch reads used as the default Store read model, direct `Enum.valueOf(...)` parsing at boundaries, broad source scans for review-only preferences, or build checks that blacklist open-ended external coordinates, read `references/anti-patterns.md` plus the changed-area references from the routing table before editing.
+If you see controllers in domain modules, app DTOs passed into service/store contracts, one-method interfaces with no distinct role, one-consumer app helper beans extracted from private methods, JPA entity fetch reads used as the default Store read model, direct `Enum.valueOf(...)` parsing at boundaries, broad source scans for review-only preferences, or build checks that blacklist open-ended external coordinates, read `references/anti-patterns.md` plus the changed-area references from the routing table before editing.
 
 ## Completion Checklist
 
 - Loaded every reference required by the work type and any changed-area reference.
 - Module boundaries, command/DTO ownership, persistence technology, and test scope match the relevant references.
+- Extracted helper classes or Spring beans pass the Class Extraction Gate; otherwise keep the logic local.
+- New Service, Store, SPI, Reader, or Notifier contracts pass the Interface Split Gate.
 - New or changed enforcement checks protect stable boundaries rather than incidental naming, helper shape, or future library coordinates.
 - Focused verification passed before the full available build/test command.

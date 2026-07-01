@@ -6,6 +6,9 @@ Use this file during code review and scaffold review.
 
 - Big-bang architecture rewrites that change structure, behavior, naming, and persistence strategy in one step.
 - Splitting classes only because they are long, without a distinct change reason, dependency boundary, or test boundary.
+- Extracting a private helper into a one-method Spring component used by one caller, without a consumer-knowledge, lifecycle, dependency, or reuse boundary.
+- Extracting a public or package-visible predicate-like helper that hides side effects such as member provisioning, message sending, persistence, or cache mutation.
+- Moving a caller-specific guard, parser, or policy out of a command executor/controller when it is still tightly coupled to that caller's ack/response/error presentation and has no second consumer.
 - Splitting every method into a separate `Service`, `Store`, SPI, Reader, or Notifier contract without a distinct consumer role, change reason, or dependency boundary.
 - Extracting abstractions that cannot be protected by tests, architecture rules, or clear module dependencies.
 - Domain module owns `adapter:web` or `@RestController`.
@@ -64,6 +67,7 @@ Use this file during code review and scaffold review.
 - Adding custom parsers or broad scans whose complexity is larger than the architecture boundary they protect.
 - Adding an ArchUnit rule that forbids a cohesive read contract such as `FooRoleReader` only because the current refactor introduced `FooAuthorizationReader`; this freezes a decomposition choice instead of protecting a stable boundary.
 - Adding a broad rule that selected app packages must use the exact newly extracted Reader or SPI name, such as `FooDisplayNameReader`, when the stable rule is only avoiding write-capable service dependencies that cross ownership boundaries and expose mutation methods to consumers that should only read or compose.
+- Adding focused tests solely to justify a new one-consumer helper bean when a private method would be equally clear.
 - Broad reflection/source-scan tests that turn cleanup guidance into a development blocker, such as failing every Store write method with scalar parameters or enforcing exact command record suffixes.
 - Broad build-file tests that try to ban every possible external Maven coordinate for web, DB, QueryDSL, jOOQ, Flyway, JDBC drivers, or Spring starters instead of checking stable internal project boundaries and actual forbidden package/type usage.
 - Build or architecture tests that treat same-domain `persistence-schema` as a forbidden sibling technology adapter.

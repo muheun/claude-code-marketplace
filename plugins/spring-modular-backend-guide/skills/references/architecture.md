@@ -6,6 +6,7 @@
 - [Test Scope Calibration](#test-scope-calibration)
   - [Interface Granularity](#interface-granularity)
   - [Interface Split Gate](#interface-split-gate)
+  - [Class Extraction Gate](#class-extraction-gate)
 - [Module Structure](#module-structure)
 - [Module Roles](#module-roles)
 - [Java Package Convention](#java-package-convention)
@@ -82,6 +83,19 @@ Prefer one contract when:
 - Extra files and wiring increase without protecting a module boundary or dependency direction.
 
 Small interfaces are useful when they protect consumers from unnecessary knowledge. They are over-split when method-level separation only increases files and wiring.
+
+### Class Extraction Gate
+
+Before extracting a private/helper block into a new class or Spring bean, pass this gate:
+
+- Name the concrete second consumer. If there is only the current consumer, extraction must be justified by a non-reuse boundary below; otherwise keep a private method.
+- Name the dependency direction, lifecycle, exception policy, cache/transaction policy, implementation possibility, or consumer-knowledge boundary the class protects. "Cleaner file" or "shorter executor/service" is not enough.
+- Confirm the extracted method name does not hide side effects. A public or package-visible predicate such as `canExecute`, `hasRole`, or `isAllowed` must not secretly provision members, send messages, write data, or mutate state unless the name makes the side effect explicit.
+- Check whether presentation/transport details remain with the caller. If a helper is tightly coupled to one Slack ack flow, controller response, modal update, or batch adapter error message, keep it local unless another consumer needs the same policy without that presentation.
+- Prefer package-private app-local classes over public components when extraction is justified only inside `app`. Do not add an interface for a single implementation unless it protects a real consumer boundary.
+- Use compilation, focused wiring, or behavior tests only for the stable boundary being created. Do not add tests merely to justify a class extraction.
+
+Extract when the new class has one primary reason to change after these checks. Keep a private method when a single-consumer extraction has no dependency, lifecycle, policy, or consumer-knowledge boundary, remains tightly coupled to caller flow, or only moves code into a one-method bean.
 
 ## Module Structure
 

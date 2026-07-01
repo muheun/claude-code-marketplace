@@ -24,6 +24,7 @@ The skill guides implementation and review judgment. Tests are guardrails for re
 - Checklist-only documentation does not count as boundary protection.
 - Mixed HTTP, use-case orchestration, domain rule, persistence query, and infrastructure wiring concerns are separated at the appropriate `app`, `api`, `core`, or `adapter` boundary.
 - Refactoring does not add direct bounded-context dependencies or make `core` depend on `adapter`/`app`.
+- New app-local helper classes or Spring beans pass the Class Extraction Gate in `architecture.md`; otherwise keep the logic as a private method.
 - New `Service`, `Store`, SPI, Reader, or Notifier contracts are split by consumer role and change reason, not only because each interface has one method.
 - Interface splits either hide concepts a consumer should not know, support realistic implementation/lifecycle differences, or remove unsafe test coupling such as inheritance-based fakes and `null` constructor arguments.
 
@@ -48,6 +49,7 @@ Before adding an ArchUnit or broad source-scan test, pass this gate:
 - The failure message should describe a regression that would still be invalid if the interface or helper names changed.
 - The rule must not force one freshly extracted Reader, SPI, Store, command, helper, or DTO name when another cohesive split would also be valid.
 - If compilation, focused wiring tests, behavior tests, or code review can protect the refactor without freezing decomposition, use those instead.
+- Do not add focused tests only to make a one-consumer class extraction look justified. Tests protect behavior or stable boundaries; they do not create a boundary by themselves.
 - If the rule is about naming, vocabulary, method prefixes, suffixes, helper names, file layout, or decomposition style, enforce it during implementation and review by default. For example, require `remove` instead of `delete` in service APIs during review, but do not add a global architecture test that fails service methods using `delete` unless naming enforcement is an explicit project policy.
 - For Gradle/build-file checks, prefer stable internal project boundaries: `api/core` must not depend on `app`, web-support, persistence adapters, or other bounded contexts. Do not maintain broad external Maven-coordinate blacklists for future DB/web libraries. Validate forbidden technology through actual source/bytecode package or type dependencies only when that technology boundary is explicitly in scope.
 - Do not add architecture tests that hard-code exact file paths, helper class names, split interface names, command record names, parameter order/count/names, private call order, or proxy/decorator internals unless those are explicit public contracts. Store write boundary checks may still forbid app DTOs, read projections, adapter entities, and persistence technology types, but they must not fail ordinary scalar parameter lists just because a command record would be cleaner.
@@ -136,6 +138,7 @@ Use these when the selected persistence adapter or Store contract is in scope. T
 Common test-design failures to reject:
 
 - Treating every design rule as an architecture-test rule instead of using review judgment and behavior tests where static enforcement would be brittle.
+- Creating tests for a newly extracted helper when the extraction itself failed the class gate; inline the helper instead.
 - Adding architecture tests for service method prefixes, Store method prefixes, class suffixes, DTO/command naming, or helper names when the stable issue is only style guidance.
 - Blocking normal development with broad tests that enforce cleanup preferences, such as failing all Store write methods with scalar parameter lists or exact command naming rules.
 - Blocking normal dependency evolution with external library-coordinate blacklists in architecture tests. New libraries, renamed artifacts, starters, or convention plugins should not require constant test edits when no forbidden type is used by `api/core`.
