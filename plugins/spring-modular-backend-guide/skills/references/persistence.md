@@ -11,6 +11,7 @@
 - [JPA And QueryDSL](#jpa-and-querydsl)
 - [jOOQ](#jooq)
 - [Flyway And DDL](#flyway-and-ddl)
+  - [DDL Comments And Key Names](#ddl-comments-and-key-names)
 - [backend-util](#backend-util)
 
 ## Search And Paging
@@ -201,6 +202,18 @@ Rules:
 - Do not derive a new migration version by adding one minute to the previous migration.
 - If multiple migrations are created in the same minute, use actual seconds with `VyyyyMMddHHmmss__module_action.sql` or regenerate at the real later creation time. Always verify there is no duplicate version across the runtime classpath.
 - Persistence integration tests should apply migrations from the runtime classpath, such as `classpath:db/migration`, so selected schema modules are included. Adapter module tests, app tests, and jOOQ code generation must include the matching `persistence-schema` resources and `shared:db-schema` when shared or legacy migrations are used. Avoid hard-coding `app/src/main/resources/db/migration` unless the test is specifically for app-only migrations.
+
+### DDL Comments And Key Names
+
+Every new table DDL must document the table and every column it introduces. Add table and column comments in the Flyway migration, including `id`, public IDs, audit columns, foreign-key columns, status/type columns, and nullable business fields. For `ALTER TABLE`, document each introduced or changed schema object in the same migration instead of requiring unrelated legacy columns to be backfilled in that change.
+
+Every new JPA entity must declare comments for its mapped table and every mapped column with the project's selected annotation mechanism, such as Hibernate `@Comment`. When changing an existing entity, declare comments for each introduced or changed mapped schema object. Entity comments and Flyway DDL comments must match in meaning. The entity is the Hibernate validation model, but Flyway remains the schema source, so do not put a required comment only on one side.
+
+Declare primary keys explicitly, and name the primary-key constraint with the project convention or a `pk_` prefix when the target database supports custom primary-key constraint names. Name foreign keys, unique keys, and indexes explicitly. Do not rely on database, Hibernate, or migration-tool generated names for foreign keys, unique keys, or indexes. Follow the project's existing naming convention only when it preserves the role prefix; otherwise use stable lowercase `fk_`, `uk_`, and `idx_` prefixes with enough table/column context to identify the purpose. Prefer `uk_<table>_<columns>` for unique constraints and `idx_<table>_<columns>` for non-unique indexes.
+
+When the target database supports comments on constraints or indexes, add comments for non-obvious keys and indexes as well. When it does not, the explicit key/index name must carry the operational meaning clearly enough for schema review, error diagnostics, and migration diff inspection.
+
+Do not edit an already-applied Flyway migration to add comments or rename keys/indexes. Preserve Flyway history and checksum integrity. If a released migration is missing comments or explicit names, add a new forward migration for the comment or rename operation when the project accepts that operational change; otherwise report the gap instead of rewriting history.
 
 ## backend-util
 

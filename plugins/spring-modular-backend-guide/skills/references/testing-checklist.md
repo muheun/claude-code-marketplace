@@ -117,6 +117,8 @@ Use these when the selected persistence adapter or Store contract is in scope. T
 - Each consumer's selected schema modules, including `shared:db-schema` when used, are available on app runtime, adapter integration test runtime, and jOOQ code generation migration inputs when present.
 - jOOQ adapters wire build tasks so Flyway-migrated schema verification runs before jOOQ code generation, and `compileJava` depends on generated sources before tests run.
 - Selected identifier strategy has matching DDL type, public ID `NOT NULL`/`UNIQUE` lookup constraints when used, ID converter, and ordering expectations.
+- New table DDL includes table and column comments, including `id`; `ALTER TABLE` DDL comments every introduced or changed schema object. New JPA entities declare matching table/column comments for every mapped object; changed entities declare them for introduced or changed mapped objects. Primary keys are declared explicitly and named when the target DB supports it; foreign keys, unique keys, and indexes use explicit names with `fk_`, `uk_`, and `idx_` role prefixes.
+- Already-applied Flyway migrations are not edited to backfill comments or rename keys/indexes. Use a new forward migration when the project accepts the operational change.
 - Paged search tests assert count, paging metadata, stable order, and result body.
 
 ## Layered Test Strategy
