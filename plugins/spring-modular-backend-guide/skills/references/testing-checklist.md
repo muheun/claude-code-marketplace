@@ -165,11 +165,11 @@ Common test-design failures to reject:
 
 Use these when app/web behavior is in scope. They are not baseline modularization checks except for app ownership of controllers in projects that have previously leaked web code into domain modules.
 
-- Controller success responses use common envelope.
+- Controller success responses follow the project API contract and are not forced into `ApiResponse` unless the project explicitly standardizes a success envelope.
 - Controllers and HTTP-facing workflows depend on `*Service` contracts, not concrete `*ServiceImpl` classes.
 - App request DTOs stay app-local. Tests may protect against HTTP binding types or request-only shapes leaking into reusable domain service, Store, or persistence contracts, but should not police every mapping method, exact command class name, or whether create/update request DTOs are split or shared.
-- String enum input tests verify the app boundary behavior: accepted tokens, invalid input outcome, defaults when the boundary defines them, and no-call behavior when invalid input must stop downstream calls. HTTP controllers verify status/envelope; domain enum factory tests stay focused on web-neutral canonical tokens and should exercise the factory instead of raw `Enum.valueOf(...)`.
-- Basic exceptions are converted to the common envelope.
+- String enum input tests verify the app boundary behavior: accepted tokens, invalid input outcome, defaults when the boundary defines them, and no-call behavior when invalid input must stop downstream calls. HTTP controllers verify status and the exception envelope for invalid input; domain enum factory tests stay focused on web-neutral canonical tokens and should exercise the factory instead of raw `Enum.valueOf(...)`.
+- Basic exceptions are converted by centralized advice to the common error envelope.
 - Tests parse JSON structure instead of only checking string fragments.
 
 ## Verification Commands

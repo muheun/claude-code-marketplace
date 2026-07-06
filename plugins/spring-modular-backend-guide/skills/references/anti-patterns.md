@@ -59,7 +59,7 @@ Use this file during code review and scaffold review.
 - Controllers bind reusable domain `api` command types directly as request bodies when the HTTP shape has request-only validation, defaults, OpenAPI schema, or client compatibility concerns.
 - Controllers, command handlers, or batch input adapters call `Enum.valueOf(...)` directly for external strings instead of using an app parser or domain enum factory.
 - Controllers or command handlers duplicate enum parsing/default helpers, or push channel-specific aliases, defaults, localization, or user-facing messages into reusable domain enums.
-- Common response contains boolean `success`.
+- Common error response contains boolean `success`.
 - 5xx fallback exposes raw exception messages.
 - HTTP-specific response DTOs or web-annotated DTOs are placed in reusable module `api`.
 

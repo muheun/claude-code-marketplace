@@ -26,7 +26,7 @@ Reusable modules should expose service APIs and SPI contracts, not HTTP adapters
 Keep reusable module Search DTOs out of HTTP responses when practical. Convert them to app response DTOs:
 
 ```java
-ResponseEntity<ApiResponse<BoardPostCommentPageResponse>> get(PostId postId, CommentSearch search)
+ResponseEntity<BoardPostCommentPageResponse> get(PostId postId, CommentSearch search)
 ```
 
 Request DTOs should be app-local. Commands/results remain in domain `api`. Use the project's ID value objects and converters instead of hard-coding `UUID` in controller examples.
@@ -45,28 +45,30 @@ Do not pass app request DTOs into domain service contracts, Store contracts, or 
 
 App workflows may pass an existing public, web-neutral service command after the app boundary has mapped the HTTP request. Do not bind that command directly as the controller request body when the HTTP shape has validation, naming, client compatibility, defaulting, multipart composition, or app-only metadata; keep a separate app request DTO and map explicitly.
 
-Single-item domain `api` result DTOs may be used directly as the `ApiResponse.data` payload when they already match the public response shape and contain no web-only annotations. This does not make them HTTP response DTOs; keep them web-neutral. Search/Paging DTOs should usually be wrapped in app response DTOs. Persistence adapters must not project directly into app response DTOs.
+Single-item domain `api` result DTOs may be used directly as the success response body when they already match the public response shape and contain no web-only annotations. If a project explicitly uses a success envelope, they may also be used as the `ApiResponse.data` payload. This does not make them HTTP response DTOs; keep them web-neutral. Search/Paging DTOs should usually be converted to app response DTOs. Persistence adapters must not project directly into app response DTOs.
 
-## Response Envelope
+## Exception Response Envelope
 
-Use `shared:web-support` for a common envelope:
+Do not force successful controller responses into `ApiResponse` by default. Success response shape follows the project's public API contract: direct DTOs, `ResponseEntity<T>`, or a project-standard success envelope are all acceptable when chosen intentionally.
+
+Exception responses should be centralized through `@RestControllerAdvice`, or `@ControllerAdvice` plus `@ResponseBody` when the project needs broader MVC advice behavior. Put this common error response support in `shared:web-support` or `app`, not in domain modules. Use the project-selected `ApiResponse`-style envelope for exception responses:
 
 ```json
 {
-  "status": 200,
-  "message": "success",
+  "status": 400,
+  "message": "invalid request",
   "data": {}
 }
 ```
 
 Rules:
 
-- For new scaffolds, default to `status`, `message`, and `data`. In existing projects, preserve the established common envelope unless the task explicitly includes a response-contract migration.
-- No boolean `success` field. HTTP status expresses success/failure.
+- For new scaffolds, default exception responses to `status`, `message`, and `data`. In existing projects, preserve the established error envelope unless the task explicitly includes a response-contract migration.
+- Do not add a boolean `success` field to the common error response. HTTP status expresses success/failure.
 - `status` must match the real HTTP status code.
 - Add a `code` or message-key field only when the project has an explicit centralized client-code or i18n/message-key strategy. Do not require it by default.
 - `message` may be fixed text or a safe exception message.
-- `data` is the success payload. For empty or error responses, use `{}`.
+- For error responses, use `{}` for `data` unless the project has a different established empty payload convention.
 - Add `errors` only when validation error handling is intentionally designed.
 
 ## Basic Exception Handler
@@ -79,7 +81,7 @@ IllegalStateException -> 409 Conflict
 Exception -> 500 Internal Server Error
 ```
 
-4xx exceptions may expose user-safe messages. 5xx fallback must not expose internal exception messages.
+4xx exceptions may expose user-safe messages through the centralized error envelope. 5xx fallback must not expose internal exception messages.
 
 ## Adapter Selection
 

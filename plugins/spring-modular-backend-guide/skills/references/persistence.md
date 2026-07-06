@@ -29,7 +29,7 @@ app request DTO
 -> service applies search.calcPaging(count)
 -> service calls store.selectBy(search)
 -> service applies search.setBody(rows)
--> controller wraps app response DTO in ApiResponse
+-> controller returns an app response DTO, wrapping it only when the project success-response contract requires an envelope
 ```
 
 Store executes count and projection queries only. Store must not own paging result mutation.
