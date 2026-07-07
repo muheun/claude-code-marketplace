@@ -132,9 +132,9 @@ Use these when the selected persistence adapter or Store contract is in scope. T
 - jOOQ-backed adapter tests verify JPA entities and Hibernate validation exist, while Store reads/writes go through the real jOOQ adapter.
 - SQL, join, projection, unique constraint, ordering, paging, and dialect behavior tests use the real target database product, preferably with Testcontainers.
 - Persistence integration tests apply Flyway migrations from the runtime classpath, such as `classpath:db/migration`, so selected `persistence-schema` modules and `shared:db-schema` are included when used. Do not hard-code `app/src/main/resources/db/migration` unless the test is specifically for app-only migrations.
-- App tests cover thin controller HTTP contracts, security, common response envelopes, module composition, selected adapter imports, and bean wiring.
-- Controller tests may mock service contracts, but they must verify HTTP concerns such as binding, validation, status codes, response envelopes, exception handling, security, filters, or interceptors. Do not retest service business logic through controllers.
-- Thin controller HTTP tests may use Mockito for service contracts when they only verify request mapping, binding, validation, status/envelope behavior, or no-call behavior. Thin app workflow forwarding tests may use Mockito when they only verify no-call behavior or a single delegated call. Do not build hand-written fakes for these tests unless stateful behavior is part of the contract.
+- App tests cover thin controller HTTP contracts, security, project success-response contracts, centralized exception/error envelopes, module composition, selected adapter imports, and bean wiring.
+- Controller tests may mock service contracts, but they must verify HTTP concerns such as binding, validation, status codes, project response contracts, exception handling, security, filters, or interceptors. Do not retest service business logic through controllers.
+- Thin controller HTTP tests may use Mockito for service contracts when they only verify request mapping, binding, validation, status codes, project response shape, exception-envelope behavior, or no-call behavior. Thin app workflow forwarding tests may use Mockito when they only verify no-call behavior or a single delegated call. Do not build hand-written fakes for these tests unless stateful behavior is part of the contract.
 - Service plus real adapter tests live in an adapter or app test source set and are integration tests, not core unit tests.
 
 Common test-design failures to reject:

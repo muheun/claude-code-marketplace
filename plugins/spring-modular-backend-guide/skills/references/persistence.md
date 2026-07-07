@@ -11,6 +11,7 @@
 - [JPA And QueryDSL](#jpa-and-querydsl)
 - [jOOQ](#jooq)
 - [Flyway And DDL](#flyway-and-ddl)
+  - [Migration Version Creation Checklist](#migration-version-creation-checklist)
   - [DDL Comments And Key Names](#ddl-comments-and-key-names)
 - [backend-util](#backend-util)
 
@@ -202,6 +203,14 @@ Rules:
 - Do not derive a new migration version by adding one minute to the previous migration.
 - If multiple migrations are created in the same minute, use actual seconds with `VyyyyMMddHHmmss__module_action.sql` or regenerate at the real later creation time. Always verify there is no duplicate version across the runtime classpath.
 - Persistence integration tests should apply migrations from the runtime classpath, such as `classpath:db/migration`, so selected schema modules are included. Adapter module tests, app tests, and jOOQ code generation must include the matching `persistence-schema` resources and `shared:db-schema` when shared or legacy migrations are used. Avoid hard-coding `app/src/main/resources/db/migration` unless the test is specifically for app-only migrations.
+
+### Migration Version Creation Checklist
+
+- Get the migration timestamp from the machine at creation time, such as `date +%Y%m%d%H%M`, instead of copying timestamps from plans, examples, review comments, or nearby files.
+- Treat timestamps in implementation plans as placeholders unless the plan explicitly says the file was created at that exact time.
+- Before adding the file, search all runtime migration source directories for the candidate version and reject duplicates.
+- If multiple migrations are created in the same minute, use actual seconds with `date +%Y%m%d%H%M%S` or regenerate at the real later creation time.
+- If a work-in-progress migration was already applied to a local codegen or test database and then edited, reset only that local work-in-progress schema/history or recreate the migration with a new actual timestamp. Do not leave a checksum-mismatched Flyway history state and do not use `repair` as a way to bless an arbitrary edited timestamp.
 
 ### DDL Comments And Key Names
 
