@@ -10,6 +10,7 @@
 - [Persistence Rules](#persistence-rules)
 - [Layered Test Strategy](#layered-test-strategy)
 - [Web Rules](#web-rules)
+- [Internationalization Rules](#internationalization-rules)
 - [Verification Commands](#verification-commands)
 
 Add tests for changed behavior and stable module boundaries. Keep architecture tests small: selected module existence and dependency direction first. Use `architecture-tests.md` for compact ArchUnit examples.
@@ -171,6 +172,17 @@ Use these when app/web behavior is in scope. They are not baseline modularizatio
 - String enum input tests verify the app boundary behavior: accepted tokens, invalid input outcome, defaults when the boundary defines them, and no-call behavior when invalid input must stop downstream calls. HTTP controllers verify status and the exception envelope for invalid input; domain enum factory tests stay focused on web-neutral canonical tokens and should exercise the factory instead of raw `Enum.valueOf(...)`.
 - Basic exceptions are converted by centralized advice to the common error envelope.
 - Tests parse JSON structure instead of only checking string fragments.
+
+## Internationalization Rules
+
+Use `i18n.md` as the canonical ownership and verification matrix when user-facing errors, validation, notifications, `MessageSource`, locale, or message keys are in scope. Select only the matrix rows exercised by the changed behavior; do not multiply every locale, error, and channel into an indiscriminate Cartesian product.
+
+- Domain tests assert semantic codes and safe arguments without locale dependencies. MVC tests exercise the configured locale policy and exception handling for the supported and fallback cases owned by the app. Java selector-parser tests include valid-prefix malformed values such as `ko-%%%%`, `ko--KR`, and `ko-x` and prove they are neither truncated to `ko` nor persisted. A stateless application proves locale selection does not create an `HttpSession`. For cacheable localized responses, verify every request-visible selector varies the cache key and that locale or translation changes invalidate representation validators such as `ETag`. For a server-side preference that cannot participate in `Vary`, verify mandatory representation-specific revalidation through `private, no-cache`; when storage is prohibited or correct revalidation cannot be guaranteed, verify `no-store` instead.
+- For every localized `AuthenticationEntryPoint`, `AccessDeniedHandler`, or `AuthenticationFailureHandler`, use the real filter chain and verify every handler-visible locale selector, malformed-selector fallback, any request-selector filter's single registration and execution before the earliest relevant failure-producing filter in each affected chain, and that selector filters remain side-effect-free. Verify that valid selector persistence occurs only in the final accepted response boundary, together with the scheme-specific status and challenge parameters, redirect/forward behavior, and localized app-owned representation. For protocol-owned OAuth2/OIDC endpoints, verify the native media type and structured error body instead of the common application envelope.
+- When `RequestRejectedHandler` is customized, send a request rejected by the configured `HttpFirewall` through the real `FilterChainProxy`. Verify the handler is global, execution stops at the rejection point, a pre-selection rejection runs no selected-chain filter, no controller runs afterward, the rejection status and safe body/media type are preserved, localization uses only an allowlisted precomputed request attribute or the deterministic default, and the handler exposes no rejected input or exception message and creates no session, cookie, or preference-store side effect. When the configured firewall uses lazy header or parameter predicates, add a late-rejection case and prove earlier selector filters did not persist state.
+- Always resolve application bundles through the real application `MessageSource`. Exercise MVC only when localized MVC behavior exists, Bean Validation through the real `Validator` or MVC path only when localized validation exists, and channel templates through their renderer only when outbound localization exists. A directly configured message source also needs a representative non-ASCII decoding test.
+- Outbound tests pass recipient locale explicitly, exercise hostile values at the channel encoding boundary, and prove the selected latest-preference or deterministic retry contract.
+- Prefer focused behavior tests and one stable dependency rule over broad source scans for string literals or message-key layout.
 
 ## Verification Commands
 

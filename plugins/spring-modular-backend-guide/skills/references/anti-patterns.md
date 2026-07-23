@@ -2,6 +2,15 @@
 
 Use this file during code review and scaffold review.
 
+## Contents
+
+- [Module Boundaries](#module-boundaries)
+- [Naming](#naming)
+- [Persistence](#persistence)
+- [Web](#web)
+- [Tests](#tests)
+- [Skill-Specific Failure Signals](#skill-specific-failure-signals)
+
 ## Module Boundaries
 
 - Big-bang architecture rewrites that change structure, behavior, naming, and persistence strategy in one step.
@@ -59,6 +68,21 @@ Use this file during code review and scaffold review.
 - Controllers bind reusable domain `api` command types directly as request bodies when the HTTP shape has request-only validation, defaults, OpenAPI schema, or client compatibility concerns.
 - Controllers, command handlers, or batch input adapters call `Enum.valueOf(...)` directly for external strings instead of using an app parser or domain enum factory.
 - Controllers or command handlers duplicate enum parsing/default helpers, or push channel-specific aliases, defaults, localization, or user-facing messages into reusable domain enums.
+- Reusable `api/core` injects `MessageSource`, reads `LocaleContextHolder`, accepts request locale only to format exceptions, or throws translated sentences as the service contract.
+- `@RestControllerAdvice` localizes MVC errors while `AuthenticationEntryPoint`, `AccessDeniedHandler`, or custom security filters still emit hard-coded text or raw JSON strings.
+- A localized JSON Security handler replaces a scheme-specific or protocol-owned handler without preserving its status, `WWW-Authenticate` challenge, redirect contract, media type, or structured error body.
+- A localized HTTP representation echoes the requested language instead of reporting the selected `Content-Language`, omits a request-visible locale selector from an effective cache key, reuses one representation validator across different languages, omits mandatory revalidation for a server-side preference, or treats `private` alone as sufficient.
+- A custom `LocaleResolver` is registered under a name other than `localeResolver`, so `DispatcherServlet` continues using the default strategy.
+- `Locale.forLanguageTag(...)` is treated as validation, so an ill-formed suffix is discarded before the remaining language is allowlisted or persisted.
+- A Security handler assumes an MVC `LocaleChangeInterceptor` has run, conflates a container filter before `DelegatingFilterProxy` with an `HttpSecurity` filter inside `springSecurityFilterChain`, lets the same request-selector filter run in both places, or lets either selector filter persist state before the final accepted response boundary.
+- Controller advice, an entry point, or an in-chain locale filter is expected to handle an `HttpFirewall` rejection, or a custom global `RequestRejectedHandler` reads rejected raw request data, exposes exception text, or performs persistence to localize the response.
+- A query/cookie/session selector is persisted without a supported-locale allowlist, `SessionLocaleResolver` creates state only for locale in a stateless application, or a malformed selector replaces an expected 401/403 with a 500.
+- Servlet MVC locale resolvers, interceptors, or Security handlers are applied mechanically to a WebFlux application.
+- Batch, scheduled, async, Slack, email, or push rendering uses the current thread/request locale instead of an explicit recipient locale.
+- Message arguments are inserted into HTML, URL components, Slack markup, or mentions without output-context encoding because they already passed through `MessageSource`, or complete URLs are trusted without allowed scheme/host validation.
+- A retry is called deterministic while re-reading mutable locale/templates, or called latest-preference while persisting only pre-rendered text.
+- A static `MessageUtil` is added to `backend-util` before multiple real applications share the same locale, fallback, missing-key, and error-contract policy.
+- Complete language bundles are missing public keys, partial regional overrides contain unknown keys, parameterized patterns are never formatted in tests, or lookup relies on the machine default locale.
 - Common error response contains boolean `success`.
 - 5xx fallback exposes raw exception messages.
 - HTTP-specific response DTOs or web-annotated DTOs are placed in reusable module `api`.

@@ -1,5 +1,13 @@
 # Web And App Reference
 
+## Contents
+
+- [Controller Placement](#controller-placement)
+- [App DTOs](#app-dtos)
+- [Exception Response Envelope](#exception-response-envelope)
+- [Basic Exception Handler](#basic-exception-handler)
+- [Adapter Selection](#adapter-selection)
+
 ## Controller Placement
 
 HTTP controllers and HTTP request/response DTOs belong in `app`, not in domain modules.
@@ -70,6 +78,12 @@ Rules:
 - `message` may be fixed text or a safe exception message.
 - For error responses, use `{}` for `data` unless the project has a different established empty payload convention.
 - Add `errors` only when validation error handling is intentionally designed.
+
+When a Servlet MVC API localizes user-facing text, follow `i18n.md`. Keep error meaning and stable arguments in the owning domain contract, but resolve locale and render the HTTP message in `app` or `shared:web-support`. Report the selected representation with `Content-Language`; include every request-visible locale selector in effective cache keys and ensure validators distinguish localized representations. For a server-side preference that cannot participate in `Vary`, require `private, no-cache` with representation-specific revalidation or use `no-store`. Do not create an `HttpSession` only to persist locale in a stateless application.
+
+Apply the app-owned response policy to ordinary JSON Security handlers because filter-chain failures do not pass through controller advice. Preserve each authentication scheme's status, challenge headers, redirect behavior, media type, and protocol-owned structured error body; OAuth2/OIDC protocol endpoints keep or delegate to their framework handlers instead of using the common application envelope. Each handler calls the shared locale policy directly. If a filter precomputes a request-only selector, use exactly one placement from `i18n.md`: a side-effect-free container filter before the Security `DelegatingFilterProxy`, or a side-effect-free filter inside each affected `SecurityFilterChain` before its earliest relevant failure-producing filter. Never register the same filter in both places. Persist a valid selector only in the final accepted MVC or app-owned Security response handler, because `HttpFirewall` may reject lazily when a wrapped header or parameter is accessed; being merely inside `springSecurityFilterChain` or before `DispatcherServlet` is insufficient.
+
+Treat firewall rejection as a separate global boundary: `FilterChainProxy` invokes one `RequestRejectedHandler`, and a rejection may occur before chain selection or later while the firewalled request is accessed. No in-chain locale filter is therefore a reliable prerequisite. Prefer a fixed generic response. If the product explicitly requires localization, use only a bounded, allowlisted selector precomputed by the side-effect-free container filter or the deterministic default; never inspect or echo rejected raw request data, expose the firewall exception, or persist locale in this handler.
 
 ## Basic Exception Handler
 

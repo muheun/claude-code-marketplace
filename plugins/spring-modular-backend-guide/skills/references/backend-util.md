@@ -53,3 +53,9 @@ Params<Object> detail = Params.obj("memberId", memberId)
 - Do not use `Params` to avoid designing explicit DTOs or commands. If the payload has a stable public shape, use a typed record/class.
 - Do not convert ordinary style preferences into architecture tests that ban all direct Java standard-library use. Review repeated helper code and changed code instead.
 - When existing code already uses project-local helpers, prefer incremental cleanup near the changed code over broad rewrites.
+
+## Internationalization Extraction Gate
+
+Use `i18n.md` as the canonical extraction gate. In one application, use Spring `MessageSource` and locale resolvers directly in `app` or `shared:web-support`; do not add a static `MessageUtil` to shorten calls or hide `LocaleContextHolder` access.
+
+Extract only after at least two real applications prove the same error descriptor, fallback and missing-key policy, response ownership, and framework expectations. A reusable utility may provide a DB/web-neutral descriptor and optional Spring adapter; each application still owns its locales, business bundles, HTTP mapping, and channel templates. Do not add a Spring/DB utility bundle to domain `api/core`, or turn an existing human-readable exception message into a bundle key without an explicit compatibility migration.

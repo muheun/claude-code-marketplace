@@ -1,20 +1,21 @@
 ---
 name: spring-modular-backend-guide
-description: Use when working on Java Spring Boot DDD-style multi-module architecture, scaffolding, review, or modification involving api/core/adapter boundaries, app-owned web composition, controller DTOs, enum input parsing, QueryDSL/jOOQ/Flyway persistence, identifier strategy, Java import ordering, layered tests, Mockito/fakes, Testcontainers, response envelopes, helper class extraction review, one-consumer Spring bean review, app-local helper review, or backend-util common utilities.
+description: Use when designing, scaffolding, reviewing, or modifying Java Spring Boot DDD-style multi-module backends involving api/core/adapter boundaries, app-owned Servlet MVC composition, controller DTOs, enum input parsing, i18n/MessageSource/localized errors or notifications, QueryDSL/jOOQ/Flyway persistence, identifier strategy, Java imports, Java test helper formatting, layered tests, Mockito/fakes/Testcontainers, response envelopes, helper extraction, Spring bean granularity, or backend-util utilities.
 ---
 
 # Spring Modular Backend Guide
 
 ## Overview
 
-Use this skill to build or review Java Spring Boot backends with reusable bounded-context modules. Core rule: domain modules expose public contracts and adapters; the app module owns HTTP endpoints, composition, and cross-domain wiring.
+Use this skill to build or review Java Spring Boot backends with reusable bounded-context modules. Core rule: domain modules expose public contracts and adapters; the app module owns HTTP endpoints, composition, and cross-domain wiring. HTTP and Security guidance targets the Servlet MVC stack; do not transplant its resolver, filter, or handler contracts into WebFlux.
 
 This is an opinionated guideline for new scaffolds and architecture reviews. Do not apply it to non-Spring projects, frontend work, or small throwaway prototypes unless the user explicitly wants this structure.
 
 ## Workflow
 
-1. Confirm the project is Java Spring Boot by reading `build.gradle`, `settings.gradle`, or `pom.xml`.
-2. Identify the work type and read only the needed references:
+1. Confirm the project is Java Spring Boot from the applicable build descriptors. For Gradle, read `settings.gradle[.kts]`, the relevant root and module `build.gradle[.kts]`, and any version catalog or convention plugin. For Maven, read the relevant `pom.xml`, parent POM, and imported BOM.
+2. Before applying version-sensitive guidance, record the configured Java toolchain/release, the JDK actually used by build and test commands, and the resolved Spring Boot, Spring Framework, Spring Security, and touched Spring extension versions. Use dependency insight, a dependency tree, or the effective POM when a BOM or plugin controls transitive versions. Verify API behavior against matching official documentation or tagged source; do not substitute documentation from another JDK or Spring generation without proving compatibility. If an exact version cannot be resolved, state the uncertainty and do not present a version-specific conclusion as confirmed.
+3. Identify the work type and read only the needed references. Use the most specific row and combine rows only when the task crosses work types:
 
 | Work type | Required reference |
 |---|---|
@@ -28,15 +29,18 @@ This is an opinionated guideline for new scaffolds and architecture reviews. Do 
 | Fixelsoft internal backend-util dependencies, common utilities, `StringUtil`, `NumberUtil`, `DateUtil`, `ListUtil`, or `Params` | `references/build-setup.md` and `references/backend-util.md` |
 | JPA, QueryDSL, jOOQ, Flyway, paging, identifier strategy | `references/persistence.md` and `references/build-setup.md` |
 | Controllers, DTOs, string enum input parsing, app composition, response envelope | `references/web-and-app.md` |
+| Internationalization/i18n, localization, `MessageSource`, message keys, or non-HTTP notifications | `references/i18n.md` |
+| Servlet MVC locale selection, localized HTTP errors, or localized Spring Security responses | `references/i18n.md` and `references/web-and-app.md` |
+| Internationalization test strategy | `references/i18n.md` and `references/testing-checklist.md` |
 | Reusable comment/file-like modules or cross-domain validation | `references/spi-and-reuse.md` |
 | Gradle dependencies, build plugin placement, or jOOQ codegen setup | `references/build-setup.md` and `references/persistence.md` |
 | Architecture test implementation | `references/testing-checklist.md` and `references/architecture-tests.md` |
 | Layered service, persistence, or app test strategy | `references/testing-checklist.md` and `references/persistence.md` |
 | Code review or readiness check | `references/anti-patterns.md`, `references/testing-checklist.md`, and any changed-area references above |
 
-3. Apply the core guardrails below, then follow the loaded references for detailed judgment.
-4. Before writing persistence adapter code, make the selected technology contract explicit from `references/persistence.md` and `references/build-setup.md`. In this guide, choosing JPA means using JPA with QueryDSL for Store reads unless the user explicitly rejects QueryDSL for the project.
-5. Verify with focused behavior, wiring, build, layer, or architecture checks that match the changed boundary; then run the full available build/test command.
+4. Apply the core guardrails below, then follow the loaded references for detailed judgment.
+5. Before writing persistence adapter code, make the selected technology contract explicit from `references/persistence.md` and `references/build-setup.md`. In this guide, choosing JPA means using JPA with QueryDSL for Store reads unless the user explicitly rejects QueryDSL for the project.
+6. Verify with focused behavior, wiring, build, layer, or architecture checks that match the changed boundary; then run the full available build/test command.
 
 ## Core Guardrails
 
@@ -47,18 +51,21 @@ This is an opinionated guideline for new scaffolds and architecture reviews. Do 
 - Store write methods do not receive app DTOs, adapter entities, JPA/jOOQ/Spring Data types, read projections, or HTTP contracts.
 - Persistence choices are explicit: JPA means QueryDSL projection reads by default; jOOQ keeps JPA entities for Hibernate validation but uses jOOQ DSL for reads/writes; schema changes go through Flyway.
 - Naming, enum parsing, response envelopes, adapter registration, and import ordering are design/review rules first. Add static enforcement only when the project treats the policy as stable or the task explicitly touches that boundary.
+- Domain modules own error and event meaning; app or outbound presentation boundaries select locale and render user-facing text. Keep `MessageSource`, `LocaleContextHolder`, translated sentences, and channel-specific templates out of reusable `api/core` modules.
 - Tests follow dependency direction. Prefer focused behavior, wiring, layer, and build checks; use architecture tests only for stable boundaries ordinary tests cannot protect cheaply.
 - For Fixelsoft internal projects, recommend approved DB-neutral `backend-util` common/json-common utilities when the project opts in, but keep DB/Spring utility bundles out of reusable domain contracts.
 
 ## Frequent Failure Signals
 
-If you see controllers in domain modules, app DTOs passed into service/store contracts, one-method interfaces with no distinct role, one-consumer app helper beans extracted from private methods, JPA entity fetch reads used as the default Store read model, direct `Enum.valueOf(...)` parsing at boundaries, broad source scans for review-only preferences, or build checks that blacklist open-ended external coordinates, read `references/anti-patterns.md` plus the changed-area references from the routing table before editing.
+If you see controllers in domain modules, app DTOs passed into service/store contracts, one-method interfaces with no distinct role, one-consumer app helper beans extracted from private methods, `MessageSource` or `LocaleContextHolder` in reusable domain logic, translated exception sentences used as service contracts, JPA entity fetch reads used as the default Store read model, direct `Enum.valueOf(...)` parsing at boundaries, broad source scans for review-only preferences, or build checks that blacklist open-ended external coordinates, read `references/anti-patterns.md` plus the changed-area references from the routing table before editing.
 
 ## Completion Checklist
 
 - Loaded every reference required by the work type and any changed-area reference.
+- For version-sensitive work, recorded the configured Java toolchain/release, the JDK used by verification commands, and resolved versions for the touched Spring stack; version-sensitive claims use matching official documentation or tagged source.
 - Module boundaries, command/DTO ownership, persistence technology, and test scope match the relevant references.
 - Extracted helper classes or Spring beans pass the Class Extraction Gate; otherwise keep the logic local.
 - New Service, Store, SPI, Reader, or Notifier contracts pass the Interface Split Gate.
+- Localized behavior declares its supported locales, default and fallback policy, message ownership, focused locale tests, and a non-HTTP rendering boundary when async or outbound messages exist.
 - New or changed enforcement checks protect stable boundaries rather than incidental naming, helper shape, or future library coordinates.
 - Focused verification passed before the full available build/test command.

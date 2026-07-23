@@ -1,7 +1,7 @@
 {
   "name": "spring-modular-backend-guide",
-  "description": "Java Spring Boot DDD modular backend guideline. Defines reusable domain modules with api/core/adapter boundaries, app-owned web composition, Java import ordering, Java test helper formatting, StoreAdapter persistence, QueryDSL/jOOQ/Flyway rules, identifier strategy, response envelope, and architecture tests.",
-  "version": "0.0.1",
+  "description": "Java Spring Boot DDD modular backend guideline. Defines reusable api/core/adapter boundaries, app-owned Servlet MVC and internationalization composition, localized error/notification contracts, Java import ordering, StoreAdapter persistence, QueryDSL/jOOQ/Flyway rules, identifier strategy, response envelopes, and architecture tests.",
+  "version": "0.1.0",
   "author": {
     "name": "muheun",
     "url": "https://github.com/muheun/claude-code-marketplace"

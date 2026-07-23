@@ -13,16 +13,35 @@ Example: `comment` must not depend on `board`, `product`, or `notice`. It should
 Put the SPI in the reusable module `api`:
 
 ```java
+public enum CommentErrorCode {
+    TARGET_NOT_COMMENTABLE
+}
+
+public final class CommentTargetNotCommentableException extends RuntimeException {
+    private final CommentErrorCode code;
+
+    public CommentTargetNotCommentableException() {
+        super(CommentErrorCode.TARGET_NOT_COMMENTABLE.name());
+        this.code = CommentErrorCode.TARGET_NOT_COMMENTABLE;
+    }
+
+    public CommentErrorCode code() {
+        return code;
+    }
+}
+
 public interface CommentTargetPolicy {
     boolean isCommentable(CommentTarget target);
 
     default void ensureCommentable(CommentTarget target) {
         if (!isCommentable(target)) {
-            throw new IllegalArgumentException("댓글을 작성할 수 없는 대상입니다.");
+            throw new CommentTargetNotCommentableException();
         }
     }
 }
 ```
+
+The reusable contract exposes stable error meaning, not a translated sentence, message key, or HTTP status. The app maps `TARGET_NOT_COMMENTABLE` to its public response code, HTTP status, message key, and locale-specific text. Add safe arguments only when the presentation boundary genuinely needs them; do not expose raw target identifiers or host data by default.
 
 The host app implements it:
 
@@ -52,7 +71,7 @@ Generate the SPI shape and wiring point. Do not generate project-specific busine
 Allowed:
 
 - SPI interface in reusable module `api`
-- default `ensure*` method that throws for command flows
+- default `ensure*` method that raises a typed semantic error for command flows
 - app-side implementation that calls host service `exists`
 - app-side target converter/helper
 
@@ -62,8 +81,11 @@ Avoid:
 - Assuming every project needs closed/open target states
 - Calling `get()` only to check existence
 - Making reusable modules log, skip, or throw in a fixed way for all workflows
+- Putting translated sentences, app message keys, or HTTP status codes in reusable SPI failures
 - Importing host domain classes in reusable modules
 
 ## Boolean Policy Methods
 
 Prefer boolean `is*able` methods as the base SPI. Command flows may call `ensure*`; batch/import flows may call `is*able` and decide whether to log, skip, collect errors, or throw.
+
+Core contract tests assert the typed error code and any safe arguments, not localized prose. App tests own status, public code, and translated response assertions.
