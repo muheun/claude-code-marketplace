@@ -3,10 +3,10 @@
 ## Contents
 
 - [Change Strategy](#change-strategy)
-- [Test Scope Calibration](#test-scope-calibration)
-  - [Interface Granularity](#interface-granularity)
+- [Extraction and Split Gates](#extraction-and-split-gates)
   - [Interface Split Gate](#interface-split-gate)
   - [Class Extraction Gate](#class-extraction-gate)
+- [Test Scope Calibration](#test-scope-calibration)
 - [Module Structure](#module-structure)
 - [Module Roles](#module-roles)
 - [Java Package Convention](#java-package-convention)
@@ -33,28 +33,11 @@ A checklist item may record the decision, but it does not protect a boundary by 
 
 Small changes do not mean creating many classes by default. Split when change reasons, test boundaries, dependency direction, or reuse boundaries differ.
 
-## Test Scope Calibration
+## Extraction and Split Gates
 
-Do not skip tests. Tests should protect the changed responsibility or boundary with the smallest sufficient check, not mirror every implementation detail. Use `testing-checklist.md` as the detailed source for layer-specific test rules.
+Split `Service`, `Store`, SPI, Reader, and Notifier contracts by role and change reason, not by method count. Apply the gates below before creating any new contract, class, or Spring bean.
 
-Quick calibration:
-
-- If a module boundary moved, add one architecture rule or dependency check for that boundary.
-- If service policy changed, test the real `*ServiceImpl` through inputs, outputs, state changes, and exceptions.
-- If persistence behavior changed, test the real adapter against the target database for projection, ordering, paging, constraints, or dialect-sensitive SQL.
-- If controller behavior changed, test HTTP binding, validation, status, response envelope, security, filters, or interceptors.
-
-Baseline architecture tests are for stable modularization rules: selected `api/core`, persistence technology adapter, and schema resource modules exist and dependency direction is correct. Technology adapters such as `persistence-jpa`, `persistence-jooq`, `persistence-mybatis`, and `persistence-memory` depend on their own `core`; `persistence-schema` is resource-only by default and is consumed through app runtime, adapter test runtime, or codegen classpaths. Also protect no `api -> core`, no `api/core -> app/adapter/web-support/other bounded context`, and no persistence technology adapter -> `app/web-support/other bounded context`. Technology bans, controller placement, adapter self-registration, jOOQ/Flyway build order, response envelope, enum parsing, and forbidden DTO/entity/persistence-type rules can still be mandatory design rules; broad static enforcement for them is an opt-in project-policy check, not the default baseline. Behavior tests, compiler contract changes, and review judgment are better for ordinary refactoring choices such as helper names, interface split names, exact command record names, scalar-vs-command migration, parameter order/count/names, and proxy internals.
-
-If a proposed architecture test needs a broad source scan, bytecode scan, dependency-coordinate blacklist, or many helper methods, stop and classify it before coding it: baseline modularization, opt-in project policy, or review-only guidance. The validation should not cost more to build or maintain than the boundary it protects.
-
-Store write commands are a design improvement target, not a global test target. Refactor the touched Store contracts when the scalar list is harming readability, validation, or mapping safety, then rely on compilation plus focused service/persistence tests for changed behavior. Do not add a broad architecture test that fails all Store write methods because they have more than a chosen number of parameters.
-
-### Interface Granularity
-
-Split `Service`, `Store`, SPI, Reader, and Notifier contracts by role and change reason, not by method count.
-
-#### Interface Split Gate
+### Interface Split Gate
 
 Before introducing a new contract or moving consumers to it, pass this gate:
 
@@ -97,6 +80,40 @@ Before extracting a private/helper block into a new class or Spring bean, pass t
 
 Extract when the new class has one primary reason to change after these checks. Keep a private method when a single-consumer extraction has no dependency, lifecycle, policy, or consumer-knowledge boundary, remains tightly coupled to caller flow, or only moves code into a one-method bean.
 
+## Test Scope Calibration
+
+Do not skip tests. Tests should protect the changed responsibility or boundary with the smallest sufficient check, not mirror every implementation detail. Use `testing-checklist.md` as the detailed source for layer-specific test rules.
+
+Quick calibration:
+
+- If a module boundary moved, add one architecture rule or dependency check for that boundary.
+- If service policy changed, test the real `*ServiceImpl` through inputs, outputs, state changes, and exceptions.
+- If persistence behavior changed, test the real adapter against the target database for projection, ordering, paging, constraints, or dialect-sensitive SQL.
+- If controller behavior changed, test HTTP binding, validation, status, response envelope, security, filters, or interceptors.
+
+Classify each proposed architecture check into one of three groups:
+
+Included in baseline (stable modularization rules):
+
+- Selected `api/core`, technology adapter (persistence, messaging, cache), and schema resource modules exist and dependency direction is correct.
+- Technology adapters such as `persistence-jpa`, `persistence-jooq`, `persistence-mybatis`, `persistence-memory`, `messaging-kafka`, `cache-caffeine`, and `cache-redis` depend inward only on their own `api` and/or `core` contracts as their role requires. Persistence, outbound messaging, and cache port implementations normally depend on `core`; a reusable inbound messaging adapter may depend on `api` to call a framework-neutral service contract.
+- `persistence-schema` is resource-only by default and is consumed through app runtime, adapter test runtime, or codegen classpaths.
+- No `api -> core`, no `api/core -> app/adapter/web-support/other bounded context`, and no technology adapter -> `app/web-support/other bounded context`.
+
+Conditional opt-in (mandatory design rules whose broad static enforcement is an opt-in project-policy check, not the default baseline):
+
+- Technology bans, controller placement, adapter self-registration, jOOQ/Flyway build order, response envelope, enum parsing, and forbidden DTO/entity/persistence-type rules.
+
+Review-only (behavior tests, compiler contract changes, and review judgment are better than architecture rules):
+
+- Ordinary refactoring choices such as helper names, interface split names, exact command record names, scalar-vs-command migration, parameter order/count/names, and proxy internals.
+
+If a proposed architecture test needs a broad source scan, bytecode scan, dependency-coordinate blacklist, or many helper methods, stop and classify it before coding it: baseline modularization, opt-in project policy, or review-only guidance. The validation should not cost more to build or maintain than the boundary it protects.
+
+Store write commands are a design improvement target, not a global test target. Refactor the touched Store contracts when the scalar list is harming readability, validation, or mapping safety, then rely on compilation plus focused service/persistence tests for changed behavior. Do not add a broad architecture test that fails all Store write methods because they have more than a chosen number of parameters.
+
+For contract and class extraction decisions, apply the [Interface Split Gate](#interface-split-gate) and [Class Extraction Gate](#class-extraction-gate) in [Extraction and Split Gates](#extraction-and-split-gates).
+
 ## Module Structure
 
 Use this shape for reusable bounded contexts:
@@ -111,6 +128,10 @@ shared:web-support
 <domain>:adapter:persistence-memory
 <domain>:adapter:persistence-jpa
 <domain>:adapter:persistence-jooq
+<domain>:adapter:persistence-mybatis
+<domain>:adapter:messaging-kafka
+<domain>:adapter:cache-caffeine
+<domain>:adapter:cache-redis
 
 app
 ```
@@ -121,15 +142,17 @@ Include only the schema resource modules and technology adapters actually needed
 
 `shared:domain` contains pure shared domain types only. Do not place Spring, Web, JPA, Jackson response types, or persistence helpers here.
 
-`shared:web-support` contains Spring Web common response helpers and basic exception handling. Domain `api/core` and persistence adapters must not depend on it.
+`shared:web-support` contains Spring Web common response helpers and basic exception handling. Domain `api/core` and technology adapters must not depend on it.
 
-`*:api` is the public contract module. Put service interfaces, commands, results, search DTOs, value objects, and SPI contracts here. It must not depend on Spring, Web, DB technology, `core`, or `adapter`.
+`*:api` is the public contract module. Put service interfaces, commands, results, search DTOs, value objects, and SPI contracts here. It must not depend on Spring, Web, persistence, messaging, cache-client technology, `core`, or `adapter`.
 
-`*:core` is the default implementation module. Put service implementations, domain models, persistence ports, and core business rules here. It must not contain Spring MVC, JPA, web request/response DTOs, or persistence technology.
+`*:core` is the default implementation module. Put service implementations, domain models, technology-neutral ports, and core business rules here. It must not contain Spring MVC, JPA, Kafka, cache-client types, web request/response DTOs, or other adapter technology.
 
 `*:adapter:persistence-schema` owns reusable relational schema resources such as Flyway migrations. It is resource-only by default and should not depend on `*:core` unless a project-specific schema convention explicitly requires code.
 
 Technology adapters such as `*:adapter:persistence-jpa`, `*:adapter:persistence-jooq`, `*:adapter:persistence-mybatis`, and `*:adapter:persistence-memory` implement core persistence ports. JPA entities, QueryDSL, jOOQ, memory stores, and generated tables stay inside technology adapters.
+
+`*:adapter:messaging-kafka`, `*:adapter:cache-caffeine`, and `*:adapter:cache-redis` follow the same inward dependency rules: they depend only on their own `api` and/or `core` contracts as their role requires, keep client types inside the adapter, and are selected by app composition. Outbound messaging and cache adapters normally implement `core` ports; a reusable inbound Kafka adapter may instead call its bounded context's framework-neutral `api` service contract. See `messaging.md` and `caching.md`.
 
 `app` is the executable composition module. Put controllers, app request/response DTOs, selected adapter imports, global web behavior, and host-domain SPI implementations here.
 
@@ -141,6 +164,8 @@ Java packages should preserve module boundaries so architecture tests can verify
 <base>.<domain>.api..
 <base>.<domain>.core..
 <base>.<domain>.adapter.persistence..
+<base>.<domain>.adapter.messaging..
+<base>.<domain>.adapter.cache..
 <base>.app.<host-workflow>..
 <base>.websupport.. or <base>.web.support..
 ```
@@ -154,14 +179,18 @@ Arrows point from the depending module to the module it depends on:
 ```text
 *:core -> *:api
 *:adapter:persistence-jpa|jooq|mybatis|memory -> *:core
+*:adapter:messaging-kafka -> *:api and/or *:core (selected roles only)
+*:adapter:cache-caffeine|redis -> *:core (port implementation only)
 app -> *:api
 app -> *:core
 app -> selected *:adapter:persistence-schema
 app -> selected *:adapter:persistence-jpa|jooq|mybatis|memory
+app -> selected *:adapter:messaging-kafka
+app -> selected *:adapter:cache-caffeine|redis
 app -> shared:web-support
 ```
 
-`shared:domain` may be used by domain contracts when pure shared domain types are needed. `shared:web-support` is web infrastructure and must stay out of domain `api/core` and persistence adapters.
+`shared:domain` may be used by domain contracts when pure shared domain types are needed. `shared:web-support` is web infrastructure and must stay out of domain `api/core` and every technology adapter.
 
 `app -> *:core` exists for composition and configuration, such as constructing selected `*ServiceImpl` service implementations or importing selected adapter configurations. Controllers and HTTP-facing app services should depend on `*:api` service contracts, not concrete `*ServiceImpl` core classes.
 

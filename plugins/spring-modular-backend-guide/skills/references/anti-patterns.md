@@ -42,7 +42,7 @@ Use this file during code review and scaffold review.
 - `core.port` Store command records are exposed upward through `*:api` service contracts or app controllers.
 - DTO, service command, Store command, and entity types are created mechanically for every method even when there is no distinct boundary, validation, policy, or persistence reason.
 - Splitting Store write commands only because of a nullable/default field when the write intent and validation are the same.
-- Persistence row mappers call `Enum.valueOf(...)` directly for stored strings instead of using an adapter mapper or domain enum factory.
+- Persistence row mappers call `Enum.valueOf(...)` directly for stored strings; follow "Enum Input Parsing and Factory Names" in `naming.md`.
 - Query reads fetch entities and map every row through `toDomain()` by default.
 - List/search queries lack stable ordering.
 - Store mutates paging result state with `calcPaging` or `setBody`.
@@ -66,23 +66,12 @@ Use this file during code review and scaffold review.
 - Controllers inject concrete core implementations such as `*ServiceImpl` instead of `*:api` service contracts.
 - Controllers pass app request DTOs directly into reusable domain services, Store contracts, or persistence adapters.
 - Controllers bind reusable domain `api` command types directly as request bodies when the HTTP shape has request-only validation, defaults, OpenAPI schema, or client compatibility concerns.
-- Controllers, command handlers, or batch input adapters call `Enum.valueOf(...)` directly for external strings instead of using an app parser or domain enum factory.
-- Controllers or command handlers duplicate enum parsing/default helpers, or push channel-specific aliases, defaults, localization, or user-facing messages into reusable domain enums.
-- Reusable `api/core` injects `MessageSource`, reads `LocaleContextHolder`, accepts request locale only to format exceptions, or throws translated sentences as the service contract.
-- `@RestControllerAdvice` localizes MVC errors while `AuthenticationEntryPoint`, `AccessDeniedHandler`, or custom security filters still emit hard-coded text or raw JSON strings.
-- A localized JSON Security handler replaces a scheme-specific or protocol-owned handler without preserving its status, `WWW-Authenticate` challenge, redirect contract, media type, or structured error body.
-- A localized HTTP representation echoes the requested language instead of reporting the selected `Content-Language`, omits a request-visible locale selector from an effective cache key, reuses one representation validator across different languages, omits mandatory revalidation for a server-side preference, or treats `private` alone as sufficient.
-- A custom `LocaleResolver` is registered under a name other than `localeResolver`, so `DispatcherServlet` continues using the default strategy.
-- `Locale.forLanguageTag(...)` is treated as validation, so an ill-formed suffix is discarded before the remaining language is allowlisted or persisted.
-- A Security handler assumes an MVC `LocaleChangeInterceptor` has run, conflates a container filter before `DelegatingFilterProxy` with an `HttpSecurity` filter inside `springSecurityFilterChain`, lets the same request-selector filter run in both places, or lets either selector filter persist state before the final accepted response boundary.
-- Controller advice, an entry point, or an in-chain locale filter is expected to handle an `HttpFirewall` rejection, or a custom global `RequestRejectedHandler` reads rejected raw request data, exposes exception text, or performs persistence to localize the response.
-- A query/cookie/session selector is persisted without a supported-locale allowlist, `SessionLocaleResolver` creates state only for locale in a stateless application, or a malformed selector replaces an expected 401/403 with a 500.
-- Servlet MVC locale resolvers, interceptors, or Security handlers are applied mechanically to a WebFlux application.
-- Batch, scheduled, async, Slack, email, or push rendering uses the current thread/request locale instead of an explicit recipient locale.
-- Message arguments are inserted into HTML, URL components, Slack markup, or mentions without output-context encoding because they already passed through `MessageSource`, or complete URLs are trusted without allowed scheme/host validation.
-- A retry is called deterministic while re-reading mutable locale/templates, or called latest-preference while persisting only pre-rendered text.
-- A static `MessageUtil` is added to `backend-util` before multiple real applications share the same locale, fallback, missing-key, and error-contract policy.
-- Complete language bundles are missing public keys, partial regional overrides contain unknown keys, parameterized patterns are never formatted in tests, or lookup relies on the machine default locale.
+- Controllers, command handlers, or batch input adapters call `Enum.valueOf(...)` directly for external strings, or duplicate ad-hoc parsing/default helpers; follow "Enum Input Parsing and Factory Names" in `naming.md`.
+- Any i18n, localized error, or localized Security response behavior that deviates from `i18n.md`; that file is the canonical policy. Representative signals:
+  - Reusable `api/core` injects `MessageSource` or reads `LocaleContextHolder` to format exceptions.
+  - `@RestControllerAdvice` localizes MVC errors while Security entry points, access-denied handlers, or filters still emit hard-coded text or raw JSON strings.
+  - A custom `LocaleResolver` is registered under a name other than `localeResolver`, so `DispatcherServlet` keeps the default strategy.
+  - Batch, scheduled, async, Slack, email, or push rendering uses the current thread/request locale instead of an explicit recipient locale.
 - Common error response contains boolean `success`.
 - 5xx fallback exposes raw exception messages.
 - HTTP-specific response DTOs or web-annotated DTOs are placed in reusable module `api`.

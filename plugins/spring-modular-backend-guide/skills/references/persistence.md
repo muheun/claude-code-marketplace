@@ -17,7 +17,7 @@
 
 ## Search And Paging
 
-For internal Fixelsoft projects, Search DTOs may extend a DB-neutral `backend-util` `Paging<T>` only when that artifact is approved as a public API contract. Do not make domain `api` depend on Spring DB bundles, Flyway, p6spy, JDBC drivers, or persistence helper packages. For general or open projects, create a local paging contract instead.
+For internal Fixelsoft projects, Search DTOs may extend a DB-neutral `backend-util` `Paging<T>` only when the artifact is already exposed with `api` scope in the project build or listed as a public contract in the project's architecture notes. Do not make domain `api` depend on Spring DB bundles, Flyway, p6spy, JDBC drivers, or persistence helper packages. For general or open projects, create a local paging contract instead.
 
 Standard flow:
 
@@ -128,7 +128,7 @@ JPA/QueryDSL-backed Store read side:
 - Choosing JPA for a project that uses this guide means using QueryDSL for Store reads.
 - Use QueryDSL projection for single-item reads and list/search reads.
 - Add stable ordering for pageable lists.
-- Before implementing a `persistence-jpa` module or `Jpa*StoreAdapter`, verify that the module build declares OpenFeign QueryDSL artifacts under `io.github.openfeign.querydsl` for `querydsl-jpa` and `querydsl-apt`, plus Jakarta annotation/persistence processors, and that the adapter can receive or create a `JPAQueryFactory`.
+- Before implementing a `persistence-jpa` module or `Jpa*StoreAdapter`, verify the module build against the QueryDSL baseline in `build-setup.md` (JPA/QueryDSL Adapter Modules) and confirm the adapter can receive or create a `JPAQueryFactory`.
 - Criteria API and JPQL string queries are not the default fallback for Store reads. Use them only after the user explicitly rejects QueryDSL for the project; capture the chosen exception in the plan, review response, or project architecture note instead of source-code comments.
 - Do not use entity fetch plus `toDomain()` as the default read pattern.
 - Do not use `JpaRepository` as the standard Store implementation.
@@ -158,7 +158,7 @@ When a jOOQ-backed Store is selected, JPA entities still exist for Hibernate sch
 Rules:
 
 - Use `DSLContext` and generated table/record classes.
-- Prefer jOOQ DSL for both 조회 and 저장.
+- Prefer jOOQ DSL for both reads and writes.
 - Do not use JPA, Spring Data, `JpaRepository`, or `EntityManager` for Store reads/writes in the jOOQ-backed Store.
 - JPA entities in a jOOQ-backed adapter are for entity declaration and `ddl-auto: validate` only.
 - Return domain objects or result DTOs through explicit mapping/projection.
@@ -226,12 +226,6 @@ Do not edit an already-applied Flyway migration to add comments or rename keys/i
 
 ## backend-util
 
-For DB-neutral common/json-common utility usage, see `backend-util.md`. This section covers Spring/DB infrastructure bundles only.
+For `backend-util` adoption, dependency snippets, and scope rules, see `backend-util.md`, the canonical source.
 
-For Spring Boot 4 internal projects:
-
-```kotlin
-implementation("com.fixelsoft.util:fixel-util-spring4-db:20260517")
-```
-
-Use this for Flyway, p6spy, and related DB infrastructure in `app` or selected persistence technology adapters. Do not expose this dependency from reusable domain `api/core` modules or resource-only `persistence-schema` modules. For H2 sample projects, exclude MariaDB/MySQL driver modules brought by DB bundles and add H2 explicitly.
+For Spring Boot 4 internal projects, use `com.fixelsoft.util:fixel-util-spring4-db:<approved-version>` for Flyway, p6spy, and related DB infrastructure in `app` or selected persistence technology adapters; resolve `<approved-version>` from the project version catalog or existing usage. Do not expose this dependency from reusable domain `api/core` modules or resource-only `persistence-schema` modules. For H2 sample projects, exclude MariaDB/MySQL driver modules brought by DB bundles and add H2 explicitly.

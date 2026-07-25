@@ -99,7 +99,7 @@
     {
       "name": "spring-modular-backend-guide",
       "source": "./plugins/spring-modular-backend-guide",
-      "description": "Java Spring Boot DDD modular backend guideline. Defines reusable api/core/adapter boundaries, app-owned Servlet MVC and internationalization composition, localized error/notification contracts, Java import ordering, StoreAdapter persistence, QueryDSL/jOOQ/Flyway rules, identifier strategy, response envelopes, and architecture tests.",
+      "description": "Java Spring Boot DDD modular backend guideline. Defines reusable api/core/adapter boundaries, app-owned Servlet MVC and internationalization composition, localized error/notification contracts, Java import ordering, StoreAdapter persistence, QueryDSL/jOOQ/Flyway rules, identifier strategy, Kafka messaging with outbox, Caffeine/Valkey/Redis caching, response envelopes, and architecture tests.",
       "author": {
         "name": "muheun"
       },

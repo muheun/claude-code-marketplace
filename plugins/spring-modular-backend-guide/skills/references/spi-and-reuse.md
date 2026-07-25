@@ -1,5 +1,12 @@
 # SPI And Reuse Reference
 
+## Contents
+
+- [Core Rule](#core-rule)
+- [Target Integration Pattern](#target-integration-pattern)
+- [What The Skill Should Generate](#what-the-skill-should-generate)
+- [Boolean Policy Methods](#boolean-policy-methods)
+
 SPI means Service Provider Interface: a contract that a host project implements to extend a reusable module without creating direct module dependencies.
 
 ## Core Rule
@@ -41,7 +48,7 @@ public interface CommentTargetPolicy {
 }
 ```
 
-The reusable contract exposes stable error meaning, not a translated sentence, message key, or HTTP status. The app maps `TARGET_NOT_COMMENTABLE` to its public response code, HTTP status, message key, and locale-specific text. Add safe arguments only when the presentation boundary genuinely needs them; do not expose raw target identifiers or host data by default.
+The reusable contract exposes stable error meaning, not a translated sentence, message key, or HTTP status. The app maps the typed code to its public response code, HTTP status, message key, and locale-specific text. `getMessage()` is non-localized diagnostic text. Add safe arguments only when the presentation boundary genuinely needs them; do not expose raw target identifiers or host data by default.
 
 The host app implements it:
 

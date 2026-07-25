@@ -50,13 +50,13 @@ Versionless Spring dependencies in submodules require a shared dependency manage
 
 ```kotlin
 plugins {
-    id("org.springframework.boot") version "4.0.6" apply false
+    id("org.springframework.boot") version "<version>" apply false
 }
 
-val springBootVersion = "4.0.6"
+val springBootVersion = "<version>"
 
 subprojects {
-    if (!projectDir.resolve("build.gradle.kts").isFile) {
+    if (!projectDir.resolve("build.gradle.kts").isFile && !projectDir.resolve("build.gradle").isFile) {
         return@subprojects
     }
 
@@ -78,7 +78,7 @@ subprojects {
 }
 ```
 
-Use a Spring Boot 3.x or 4.x version that matches the target project. If the project uses the Spring dependency-management plugin instead, apply the same BOM consistently to every submodule configuration that declares versionless dependencies.
+Use a Spring Boot 3.x or 4.x version that matches the target project; resolve `<version>` from the project version catalog or the official Spring Boot release notes. If the project uses the Spring dependency-management plugin instead, apply the same BOM consistently to every submodule configuration that declares versionless dependencies.
 
 Internal projects may add `mavenLocal()` or a company repository, but `mavenCentral()` should remain the default public repository for Spring, QueryDSL, ArchUnit, and test dependencies.
 
@@ -98,23 +98,7 @@ dependencies {
 
 If an internal project uses a shared `Paging<T>`, keep the dependency DB-neutral. Do not add `fixel-util-spring4-db` or other DB infrastructure bundles to domain `api`.
 
-For Fixelsoft internal Spring projects, `backend-util` common/json-common usage is recommended but not required; use it only when the user or project chooses it. When the project opts in and a module only calls common utilities or JSON map helpers internally, keep the dependency non-transitive:
-
-```kotlin
-dependencies {
-    implementation("com.fixelsoft.util:fixel-util-json-common:<approved-version>")
-}
-```
-
-Use `api` only when the module intentionally exposes approved `backend-util` public contract types, such as shared paging/search contracts:
-
-```kotlin
-dependencies {
-    api("com.fixelsoft.util:fixel-util-json-common:<approved-version>")
-}
-```
-
-`fixel-util-json-common` exposes common utilities such as `StringUtil`, `NumberUtil`, `DateUtil`, and `ListUtil`, plus `Params` for dynamic JSON/key-value payloads. Do not depend directly on the internal `fixel-util-common` module from consuming projects unless that project explicitly publishes and approves it.
+For Fixelsoft internal Spring projects, `backend-util` common/json-common adoption, dependency snippets, and `implementation` vs `api` scope rules are covered in `backend-util.md`, the canonical source. Do not depend directly on the internal `fixel-util-common` module from consuming projects unless that project explicitly publishes and approves it.
 
 Domain `core` modules:
 
@@ -174,10 +158,10 @@ dependencies {
     testRuntimeOnly(project(":board:adapter:persistence-schema"))
 }
 
-// jOOQ code generation convention; use the project's actual configuration name.
+// jOOQ codegen classpath for the official org.jooq.jooq-codegen-gradle plugin.
 dependencies {
-    jooqCodegenMigration(project(":shared:db-schema")) // if codegen needs shared or legacy migrations
-    jooqCodegenMigration(project(":board:adapter:persistence-schema"))
+    jooqCodegen(project(":shared:db-schema")) // if codegen needs shared or legacy migrations
+    jooqCodegen(project(":board:adapter:persistence-schema"))
 }
 ```
 
@@ -195,50 +179,101 @@ plugins {
 dependencies {
     implementation(project(":board:core"))
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-    implementation("io.github.openfeign.querydsl:querydsl-jpa:7.4.0")
-    annotationProcessor("io.github.openfeign.querydsl:querydsl-apt:7.4.0:jakarta")
+    implementation("io.github.openfeign.querydsl:querydsl-jpa:<version>")
+    annotationProcessor("io.github.openfeign.querydsl:querydsl-apt:<version>:jakarta")
     annotationProcessor("jakarta.persistence:jakarta.persistence-api")
     annotationProcessor("jakarta.annotation:jakarta.annotation-api")
 }
 ```
 
-Treat this as the required JPA adapter baseline for projects using this guide, not an optional embellishment. Use the OpenFeign-maintained QueryDSL artifacts under `io.github.openfeign.querydsl`; do not use legacy `com.querydsl` coordinates for new scaffolds. When scaffolding a `persistence-jpa` module or `Jpa*StoreAdapter`, include QueryDSL dependencies and annotation processors before writing read-side adapter code. If the user explicitly rejects QueryDSL for the project, stop and ask for the selected persistence-read alternative instead of silently falling back to Criteria, JPQL string queries, entity fetch mapping, or `JpaRepository`.
+Treat this as the required JPA adapter baseline for projects using this guide, not an optional embellishment. Use the OpenFeign-maintained QueryDSL artifacts under `io.github.openfeign.querydsl`; do not use legacy `com.querydsl` coordinates for new scaffolds. Resolve `<version>` from the project version catalog or the current OpenFeign QueryDSL release, and verify from the chosen artifact's POM whether the `jakarta` classifier is required for that version. When scaffolding a `persistence-jpa` module or `Jpa*StoreAdapter`, include QueryDSL dependencies and annotation processors before writing read-side adapter code. If the user explicitly rejects QueryDSL for the project, stop and ask for the selected persistence-read alternative instead of silently falling back to Criteria, JPQL string queries, entity fetch mapping, or `JpaRepository`.
 
 ### jOOQ Adapter Modules
 
+Minimal example with the official `org.jooq.jooq-codegen-gradle` plugin, available for jOOQ 3.19+:
+
 ```kotlin
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath("org.flywaydb:flyway-mysql:<flyway-version>")
+    }
+}
+
 plugins {
     `java-library`
-    // Apply the project's selected jOOQ code generation convention here.
+    id("org.jooq.jooq-codegen-gradle") version "<jooq-version>"
+    id("org.flywaydb.flyway") version "<flyway-version>"
 }
 
 dependencies {
     implementation(project(":board:core"))
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-jooq")
-    // Add the target JDBC driver, Flyway, and jOOQ codegen dependencies through the project convention.
-    // Keep JPA entities for Hibernate schema validation; Store reads/writes still use jOOQ DSL.
+    runtimeOnly("org.mariadb.jdbc:mariadb-java-client") // target JDBC driver
+    jooqCodegen("org.mariadb.jdbc:mariadb-java-client:<version>")
+    jooqCodegen(project(":board:adapter:persistence-schema"))
+    // jooqCodegen(project(":shared:db-schema")) // if codegen needs shared or legacy migrations
+}
+
+flyway {
+    url = "<codegen-jdbc-url>"
+    user = "<codegen-user>"
+    password = "<codegen-password>"
+    locations = arrayOf("classpath:db/migration")
+    configurations = arrayOf("jooqCodegen")
+}
+
+jooq {
+    configuration {
+        jdbc {
+            url = "<codegen-jdbc-url>"
+            user = "<codegen-user>"
+            password = "<codegen-password>"
+        }
+        generator {
+            database {
+                inputSchema = "<codegen-schema>"
+            }
+            target {
+                packageName = "<project-package>.jooq"
+            }
+        }
+    }
+}
+
+tasks.named("flywayValidate") {
+    dependsOn(tasks.named("flywayMigrate"))
+}
+tasks.named("jooqCodegen") {
+    dependsOn(tasks.named("flywayValidate"))
+}
+tasks.named("compileJava") {
+    dependsOn(tasks.named("jooqCodegen"))
 }
 ```
 
-jOOQ-backed adapters still keep JPA entity declarations and `ddl-auto: validate` for schema verification. Do not add Spring Data repositories or use `EntityManager` for Store reads/writes in the jOOQ-backed Store.
+Resolve `<jooq-version>` and other `<version>` placeholders from the project version catalog or the official release notes. Resolve the single `<flyway-version>` placeholder once and use the same compatible version for both `org.flywaydb.flyway` and `org.flywaydb:flyway-mysql`. The `buildscript` repository and classpath make Flyway's MariaDB/MySQL database module resolvable on the Flyway Gradle plugin execution path. `configurations = arrayOf("jooqCodegen")` points the Flyway plugin's classpath scan at the codegen configuration, where the schema module's `db/migration` resources live; without it the plugin scans only the default compile/runtime classpaths and this example finds zero migrations. The official codegen plugin registers its generated target directory on the main source set automatically, so do not add manual `sourceSets` wiring for the default layout. Point the JDBC settings at the Flyway-migrated codegen database, not a developer-local one. The standard task order is `flywayMigrate`, `flywayValidate`, `jooqCodegen`, compilation, then tests.
+
+jOOQ-backed adapters still keep JPA entity declarations and `ddl-auto: validate` for schema verification; Store reads/writes still use jOOQ DSL. Do not add Spring Data repositories or use `EntityManager` for Store reads/writes in the jOOQ-backed Store.
 
 ### jOOQ Codegen Order
 
-jOOQ adapters must generate sources from a Flyway-migrated schema before Java compilation and tests. Use project-specific task names, but keep this dependency order:
+jOOQ adapters must generate sources from a Flyway-migrated and validated schema before Java compilation and tests. For the official plugin baseline, use only its standard tasks in this dependency order:
 
 ```text
-prepareJooqCodegenDb
--> flywayMigrateJooqCodegen
--> verifyJooqCodegenSchema
--> generateJooq
+flywayMigrate
+-> flywayValidate
+-> jooqCodegen
 -> compileJava
 -> test
 ```
 
-Gradle wiring must make `generateJooq` depend on the migration and schema verification tasks, and `compileJava` depend on `generateJooq`. `compileJava.dependsOn(generateJooq)` is the required contract. `test` will then depend on generated sources through compilation; an explicit `test.dependsOn(generateJooq)` is only a supplemental clarity check.
+Gradle wiring must make `flywayValidate` depend on `flywayMigrate`, `jooqCodegen` depend on `flywayValidate`, and `compileJava` depend on `jooqCodegen`. The Java plugin already makes `test` depend on compilation; do not add that wiring manually.
 
-`verifyJooqCodegenSchema` should fail when:
+If a project needs stronger checks beyond Flyway validation, explicitly register a project-specific verification task after `flywayValidate` and make `jooqCodegen` depend on it. That task may fail when:
 
 - Flyway migrations were not applied to the codegen database.
 - The expected schema is empty.
@@ -269,9 +304,11 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-webmvc") // Spring Boot 4
     // implementation("org.springframework.boot:spring-boot-starter-web") // Spring Boot 3.x
     testImplementation("org.springframework.boot:spring-boot-starter-test")
-    testImplementation("com.tngtech.archunit:archunit-junit5:1.4.1")
+    testImplementation("com.tngtech.archunit:archunit-junit5:<version>")
 }
 ```
+
+Resolve the ArchUnit `<version>` from the project version catalog or the official release notes.
 
 ## Plugin Placement
 

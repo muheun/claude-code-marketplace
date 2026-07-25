@@ -8,6 +8,8 @@
 - [Module Boundary Rules](#module-boundary-rules)
 - [Naming Rules](#naming-rules)
 - [Persistence Rules](#persistence-rules)
+- [Messaging Rules](#messaging-rules)
+- [Caching Rules](#caching-rules)
 - [Layered Test Strategy](#layered-test-strategy)
 - [Web Rules](#web-rules)
 - [Internationalization Rules](#internationalization-rules)
@@ -43,7 +45,7 @@ The skill guides implementation and review judgment. Tests are guardrails for re
 Before adding an ArchUnit or broad source-scan test, pass this gate:
 
 - Classify the check before coding it:
-  - Baseline modularization: selected modules exist and dependency direction is correct, including no `api -> core`, no `api/core -> app/adapter/web-support/other bounded context`, and no persistence technology adapter -> `app/web-support/other bounded context`.
+  - Baseline modularization: selected modules exist and dependency direction is correct. A selected adapter depends inward only on its own `api` and/or `core` contracts as its role requires, including the allowed `inbound messaging adapter -> api` direction, with no `api -> core`, no `api/core -> app/adapter/web-support/other bounded context`, and no selected persistence, messaging, or cache technology adapter -> `app/web-support/other bounded context`.
   - Opt-in project-policy enforcement: broad static checks for technology bans, adapter registration, naming, jOOQ/Flyway build order, response envelope, enum parsing, and forbidden DTO/entity/persistence types.
   - Review-only guidance: cleanup preferences, exact decomposition names, command-shape preference, scalar-vs-command migration, helper names, and file layout details.
 - The rule must protect a stable boundary. Baseline checks are dependency direction and selected module existence. Optional static enforcement needs an existing project standard, a touched boundary, or an explicit user request; it does not make the underlying design rule optional.
@@ -52,7 +54,7 @@ Before adding an ArchUnit or broad source-scan test, pass this gate:
 - If compilation, focused wiring tests, behavior tests, or code review can protect the refactor without freezing decomposition, use those instead.
 - Do not add focused tests only to make a one-consumer class extraction look justified. Tests protect behavior or stable boundaries; they do not create a boundary by themselves.
 - If the rule is about naming, vocabulary, method prefixes, suffixes, helper names, file layout, or decomposition style, enforce it during implementation and review by default. For example, require `remove` instead of `delete` in service APIs during review, but do not add a global architecture test that fails service methods using `delete` unless naming enforcement is an explicit project policy.
-- For Gradle/build-file checks, prefer stable internal project boundaries: `api/core` must not depend on `app`, web-support, persistence adapters, or other bounded contexts. Do not maintain broad external Maven-coordinate blacklists for future DB/web libraries. Validate forbidden technology through actual source/bytecode package or type dependencies only when that technology boundary is explicitly in scope.
+- For Gradle/build-file checks, prefer stable internal project boundaries: `api/core` must not depend on `app`, web-support, technology adapters, or other bounded contexts. Do not maintain broad external Maven-coordinate blacklists for future DB, web, Kafka, or cache-client libraries. Validate forbidden technology through actual source/bytecode package or type dependencies only when that technology boundary is explicitly in scope.
 - Do not add architecture tests that hard-code exact file paths, helper class names, split interface names, command record names, parameter order/count/names, private call order, or proxy/decorator internals unless those are explicit public contracts. Store write boundary checks may still forbid app DTOs, read projections, adapter entities, and persistence technology types, but they must not fail ordinary scalar parameter lists just because a command record would be cleaner.
 - Do not convert refactoring guidance into broad reflection/source-scan tests. For example, do not add a test that fails every `*Store` write method with more than N scalar parameters, every command record that lacks a preferred suffix, or every split that uses a different class name than the guide's example.
 - Service command and Store command cleanup is verified by compiling the changed contracts and by focused behavior or persistence tests when mapping, validation, SQL, or service behavior can regress. It is not verified by a global style-policing architecture test.
@@ -69,15 +71,15 @@ Before adding an ArchUnit or broad source-scan test, pass this gate:
 Baseline checks:
 
 - Each migrated bounded context has `*:api` and `*:core`.
-- Only selected persistence modules are required. Reusable relational modules usually include `*:adapter:persistence-schema` plus the selected relational technology adapter such as `*:adapter:persistence-jooq`, `*:adapter:persistence-jpa`, or `*:adapter:persistence-mybatis`. Memory-only modules do not need schema resources unless they are paired with a relational runtime.
+- Only selected technology adapters are required. These may include persistence adapters such as `persistence-jooq`, messaging adapters such as `messaging-kafka`, or cache adapters such as `cache-caffeine` and `cache-redis`; do not require messaging or cache modules when the project has not selected them. Reusable relational modules usually also include `*:adapter:persistence-schema`. Memory-only modules do not need schema resources unless they are paired with a relational runtime.
 - `*:core` depends on its own `*:api`.
 - `*:api` does not depend on its own `*:core`.
-- Persistence technology adapters depend on their own `*:core`.
+- Every selected persistence, messaging, and cache technology adapter depends inward only on its own `*:api` and/or `*:core` contracts as its role requires. Persistence, outbound messaging, and cache port implementations normally depend on `*:core`; a reusable inbound messaging adapter may depend on `*:api`. All remain independent of `app`, `shared:web-support`, and other bounded contexts.
 - `*:adapter:persistence-schema` is resource-only by default and is consumed by app runtime, adapter test runtime, and codegen classpaths.
 - `shared:db-schema` is allowed for legacy baseline DDL, strongly cross-domain existing tables, shared foundation tables, or transitional migrations that cannot yet be assigned to one bounded context. Treat it as resource-only and consume it through runtime/test/codegen classpaths.
-- `app` depends on selected `*:api`, `*:core`, persistence technology adapters, and schema resource modules for composition.
+- `app` depends on selected `*:api`, `*:core`, technology adapters, and schema resource modules for composition.
 - Domain `api/core` modules do not depend on `app`, adapters, `shared:web-support`, or other bounded contexts.
-- Persistence technology adapters do not depend on `app`, `shared:web-support`, or other bounded contexts.
+- Technology adapters do not depend on `app`, `shared:web-support`, or other bounded contexts.
 - Build-file checks that forbid persistence technology adapter sibling dependencies must not classify same-domain `persistence-schema` as a forbidden technology adapter; forbid dependencies on sibling `persistence-jooq`/`persistence-jpa`/`persistence-mybatis` modules instead.
 - If the project keeps root-level Flyway migration source lists or code generation migration input lists, verify they include the selected `*:adapter:persistence-schema/src/main/resources/db/migration` locations and `shared/db-schema/src/main/resources/db/migration` when shared or legacy migrations are used.
 
@@ -90,6 +92,8 @@ The design rules below may be mandatory for this guide or for the project. What 
 - App packages own web controllers and app-specific DTOs.
 - Domain `api/core` source or bytecode does not use DB, Spring Web, Spring Data, JDBC, SQL, transaction, Flyway, jOOQ, QueryDSL, Hibernate, or JPA packages.
 - Domain `api/core` modules do not depend on DB infrastructure bundles. Guard this with source/bytecode package rules, not an exhaustive list of external dependency coordinates.
+- When the project has stabilized the messaging boundary, domain `api/core` source or bytecode does not use Kafka packages such as `org.apache.kafka` or `org.springframework.kafka`.
+- When the project has stabilized the cache boundary, domain `api/core` source or bytecode does not use Spring Cache, Spring Data Redis, Lettuce, Caffeine, or another selected cache-client package.
 
 ## Naming Rules
 
@@ -122,17 +126,39 @@ Use these when the selected persistence adapter or Store contract is in scope. T
 - Already-applied Flyway migrations are not edited to backfill comments or rename keys/indexes. Use a new forward migration when the project accepts the operational change.
 - Paged search tests assert count, paging metadata, stable order, and result body.
 
+## Messaging Rules
+
+Use these when a Kafka adapter, transactional outbox, relay, or consumer is in scope. Do not require messaging modules or their packages in projects that have not selected messaging.
+
+- Relay persistence tests use competing workers to prove recoverable claims and next-sequence-only claiming: one aggregate stays ordered while independent aggregates may publish concurrently.
+- Crash-boundary tests prove a relay reuses the stable `eventId` when broker acknowledgment succeeds but the published mark does not, and consumer tests prove the resulting duplicate applies the business mutation only once.
+- Consumer transaction tests prove the processed-event marker and business mutation roll back together, and prove offset completion occurs only after the local transaction commits. Scope marker uniqueness to the logical consumer/subscription with one table per logical consumer or `(consumer/subscription identity, eventId)` uniqueness, using an identity stable across replicas. Give two independent subscriptions the same event and prove both process it.
+- Poison input such as deserialization failure, unsupported schema version, or envelope validation failure goes to the durable quarantine/dead-letter path without invoking the service. A failed poison transfer keeps the source offset incomplete and enforces a partition barrier; offset incompletion alone is not sufficient because Kafka offsets are cumulative per partition.
+- Transient failures after service invocation use bounded retries with backoff, preserve the original envelope and `eventId`, and enforce a partition barrier until successful processing or durable dead-letter transfer after exhaustion.
+- Put failed record `n` immediately before valid record `n+1` in one partition; `n+1` cannot advance the committed offset past `n` until `n` succeeds or its durable terminal transfer succeeds.
+
+## Caching Rules
+
+Use these when a cache port, caching decorator, or cache adapter is in scope. Do not require cache modules or their packages in projects that have not selected caching.
+
+- Cache isolation tests prove tenant, current visibility scope/version, locale, query, projection, and representation-version dimensions cannot collide whenever they change the visible result. When keys are hashed, test logical isolation without freezing the complete physical key or digest output.
+- Transaction-focused tests prove a committed write invalidates after commit and a rolled-back write does not invalidate. Verify the explicit write-to-invalidation-scope mapping reaches every affected permission, locale, query, page, projection, and representation variant through enumeration, generation/tag/namespace invalidation, or an explicitly accepted TTL-only policy. Pre-commit eviction alone is not sufficient coverage.
+- Stale-fill tests model an authoritative load that starts before the commit and completes after post-commit invalidation. Verify the accepted overlap-plus-TTL commit-to-fresh bound uses non-renewing absolute/expire-after-write expiry by repeating hits through the deadline, or verify the selected bounded-load or stale-fill fencing contract.
+- Authorization and failure-policy tests prove cached data cannot bypass an authoritative denial and cover a user who remains authorized but loses visible fields. Exercise visibility-scope/version invalidation or permission-neutral data with authoritative reprojection, plus the selected safe behavior when eviction failure could expose correctness-critical stale data.
+- App configuration tests prove TTL is present and valid and that an absent or invalid value follows the explicit fail-startup or cache-disabled policy.
+
 ## Layered Test Strategy
 
-- Core service tests instantiate the real `*ServiceImpl` and replace only external boundaries such as `*Store`, SPI, readers, recorders, notifiers, senders, or publishers.
+- Core service tests instantiate the real `*ServiceImpl` and replace only external boundaries such as `*Store`, SPI, readers, recorders, notifiers, senders, publishers, or caches.
 - Mockito is acceptable in service tests for controlling boundary return values, exceptions, or verifying side-effect calls. The mock is not the test subject.
 - Prefer hand-written fakes when state matters: save-then-read, insert-then-select, count-plus-paging, ordering, accumulated changes, multi-step Store interactions, or scenarios where Mockito setup becomes longer than the behavior under test.
 - Prefer Mockito mocks when the boundary is stateless, the test only needs one or two methods, a fake would be longer than the test intent, or the scenario is a one-off return value, exception, no-call, or side-effect verification. Core business policy collaborators stay real unless they are the unit under test in a separate focused test.
-- Core service tests do not use real persistence adapters and must not add `core -> adapter` or `core -> app` dependencies for testing.
+- Core service tests do not use real technology adapters and must not add `core -> adapter` or `core -> app` dependencies for testing.
 - Persistence adapter tests exercise the real `Jpa*StoreAdapter`, `Jooq*StoreAdapter`, or `InMemory*StoreAdapter`; do not fake the adapter under test.
 - jOOQ-backed adapter tests verify JPA entities and Hibernate validation exist, while Store reads/writes go through the real jOOQ adapter.
 - SQL, join, projection, unique constraint, ordering, paging, and dialect behavior tests use the real target database product, preferably with Testcontainers.
 - Persistence integration tests apply Flyway migrations from the runtime classpath, such as `classpath:db/migration`, so selected `persistence-schema` modules and `shared:db-schema` are included when used. Do not hard-code `app/src/main/resources/db/migration` unless the test is specifically for app-only migrations.
+- Messaging and cache adapter integration tests exercise the real selected infrastructure through Testcontainers where applicable; core tests use framework-neutral fakes or mocks for the ports.
 - App tests cover thin controller HTTP contracts, security, project success-response contracts, centralized exception/error envelopes, module composition, selected adapter imports, and bean wiring.
 - Controller tests may mock service contracts, but they must verify HTTP concerns such as binding, validation, status codes, project response contracts, exception handling, security, filters, or interceptors. Do not retest service business logic through controllers.
 - Thin controller HTTP tests may use Mockito for service contracts when they only verify request mapping, binding, validation, status codes, project response shape, exception-envelope behavior, or no-call behavior. Thin app workflow forwarding tests may use Mockito when they only verify no-call behavior or a single delegated call. Do not build hand-written fakes for these tests unless stateful behavior is part of the contract.
@@ -145,7 +171,9 @@ Common test-design failures to reject:
 - Adding architecture tests for service method prefixes, Store method prefixes, class suffixes, DTO/command naming, or helper names when the stable issue is only style guidance.
 - Blocking normal development with broad tests that enforce cleanup preferences, such as failing all Store write methods with scalar parameter lists or exact command naming rules.
 - Blocking normal dependency evolution with external library-coordinate blacklists in architecture tests. New libraries, renamed artifacts, starters, or convention plugins should not require constant test edits when no forbidden type is used by `api/core`.
-- Adding production or test dependencies from `core` to a persistence adapter just to run a convenient service test.
+- Adding production or test dependencies from `core` to a technology adapter just to run a convenient service test.
+- Treating one unacknowledged Kafka record as a partition barrier, or using global `eventId` uniqueness that suppresses an independent subscription.
+- Testing only outright authorization denial or one cache key while missing permission downgrades, affected invalidation variants, non-renewing expiry, or invalid-TTL configuration behavior.
 - Replacing the target MariaDB/MySQL/PostgreSQL behavior with H2 for SQL, constraint, projection, ordering, or dialect-sensitive tests.
 - Hard-coding app migration paths in reusable adapter tests, which hides selected `persistence-schema` migrations.
 - Faking the `*StoreAdapter` class in a persistence adapter test instead of testing the real adapter implementation.
@@ -159,7 +187,7 @@ Common test-design failures to reject:
 - Expanding controller tests into duplicated service policy tests instead of keeping them focused on HTTP contracts.
 - Running jOOQ code generation from a stale manual database or after `test` has already started.
 - Keeping Flyway DDL only in `persistence-jooq` or another technology adapter, which makes schema ownership depend on the selected adapter.
-- Adding only `test.dependsOn(generateJooq)` while leaving `compileJava` free to run before generated sources exist.
+- Adding only `test.dependsOn(jooqCodegen)` while leaving `compileJava` free to run before generated sources exist.
 - Using JPA, Spring Data, or `EntityManager` for jOOQ-backed Store reads/writes instead of limiting JPA to entity declaration and validation.
 
 ## Web Rules
@@ -175,14 +203,11 @@ Use these when app/web behavior is in scope. They are not baseline modularizatio
 
 ## Internationalization Rules
 
-Use `i18n.md` as the canonical ownership and verification matrix when user-facing errors, validation, notifications, `MessageSource`, locale, or message keys are in scope. Select only the matrix rows exercised by the changed behavior; do not multiply every locale, error, and channel into an indiscriminate Cartesian product.
+Use `i18n.md` as the canonical ownership and verification matrix when user-facing errors, validation, notifications, `MessageSource`, locale, or message keys are in scope. Select only the matrix rows exercised by the changed behavior; do not multiply every locale, error, and channel into an indiscriminate Cartesian product. Selector-filter placement, firewall lazy rejection, persistence timing, caching, and Security handler requirements are defined there, not here.
 
-- Domain tests assert semantic codes and safe arguments without locale dependencies. MVC tests exercise the configured locale policy and exception handling for the supported and fallback cases owned by the app. Java selector-parser tests include valid-prefix malformed values such as `ko-%%%%`, `ko--KR`, and `ko-x` and prove they are neither truncated to `ko` nor persisted. A stateless application proves locale selection does not create an `HttpSession`. For cacheable localized responses, verify every request-visible selector varies the cache key and that locale or translation changes invalidate representation validators such as `ETag`. For a server-side preference that cannot participate in `Vary`, verify mandatory representation-specific revalidation through `private, no-cache`; when storage is prohibited or correct revalidation cannot be guaranteed, verify `no-store` instead.
-- For every localized `AuthenticationEntryPoint`, `AccessDeniedHandler`, or `AuthenticationFailureHandler`, use the real filter chain and verify every handler-visible locale selector, malformed-selector fallback, any request-selector filter's single registration and execution before the earliest relevant failure-producing filter in each affected chain, and that selector filters remain side-effect-free. Verify that valid selector persistence occurs only in the final accepted response boundary, together with the scheme-specific status and challenge parameters, redirect/forward behavior, and localized app-owned representation. For protocol-owned OAuth2/OIDC endpoints, verify the native media type and structured error body instead of the common application envelope.
-- When `RequestRejectedHandler` is customized, send a request rejected by the configured `HttpFirewall` through the real `FilterChainProxy`. Verify the handler is global, execution stops at the rejection point, a pre-selection rejection runs no selected-chain filter, no controller runs afterward, the rejection status and safe body/media type are preserved, localization uses only an allowlisted precomputed request attribute or the deterministic default, and the handler exposes no rejected input or exception message and creates no session, cookie, or preference-store side effect. When the configured firewall uses lazy header or parameter predicates, add a late-rejection case and prove earlier selector filters did not persist state.
-- Always resolve application bundles through the real application `MessageSource`. Exercise MVC only when localized MVC behavior exists, Bean Validation through the real `Validator` or MVC path only when localized validation exists, and channel templates through their renderer only when outbound localization exists. A directly configured message source also needs a representative non-ASCII decoding test.
+- Selector-parser tests include the valid-prefix malformed regressions per the HTTP Locale Policy section of `i18n.md`.
+- Exercise each localization consumer only when it exists: MVC for localized MVC behavior, the real `Validator` or MVC path for localized Bean Validation, the channel renderer for outbound localization. Always resolve application bundles through the real application `MessageSource`.
 - Outbound tests pass recipient locale explicitly, exercise hostile values at the channel encoding boundary, and prove the selected latest-preference or deterministic retry contract.
-- Prefer focused behavior tests and one stable dependency rule over broad source scans for string literals or message-key layout.
 
 ## Verification Commands
 

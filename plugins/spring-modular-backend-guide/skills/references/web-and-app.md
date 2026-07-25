@@ -31,7 +31,7 @@ Reusable modules should expose service APIs and SPI contracts, not HTTP adapters
 
 ## App DTOs
 
-Keep reusable module Search DTOs out of HTTP responses when practical. Convert them to app response DTOs:
+Keep reusable module Search DTOs out of HTTP responses. Return one directly only when it is web-neutral and already field-for-field identical to the public response contract; otherwise convert it to an app response DTO:
 
 ```java
 ResponseEntity<BoardPostCommentPageResponse> get(PostId postId, CommentSearch search)
@@ -45,7 +45,11 @@ Controller search parameters may bind directly to a web-neutral `*:api` `*Search
 
 Use an app-owned mapper or request DTO for search input when the HTTP boundary must parse or normalize values (`String -> enum`, date/time strings, inclusive `from/to` ranges such as start-of-day/end-of-day), apply request-specific validation or defaults, force authenticated user or tenant scope, ignore client-supplied fields, preserve client compatibility aliases, document a different OpenAPI parameter shape, or expose a different HTTP parameter shape from the internal search model. When binding an app-owned DTO-like query object, use the project's OpenAPI support to expose the flattened query parameters in Swagger/OpenAPI, such as springdoc `@ParameterObject` on the controller argument plus app DTO field metadata or explicit controller parameters when needed. Keep that policy in app code; do not push Spring/OpenAPI annotations or channel-specific defaults into reusable domain `api` search classes.
 
-External and persistence boundaries may receive string enum inputs. Do not scatter raw `Enum.valueOf(...)` calls or private `parseXxxOrDefault` helpers across controllers, Slack/LLM command handlers, batch input adapters, or persistence row mappers that read stored strings. Prefer a small boundary-owned parser or mapper when the same policy is reused by multiple entry points. Keep channel-specific aliases, defaults, compatibility tokens, and user-facing messages in app-owned mappers, parsers, request validation, or exception mapping. Call a domain enum factory only when the accepted token is a web-neutral canonical domain code or name, and keep that factory free of Spring, Jackson, OpenAPI, localization, and response-envelope concerns. This rule covers `String -> enum` parsing; it does not forbid `.name()` when an adapter intentionally serializes an enum to the stored canonical token.
+External and persistence boundaries may receive string enum inputs. The canonical `String -> enum` parsing policy is "Enum Input Parsing and Factory Names" in `naming.md`. For request DTO enum fields, choose the binding by this rule:
+
+- Use a `String` field plus an app-boundary parser when lenient parsing, aliases, or defaults are needed.
+- Bind an enum field directly only when exact-match semantics are acceptable. Spring MVC binds query/form/path enum parameters through a case-sensitive built-in converter (effectively `Enum.valueOf`); JSON request-body enum fields follow the project's Jackson deserialization policy instead. In both cases verify that the resulting binding failure maps to the project's 400 response contract.
+- Register a `Converter` or an `@InitBinder` editor when one global parsing policy must apply across endpoints.
 
 Create and update request DTOs may stay separate even when their current fields match if endpoint meaning, OpenAPI schema name, validation/defaulting, client compatibility, allowed/immutable fields, optimistic-lock tokens, or change-reason fields can evolve independently. This split threshold is looser than service or Store command granularity; splitting HTTP request DTOs does not require matching service or Store command types unless their use-case or persistence write intent also differs. Share an app request DTO only when multiple endpoints intentionally expose the same HTTP contract and validation, defaults, schema meaning, and client compatibility are the same. Do not split every request mechanically just to mirror methods.
 
@@ -53,7 +57,7 @@ Do not pass app request DTOs into domain service contracts, Store contracts, or 
 
 App workflows may pass an existing public, web-neutral service command after the app boundary has mapped the HTTP request. Do not bind that command directly as the controller request body when the HTTP shape has validation, naming, client compatibility, defaulting, multipart composition, or app-only metadata; keep a separate app request DTO and map explicitly.
 
-Single-item domain `api` result DTOs may be used directly as the success response body when they already match the public response shape and contain no web-only annotations. If a project explicitly uses a success envelope, they may also be used as the `ApiResponse.data` payload. This does not make them HTTP response DTOs; keep them web-neutral. Search/Paging DTOs should usually be converted to app response DTOs. Persistence adapters must not project directly into app response DTOs.
+Single-item domain `api` result DTOs may be used directly as the success response body when they already match the public response shape and contain no web-only annotations. If a project explicitly uses a success envelope, they may also be used as the `ApiResponse.data` payload. This does not make them HTTP response DTOs; keep them web-neutral. Convert Search/Paging DTOs to app response DTOs unless the type is web-neutral and field-for-field identical to the public response contract, including paging metadata. Persistence adapters must not project directly into app response DTOs.
 
 ## Exception Response Envelope
 
@@ -83,7 +87,7 @@ When a Servlet MVC API localizes user-facing text, follow `i18n.md`. Keep error 
 
 Apply the app-owned response policy to ordinary JSON Security handlers because filter-chain failures do not pass through controller advice. Preserve each authentication scheme's status, challenge headers, redirect behavior, media type, and protocol-owned structured error body; OAuth2/OIDC protocol endpoints keep or delegate to their framework handlers instead of using the common application envelope. Each handler calls the shared locale policy directly. If a filter precomputes a request-only selector, use exactly one placement from `i18n.md`: a side-effect-free container filter before the Security `DelegatingFilterProxy`, or a side-effect-free filter inside each affected `SecurityFilterChain` before its earliest relevant failure-producing filter. Never register the same filter in both places. Persist a valid selector only in the final accepted MVC or app-owned Security response handler, because `HttpFirewall` may reject lazily when a wrapped header or parameter is accessed; being merely inside `springSecurityFilterChain` or before `DispatcherServlet` is insufficient.
 
-Treat firewall rejection as a separate global boundary: `FilterChainProxy` invokes one `RequestRejectedHandler`, and a rejection may occur before chain selection or later while the firewalled request is accessed. No in-chain locale filter is therefore a reliable prerequisite. Prefer a fixed generic response. If the product explicitly requires localization, use only a bounded, allowlisted selector precomputed by the side-effect-free container filter or the deterministic default; never inspect or echo rejected raw request data, expose the firewall exception, or persist locale in this handler.
+Treat firewall rejection as a separate global boundary: `FilterChainProxy` invokes one `RequestRejectedHandler` (Spring Security 5.4+), and a rejection may occur before chain selection or later while the firewalled request is accessed. No in-chain locale filter is therefore a reliable prerequisite. Prefer a fixed generic response. If the product explicitly requires localization, use only a bounded, allowlisted selector precomputed by the side-effect-free container filter or the deterministic default; never inspect or echo rejected raw request data, expose the firewall exception, or persist locale in this handler.
 
 ## Basic Exception Handler
 
@@ -94,6 +98,8 @@ IllegalArgumentException -> 400 Bad Request
 IllegalStateException -> 409 Conflict
 Exception -> 500 Internal Server Error
 ```
+
+The `IllegalArgumentException -> 400` mapping is a scaffold default only: it can misclassify internal or framework-thrown `IllegalArgumentException` as client errors, so prefer introducing domain exception types for intentional 4xx responses.
 
 4xx exceptions may expose user-safe messages through the centralized error envelope. 5xx fallback must not expose internal exception messages.
 
@@ -113,4 +119,4 @@ class ApplicationComposition {
 }
 ```
 
-Do not annotate adapter configuration holders with `@Configuration` if component scanning could activate unselected adapters. App imports the selected holder explicitly.
+Default: annotate adapter configuration holders with `@Configuration(proxyBeanMethods = false)` and keep them outside component-scan reach so unselected adapters cannot activate; the app imports the selected holder explicitly. Both under `proxyBeanMethods = false` and in a plain class used via `@Import` (bean lite mode), `@Bean` methods must not call each other directly: singleton semantics are not proxied in either mode, so each direct call creates a new instance. Pass the dependency as a method parameter instead.

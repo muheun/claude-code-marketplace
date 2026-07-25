@@ -1,6 +1,6 @@
 ---
 name: spring-modular-backend-guide
-description: Use when designing, scaffolding, reviewing, or modifying Java Spring Boot DDD-style multi-module backends involving api/core/adapter boundaries, app-owned Servlet MVC composition, controller DTOs, enum input parsing, i18n/MessageSource/localized errors or notifications, QueryDSL/jOOQ/Flyway persistence, identifier strategy, Java imports, Java test helper formatting, layered tests, Mockito/fakes/Testcontainers, response envelopes, helper extraction, Spring bean granularity, or backend-util utilities.
+description: Use when designing, scaffolding, reviewing, or modifying Java Spring Boot DDD-style multi-module backends involving api/core/adapter boundaries, app-owned Servlet MVC composition, controller DTOs, enum input parsing, i18n/MessageSource/localized errors or notifications, QueryDSL/jOOQ/Flyway persistence, identifier strategy, Kafka messaging/event publishing/outbox, Caffeine/Valkey/Redis caching, Java imports, Java test helper formatting, layered tests, Mockito/fakes/Testcontainers, response envelopes, helper extraction, Spring bean granularity, or backend-util utilities.
 ---
 
 # Spring Modular Backend Guide
@@ -28,7 +28,9 @@ This is an opinionated guideline for new scaffolds and architecture reviews. Do 
 | Service, Store, adapter names, Java import ordering, or Java test helper formatting | `references/naming.md` |
 | Fixelsoft internal backend-util dependencies, common utilities, `StringUtil`, `NumberUtil`, `DateUtil`, `ListUtil`, or `Params` | `references/build-setup.md` and `references/backend-util.md` |
 | JPA, QueryDSL, jOOQ, Flyway, paging, identifier strategy | `references/persistence.md` and `references/build-setup.md` |
-| Controllers, DTOs, string enum input parsing, app composition, response envelope | `references/web-and-app.md` |
+| Controllers, DTOs, string enum input parsing, app composition, response envelope | `references/web-and-app.md` and `references/naming.md` |
+| Kafka, messaging, event publishing or consuming, outbox, topic contracts | `references/messaging.md`, `references/architecture.md`, and `references/testing-checklist.md` |
+| Caffeine/Valkey/Redis caching, cache selection, cache keys, TTL, cache invalidation | `references/caching.md`, `references/architecture.md`, and `references/testing-checklist.md` |
 | Internationalization/i18n, localization, `MessageSource`, message keys, or non-HTTP notifications | `references/i18n.md` |
 | Servlet MVC locale selection, localized HTTP errors, or localized Spring Security responses | `references/i18n.md` and `references/web-and-app.md` |
 | Internationalization test strategy | `references/i18n.md` and `references/testing-checklist.md` |
@@ -44,20 +46,31 @@ This is an opinionated guideline for new scaffolds and architecture reviews. Do 
 
 ## Core Guardrails
 
-- Domain modules use `api`, `core`, and `adapter:persistence-*`; app owns web controllers and host-specific DTOs.
-- Domain `api/core` modules do not depend on app, web-support, persistence adapters, Spring MVC, JPA, DB technology, or other bounded contexts unless a reference explicitly allows it.
+- Domain modules use `api`, `core`, and technology adapters (`adapter:persistence-*`, `adapter:messaging-*`, `adapter:cache-*`); app owns web controllers and host-specific DTOs.
+- Domain `api/core` modules do not depend on app, web-support, technology adapters, Spring MVC, JPA, DB technology, or other bounded contexts unless a reference explicitly allows it.
 - Reusable modules expose service APIs and SPI contracts; app or host composition owns HTTP endpoints, adapter selection, and cross-domain wiring.
 - Controller request DTOs are app-owned HTTP contracts. Service commands live in `*:api`; Store commands live in `core.port`. Share command types only when the boundary and write intent are truly identical.
 - Store write methods do not receive app DTOs, adapter entities, JPA/jOOQ/Spring Data types, read projections, or HTTP contracts.
 - Persistence choices are explicit: JPA means QueryDSL projection reads by default; jOOQ keeps JPA entities for Hibernate validation but uses jOOQ DSL for reads/writes; schema changes go through Flyway.
 - Naming, enum parsing, response envelopes, adapter registration, and import ordering are design/review rules first. Add static enforcement only when the project treats the policy as stable or the task explicitly touches that boundary.
 - Domain modules own error and event meaning; app or outbound presentation boundaries select locale and render user-facing text. Keep `MessageSource`, `LocaleContextHolder`, translated sentences, and channel-specific templates out of reusable `api/core` modules.
+- Keep logical messaging and cache contracts framework-neutral in `api/core`. Kafka producer/client types stay in messaging adapters and cache-client types in cache adapters. Outbound messaging adapters may implement their bounded context's `core` ports; reusable inbound messaging adapters may call that context's framework-neutral `api`; neither depends on app, web-support, or another bounded context. App may own host-specific inbound listeners, and implementation selection follows the documented messaging and cache selection gates.
 - Tests follow dependency direction. Prefer focused behavior, wiring, layer, and build checks; use architecture tests only for stable boundaries ordinary tests cannot protect cheaply.
 - For Fixelsoft internal projects, recommend approved DB-neutral `backend-util` common/json-common utilities when the project opts in, but keep DB/Spring utility bundles out of reusable domain contracts.
 
 ## Frequent Failure Signals
 
-If you see controllers in domain modules, app DTOs passed into service/store contracts, one-method interfaces with no distinct role, one-consumer app helper beans extracted from private methods, `MessageSource` or `LocaleContextHolder` in reusable domain logic, translated exception sentences used as service contracts, JPA entity fetch reads used as the default Store read model, direct `Enum.valueOf(...)` parsing at boundaries, broad source scans for review-only preferences, or build checks that blacklist open-ended external coordinates, read `references/anti-patterns.md` plus the changed-area references from the routing table before editing.
+If you see any of the following, read `references/anti-patterns.md` plus the changed-area references from the routing table before editing:
+
+- Controllers in domain modules; app DTOs passed into service/store contracts.
+- One-method interfaces with no distinct role; one-consumer app helper beans extracted from private methods.
+- `MessageSource` or `LocaleContextHolder` in reusable domain logic; translated exception sentences used as service contracts.
+- JPA entity fetch reads used as the default Store read model; direct `Enum.valueOf(...)` parsing at boundaries.
+- `KafkaTemplate`/`@KafkaListener`/cache client types or `@Cacheable` in `api/core` modules.
+- One unacknowledged Kafka record treated as a partition barrier; processed-event uniqueness shared across independent subscriptions.
+- User identity treated as current visibility scope; incomplete cache invalidation; read-renewed expiry; weak/truncated hashed cache keys.
+- Paid managed brokers or caches selected without a project opt-in.
+- Broad source scans for review-only preferences; build checks that blacklist open-ended external coordinates.
 
 ## Completion Checklist
 
@@ -67,5 +80,7 @@ If you see controllers in domain modules, app DTOs passed into service/store con
 - Extracted helper classes or Spring beans pass the Class Extraction Gate; otherwise keep the logic local.
 - New Service, Store, SPI, Reader, or Notifier contracts pass the Interface Split Gate.
 - Localized behavior declares its supported locales, default and fallback policy, message ownership, focused locale tests, and a non-HTTP rendering boundary when async or outbound messages exist.
+- When messaging is in scope, state the explicit delivery policy, per-aggregate ordering, partition-barrier behavior, logical-consumer/subscription idempotency scope, and implementation-selection policy.
+- When caching is in scope, state current visibility identity or authoritative reprojection, complete write-to-invalidation scope, non-renewing expiry, validated TTL configuration policy, unambiguous collision-resistant encoding, and implementation-selection policy.
 - New or changed enforcement checks protect stable boundaries rather than incidental naming, helper shape, or future library coordinates.
 - Focused verification passed before the full available build/test command.

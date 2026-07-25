@@ -29,6 +29,7 @@ import static all other imports
 ```
 
 Rules:
+- The `import module` group applies only when the project's JDK supports module import declarations (a preview feature in JDK 23, finalized in JDK 25). On older JDKs the layout starts with `import all other imports`.
 - Keep the IntelliJ layout order exactly as configured, including adjacent entries that render without a blank line in Java source.
 - Sort imports alphabetically by the complete path after `import` only inside each layout entry.
 - Do not invent extra package-type groups such as `model`, `event`, or `service`.
@@ -107,7 +108,7 @@ AlertScheduleService.remove(id)
 AlertScheduleService.modifyStatus(id, status)
 ```
 
-Use a `*:api` command/value record for non-trivial write use cases, especially when a method has several fields, repeats primitive/String types, owns validation/defaulting, is likely to grow, or would otherwise pass controller request fields straight through the service layer:
+Use a `*:api` command/value record for non-trivial write use cases, especially when a method takes 4 or more fields, has 2 or more adjacent parameters of the same type, owns validation/defaulting, is likely to grow, or would otherwise pass controller request fields straight through the service layer:
 
 ```java
 AlertScheduleService.save(AlertScheduleSave command)
@@ -124,7 +125,7 @@ Do not create command records mechanically for every one-field or two-field serv
 
 Do not call `Enum.valueOf(...)` directly when converting a `String` from a user, API, database row, file, Slack/LLM command, batch job, or integration payload into a domain enum. Route that conversion through a boundary-owned parser/mapper or a domain enum factory so trimming, case policy, invalid-token errors, and compatibility aliases stay centralized.
 
-Use a reusable domain enum factory only when the enum owns a stable web-neutral token such as code, name, or canonical name. Name the factory by the accepted token when ambiguity matters, such as `fromCode` or `fromName`. Use a generic `from` only when the input contract is obvious and domain-neutral.
+Use a reusable domain enum factory only when the enum owns a stable web-neutral token such as code, name, or canonical name. Name the factory by the accepted token when ambiguity matters, such as `fromCode` or `fromName`. Use a generic `from` only when the input contract is obvious and domain-neutral. Keep domain enum factories free of Spring, Jackson, OpenAPI, localization, and response-envelope concerns.
 
 Internal-only enums do not need factories just because they exist. Add a domain enum factory when parsing a stable domain-owned canonical code or name is repeated, case-insensitive by domain contract, or part of a stable domain input contract. Keep channel aliases, compatibility tokens, and defaults in app-owned parsers. Lookup maps are optional for tiny one-off internal checks; prefer a `private static final` immutable lookup map when parsing is repeated, the enum is large enough that scanning hurts readability, or the factory accepts explicit codes/aliases that would otherwise become scattered conditionals.
 
@@ -176,7 +177,7 @@ interface CommentStore {
 }
 ```
 
-Store write methods should communicate write intent through the input type, not a long column-shaped parameter list. Use a purpose-specific command/value record such as `CommentCreate` or `CommentUpdate` when an `insert`, `update`, or `upsert` needs more than a few fields, repeats primitive/String types, or has validation rules.
+Store write methods should communicate write intent through the input type, not a long column-shaped parameter list. Use a purpose-specific command/value record such as `CommentCreate` or `CommentUpdate` when an `insert`, `update`, or `upsert` takes 4 or more fields, has 2 or more adjacent parameters of the same type, or has validation rules.
 
 Do not split command records only because one field is nullable, has a default, or is used by only one overload. Split by meaning: different required fields, validation, state transition, audit/event behavior, concurrency policy, or caller knowledge. When the write intent is the same, prefer one command and make defaults explicit.
 

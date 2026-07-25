@@ -12,7 +12,7 @@ dependencies {
 }
 ```
 
-Use `api` only when the module intentionally exposes approved `backend-util` public contract types:
+Use `api` only when the module intentionally exposes `backend-util` public contract types — the artifact is already exposed with `api` scope elsewhere in the project build, or the contract is listed in the project's architecture notes:
 
 ```kotlin
 dependencies {
@@ -56,6 +56,4 @@ Params<Object> detail = Params.obj("memberId", memberId)
 
 ## Internationalization Extraction Gate
 
-Use `i18n.md` as the canonical extraction gate. In one application, use Spring `MessageSource` and locale resolvers directly in `app` or `shared:web-support`; do not add a static `MessageUtil` to shorten calls or hide `LocaleContextHolder` access.
-
-Extract only after at least two real applications prove the same error descriptor, fallback and missing-key policy, response ownership, and framework expectations. A reusable utility may provide a DB/web-neutral descriptor and optional Spring adapter; each application still owns its locales, business bundles, HTTP mapping, and channel templates. Do not add a Spring/DB utility bundle to domain `api/core`, or turn an existing human-readable exception message into a bundle key without an explicit compatibility migration.
+For i18n utility extraction criteria, `MessageSource` usage boundaries, and bundle ownership rules, see `i18n.md`, the canonical source.
