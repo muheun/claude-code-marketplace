@@ -2,8 +2,13 @@
 
 Use this file during code review and scaffold review.
 
+## Review Scope
+
+Review findings report design, boundary, contract, behavior, persistence, and test problems — the categories below. Code formatting is the formatter's domain: indentation, whitespace, blank lines, line wrapping, brace placement, and import order/grouping are write-time rules applied while producing code (`naming.md`), enforced by the project formatter or IDE, and they do not appear in review findings. When the user explicitly requests a formatting or import-cleanup review, treat the formatting rules in `naming.md` as the requested review scope.
+
 ## Contents
 
+- [Review Scope](#review-scope)
 - [Module Boundaries](#module-boundaries)
 - [Naming](#naming)
 - [Persistence](#persistence)

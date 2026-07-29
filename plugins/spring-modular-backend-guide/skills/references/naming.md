@@ -13,6 +13,8 @@
 
 ## Java Import Ordering
 
+Apply this layout when writing or modifying Java code. During code review, import order and grouping belong to the project formatter, not to review findings; see Review Scope in `anti-patterns.md`.
+
 Follow the IntelliJ import layout used by the project, then sort alphabetically
 inside each layout group.
 
