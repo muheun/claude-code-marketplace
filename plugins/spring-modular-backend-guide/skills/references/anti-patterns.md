@@ -56,6 +56,7 @@ Review findings report design, boundary, contract, behavior, persistence, and te
 - Gradle runs compile/test before Flyway migration and jOOQ code generation are complete.
 - jOOQ selection removes JPA entity declarations or Hibernate `ddl-auto: validate` schema verification.
 - Flyway migrations are only in app or a technology adapter even though reusable relational schema should live in `*:adapter:persistence-schema`.
+- A new Flyway version uses 12-digit `yyyyMMddHHmm`, copies a plan/example timestamp, invents `HHmmss` instead of running `date +%Y%m%d%H%M%S` at file creation, increments a previous version, leaves an unapplied 12-digit file beside new 14-digit files, or changes the version of an already-applied 12-digit file. Already-applied 12-digit history plus new 14-digit files is the expected transition, not a defect.
 - New table DDL, changed table DDL, or its matching JPA entity omits table/column comments for introduced or changed schema objects, including the `id` column on new entities.
 - Flyway DDL comments and JPA entity comments describe the same table or column differently.
 - Primary keys are not declared explicitly, or primary-key constraints are left unnamed when the target DB supports naming them.

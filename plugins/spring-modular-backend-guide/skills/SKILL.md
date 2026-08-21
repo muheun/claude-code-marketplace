@@ -66,6 +66,7 @@ If you see any of the following, read `references/anti-patterns.md` plus the cha
 - One-method interfaces with no distinct role; one-consumer app helper beans extracted from private methods.
 - `MessageSource` or `LocaleContextHolder` in reusable domain logic; translated exception sentences used as service contracts.
 - JPA entity fetch reads used as the default Store read model; direct `Enum.valueOf(...)` parsing at boundaries.
+- Flyway versions that use today's date with a guessed, rounded, or copied `HHmmss`, or new 12-digit `yyyyMMddHHmm` files.
 - `KafkaTemplate`/`@KafkaListener`/cache client types or `@Cacheable` in `api/core` modules.
 - One unacknowledged Kafka record treated as a partition barrier; processed-event uniqueness shared across independent subscriptions.
 - User identity treated as current visibility scope; incomplete cache invalidation; read-renewed expiry; weak/truncated hashed cache keys.

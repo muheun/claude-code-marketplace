@@ -119,6 +119,7 @@ Use these when the selected persistence adapter or Store contract is in scope. T
 - Persistence adapters do not self-register with `@Component`, `@Service`, `@Repository`, or component-scanned `@Configuration`.
 - App uses Hibernate `ddl-auto: validate` for relational schema verification.
 - Reusable relational modules have Flyway migrations in `*:adapter:persistence-schema`, not duplicated inside `persistence-jpa`, `persistence-jooq`, or `persistence-mybatis`.
+- New versioned migrations are 14-digit `VyyyyMMddHHmmss` taken from `date +%Y%m%d%H%M%S` at file creation. They do not invent time, increment a previous version, copy a plan timestamp, or use 12-digit `yyyyMMddHHmm`. Unapplied 12-digit files in the change have their whole version replaced with a new `date +%Y%m%d%H%M%S`; already-applied 12-digit files keep their version.
 - Each consumer's selected schema modules, including `shared:db-schema` when used, are available on app runtime, adapter integration test runtime, and jOOQ code generation migration inputs when present.
 - jOOQ adapters wire build tasks so Flyway-migrated schema verification runs before jOOQ code generation, and `compileJava` depends on generated sources before tests run.
 - Selected identifier strategy has matching DDL type, public ID `NOT NULL`/`UNIQUE` lookup constraints when used, ID converter, and ordering expectations.

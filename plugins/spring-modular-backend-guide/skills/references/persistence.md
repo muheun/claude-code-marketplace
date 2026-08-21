@@ -198,19 +198,24 @@ Rules:
 - Technology adapters such as `persistence-jpa`, `persistence-jooq`, and `persistence-mybatis` consume the schema module and must not duplicate table DDL migrations.
 - App-only composition tables or deployment-only schema changes may live in app migrations.
 - Migration versions must be unique across the runtime classpath.
-- Prefer `VyyyyMMddHHmm__module_action.sql` style names.
-- The version timestamp is the actual creation date/time of the migration file.
-- Do not derive a new migration version by adding one minute to the previous migration.
-- If multiple migrations are created in the same minute, use actual seconds with `VyyyyMMddHHmmss__module_action.sql` or regenerate at the real later creation time. Always verify there is no duplicate version across the runtime classpath.
+- Every new versioned migration uses `VyyyyMMddHHmmss__module_action.sql`. The version is always 14 digits. That is this guide's timestamp version, not an optional extra for collisions.
+- Do not create new 12-digit `VyyyyMMddHHmm` files, including to match already-applied 12-digit history. Never change the version of an already-applied file. If a 12-digit file in this change has not been applied, replace its whole version with a new `date +%Y%m%d%H%M%S` output; do not append seconds to the old prefix.
+- Flyway compares an undotted version as one number. `V202412312359` (12-digit) is a smaller integer than `V20240101000000` (14-digit), so mixed lengths are not calendar order. New 14-digit versions still sort after existing 12-digit history, which is the safe forward path for already-applied files.
+- The 14-digit value is the machine clock at file-creation time. Session date, `user_info` date, "today", plan samples, nearby filenames, and review comments supply a calendar day at most. They are not a clock and must not be combined with a chosen hour, minute, or second.
+- Before creating the file, run `date +%Y%m%d%H%M%S` in the environment that will write it and use that exact output as the version. If that command is unavailable, use an equivalent local clock that prints `yyyyMMddHHmmss`. If neither can print a 14-digit clock, do not create the file; ask for the output of `date +%Y%m%d%H%M%S`. Do not skip the clock because the date is already known, and do not compose `yyyyMMdd` with a chosen time.
+- Do not invent, round, pad, or pick `HHmmss`. Forbidden sources include `000000`, `120000`, `090000`, "a unique time", the next second, previous version plus one, and any timestamp copied from a plan, example, or nearby file.
+- If two files would share the same 14-digit version, wait until the clock changes and run `date +%Y%m%d%H%M%S` again. Do not increment the previous version to manufacture uniqueness.
 - Persistence integration tests should apply migrations from the runtime classpath, such as `classpath:db/migration`, so selected schema modules are included. Adapter module tests, app tests, and jOOQ code generation must include the matching `persistence-schema` resources and `shared:db-schema` when shared or legacy migrations are used. Avoid hard-coding `app/src/main/resources/db/migration` unless the test is specifically for app-only migrations.
 
 ### Migration Version Creation Checklist
 
-- Get the migration timestamp from the machine at creation time, such as `date +%Y%m%d%H%M`, instead of copying timestamps from plans, examples, review comments, or nearby files.
-- Treat timestamps in implementation plans as placeholders unless the plan explicitly says the file was created at that exact time.
+- Run `date +%Y%m%d%H%M%S` immediately before creating the file. The conversation date is not a substitute. If the clock cannot be printed, stop and ask for that output.
+- Use that exact 14-digit string in `V<timestamp>__module_action.sql`.
+- Treat timestamps in implementation plans, examples, review comments, and nearby files as placeholders. Ignore them and run the clock at file creation.
 - Before adding the file, search all runtime migration source directories for the candidate version and reject duplicates.
-- If multiple migrations are created in the same minute, use actual seconds with `date +%Y%m%d%H%M%S` or regenerate at the real later creation time.
-- If a work-in-progress migration was already applied to a local codegen or test database and then edited, reset only that local work-in-progress schema/history or recreate the migration with a new actual timestamp. Do not leave a checksum-mismatched Flyway history state and do not use `repair` as a way to bless an arbitrary edited timestamp.
+- On a duplicate, wait and re-run `date +%Y%m%d%H%M%S`. Do not add one second or one minute to the previous version.
+- If this change still contains an unapplied 12-digit file, replace its whole version with a new `date +%Y%m%d%H%M%S` output. Do not append seconds to the old prefix. Do not change the version of an already-applied file.
+- If a work-in-progress migration was already applied to a local codegen or test database and then edited, reset only that local work-in-progress schema/history or recreate the migration with a new clock timestamp. Do not leave a checksum-mismatched Flyway history state and do not use `repair` as a way to bless an arbitrary edited timestamp.
 
 ### DDL Comments And Key Names
 

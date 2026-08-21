@@ -327,12 +327,11 @@ Resolve the ArchUnit `<version>` from the project version catalog or the officia
 Schema resource locations usually include bounded-context `persistence-schema`; optional shared, legacy, or transitional schema uses `shared:db-schema`:
 
 ```text
-shared/db-schema/src/main/resources/db/migration/VyyyyMMddHHmm__baseline_create_shared_tables.sql
-board/adapter/persistence-schema/src/main/resources/db/migration/VyyyyMMddHHmm__board_create_posts.sql
-comment/adapter/persistence-schema/src/main/resources/db/migration/VyyyyMMddHHmm__comment_create_comments.sql
+shared/db-schema/src/main/resources/db/migration/VyyyyMMddHHmmss__baseline_create_shared_tables.sql
+board/adapter/persistence-schema/src/main/resources/db/migration/VyyyyMMddHHmmss__board_create_posts.sql
+comment/adapter/persistence-schema/src/main/resources/db/migration/VyyyyMMddHHmmss__comment_create_comments.sql
 ```
 
-App-only composition tables may use app migrations. Use `shared:db-schema` only for shared, legacy, or transitional schema that cannot yet be assigned to one bounded context. Technology adapters consume schema resources; they do not own duplicate table DDL. Migration versions must be unique across the runtime classpath.
-Use the actual creation date/time for `VyyyyMMddHHmm`; do not create new versions by incrementing the previous migration timestamp. If multiple migrations are created in the same minute, use the actual seconds in `VyyyyMMddHHmmss` or regenerate at the real later creation time, then verify no runtime classpath duplicate remains.
+App-only composition tables may use app migrations. Use `shared:db-schema` only for shared, legacy, or transitional schema that cannot yet be assigned to one bounded context. Technology adapters consume schema resources; they do not own duplicate table DDL. Migration versions must be unique across the runtime classpath. Version naming, clock source, and the ban on invented `HHmmss` values are in `persistence.md` (`Flyway And DDL`). New files always use 14-digit `VyyyyMMddHHmmss` from `date +%Y%m%d%H%M%S` at file creation; do not invent the time or increment a previous version.
 
 Keep Non-Flyway DB helper SQL minimal. A project may centralize shared or operational helper SQL, such as seed, cleanup, sample, or manual import scripts, under `shared/db-schema/src/main/resources/db/`, one level above `db/migration`, to avoid scattering rare scripts. Do not put Flyway migrations or new domain-owned table DDL there. If helper SQL becomes part of a bounded context's test, code generation, fixture, or domain behavior contract, move it to the owning `*:adapter:persistence-schema/src/main/resources/db/`. App may keep truly app-owned composition, deployment, or runtime data.
