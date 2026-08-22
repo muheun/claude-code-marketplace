@@ -51,6 +51,7 @@ Review findings report design, boundary, contract, behavior, persistence, and te
 - Query reads fetch entities and map every row through `toDomain()` by default.
 - List/search queries lack stable ordering.
 - Store mutates paging result state with `calcPaging` or `setBody`.
+- `*Search` that extends `Paging` stores bindable filters as subclass fields instead of the paging param bag; see `persistence.md` (Search And Paging).
 - jOOQ-backed Store uses JPA, Spring Data, or `EntityManager` for reads/writes instead of jOOQ DSL.
 - jOOQ generated sources come from a manually prepared or stale developer-local database.
 - Gradle runs compile/test before Flyway migration and jOOQ code generation are complete.
@@ -81,6 +82,8 @@ Review findings report design, boundary, contract, behavior, persistence, and te
 - Common error response contains boolean `success`.
 - 5xx fallback exposes raw exception messages.
 - HTTP-specific response DTOs or web-annotated DTOs are placed in reusable module `api`.
+- Controllers unroll `page`, `pageSize`, or other `*Search` accessors as individual `@RequestParam` values and construct `*Search` with `new`.
+- Controllers introduce an app request DTO whose fields only repeat `*Search` accessors.
 
 ## Tests
 
@@ -104,4 +107,4 @@ Review findings report design, boundary, contract, behavior, persistence, and te
 
 ## Skill-Specific Failure Signals
 
-If a proposed answer says "keep controllers inside each feature/domain module", "use JpaRepository for simple CRUD", "service create/find/list", or "put all migrations in app or a technology adapter by default", stop and realign with this skill.
+If a proposed answer says "keep controllers inside each feature/domain module", "use JpaRepository for simple CRUD", "service create/find/list", "put all migrations in app or a technology adapter by default", "bind page and pageSize as `@RequestParam` then `new *Search`", or "use Spring Data `Pageable` as the search contract", stop and realign with this skill.

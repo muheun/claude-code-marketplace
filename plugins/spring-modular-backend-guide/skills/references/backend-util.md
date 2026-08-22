@@ -50,7 +50,7 @@ Params<Object> detail = Params.obj("memberId", memberId)
 ## Boundary Rules
 
 - Domain `api` may expose DB-neutral `backend-util` types only for explicitly approved public contracts, commonly paging/search. Utility helper classes should remain implementation details.
-- Do not use `Params` to avoid designing explicit DTOs or commands. If the payload has a stable public shape, use a typed record/class.
+- Do not use `Params` to avoid designing explicit DTOs or commands. If the payload has a stable public shape, use a typed record/class. Typed `*Search` getters/setters that store filters in `Paging.getParams()` are the approved paging use of that bag, not this prohibition; see `persistence.md` (Search And Paging).
 - Do not convert ordinary style preferences into architecture tests that ban all direct Java standard-library use. Review repeated helper code and changed code instead.
 - When existing code already uses project-local helpers, prefer incremental cleanup near the changed code over broad rewrites.
 

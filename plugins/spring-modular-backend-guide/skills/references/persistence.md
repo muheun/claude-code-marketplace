@@ -17,13 +17,128 @@
 
 ## Search And Paging
 
-For internal Fixelsoft projects, Search DTOs may extend a DB-neutral `backend-util` `Paging<T>` only when the artifact is already exposed with `api` scope in the project build or listed as a public contract in the project's architecture notes. Do not make domain `api` depend on Spring DB bundles, Flyway, p6spy, JDBC drivers, or persistence helper packages. For general or open projects, create a local paging contract instead.
+HTTP binding of `*Search` is in `web-and-app.md` (Search Binding). This section is the Search type, Paging contract, and service/store flow.
+
+For internal Fixelsoft projects that already expose DB-neutral `backend-util` `Paging<T>` with `api` scope or list it as a public contract, `*Search` extends that `Paging<T>`. Do not make domain `api` depend on Spring DB bundles, Flyway, p6spy, JDBC drivers, or persistence helper packages.
+
+If the project cannot use `backend-util`, create a local `Paging<T>` with the same contract and extend it the same way. Do not substitute Spring Data `Page`, `Pageable`, or `Slice` as the search contract.
+
+Required `Paging<T>` surface:
+
+- `page` and `pageSize` stored in the same named param bag as search filters, 1-based, query names `page` and `pageSize` (not Spring Data `page`/`size`)
+- JavaBean `getPage` / `setPage` / `getPageSize` / `setPageSize` that read and write that bag, so `@ModelAttribute` can bind `?page=` and `?pageSize=`
+- `(int page, int pageSize)` constructor used by Search subclasses
+- `getParams()` with put-by-name / get-by-name
+- `calcPaging(count)`, `offset()`, `limit()`, `getBody()` / `setBody()`, and readable totals such as `getAllCount()` after `calcPaging`
+
+Do not treat `setBody` or total setters as query parameters. Service `calcPaging` / `setBody` overwrite result mutation.
+
+When the project cannot use `backend-util`, this is the minimum local `Paging<T>` that `@ModelAttribute` can bind. It stores `allCount` only; copy block/row metadata from the project `Paging` when the response needs it. Do not add Spring Data `Page` / `Pageable` instead.
+
+```java
+public abstract class Paging<T> {
+    private final Map<String, Object> params = new HashMap<>();
+    private List<T> body = List.of();
+    private long allCount;
+
+    protected Paging() {
+        this(1, 10);
+    }
+
+    protected Paging(int page, int pageSize) {
+        setPage(page);
+        setPageSize(pageSize);
+    }
+
+    public Map<String, Object> getParams() {
+        return params;
+    }
+
+    public int getPage() {
+        return (Integer) params.getOrDefault("page", 1);
+    }
+
+    public void setPage(int page) {
+        params.put("page", page);
+    }
+
+    public int getPageSize() {
+        return (Integer) params.getOrDefault("pageSize", 10);
+    }
+
+    public void setPageSize(int pageSize) {
+        params.put("pageSize", pageSize);
+    }
+
+    public int offset() {
+        return (getPage() - 1) * getPageSize();
+    }
+
+    public int limit() {
+        return getPageSize();
+    }
+
+    public List<T> getBody() {
+        return body;
+    }
+
+    public void setBody(List<T> body) {
+        this.body = body;
+    }
+
+    public long getAllCount() {
+        return allCount;
+    }
+
+    public Paging<T> calcPaging(long count) {
+        allCount = count;
+        return this;
+    }
+}
+```
+
+`*Search` exposes typed JavaBean getters and setters so Spring can bind query parameters. Those accessors read and write the paging param bag; they do not keep a second copy of the filter as a subclass field. On `backend-util` `Paging`, that bag is `getParams()` and the write is `putParam`. On a local `Paging`, use the local bag's `get` / `put` in the same accessor shape.
+
+```java
+public final class CommentSearch extends Paging<CommentResult> {
+
+    public CommentSearch() {
+        super(1, 20);
+    }
+
+    public String getKeyword() {
+        return getParams().getString("keyword");
+    }
+
+    public void setKeyword(String value) {
+        getParams().putParam("keyword", value);
+    }
+
+    public AuthorId getAuthorId() {
+        return (AuthorId) getParams().get("authorId");
+    }
+
+    public void setAuthorId(AuthorId value) {
+        getParams().putParam("authorId", value);
+    }
+
+    public boolean isMine() {
+        return Boolean.TRUE.equals(getParams().get("mine"));
+    }
+
+    public void setMine(boolean value) {
+        getParams().putParam("mine", value);
+    }
+}
+```
+
+This `putParam` use is the paging param bag, not a substitute for command or result DTOs. `Params` as a replacement for those types is still forbidden; see `backend-util.md`.
 
 Standard flow:
 
 ```text
-app request DTO
--> Search DTO
+controller binds *Search
+-> optional controller set for values that did not bind as Search accessors
 -> service.get(search)
 -> service validates target/SPI
 -> service calls store.countBy(search)

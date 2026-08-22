@@ -1,6 +1,6 @@
 ---
 name: spring-modular-backend-guide
-description: Use when designing, scaffolding, reviewing, or modifying Java Spring Boot DDD-style multi-module backends involving api/core/adapter boundaries, app-owned Servlet MVC composition, controller DTOs, enum input parsing, i18n/MessageSource/localized errors or notifications, QueryDSL/jOOQ/Flyway persistence, identifier strategy, Kafka messaging/event publishing/outbox, Caffeine/Valkey/Redis caching, Java imports, Java test helper formatting, layered tests, Mockito/fakes/Testcontainers, response envelopes, helper extraction, Spring bean granularity, or backend-util utilities.
+description: Use when designing, scaffolding, reviewing, or modifying Java Spring Boot DDD-style multi-module backends involving api/core/adapter boundaries, app-owned Servlet MVC composition, controller DTOs, paging, Search, Paging, ModelAttribute search binding, putParam, enum input parsing, i18n/MessageSource/localized errors or notifications, QueryDSL/jOOQ/Flyway persistence, identifier strategy, Kafka messaging/event publishing/outbox, Caffeine/Valkey/Redis caching, Java imports, Java test helper formatting, layered tests, Mockito/fakes/Testcontainers, response envelopes, helper extraction, Spring bean granularity, or backend-util utilities.
 ---
 
 # Spring Modular Backend Guide
@@ -27,7 +27,8 @@ This is an opinionated guideline for new scaffolds and architecture reviews. Do 
 | Store write input design or review | `references/naming.md`, `references/persistence.md`, `references/testing-checklist.md`, and `references/anti-patterns.md` |
 | Service, Store, adapter names, Java import ordering, or Java test helper formatting | `references/naming.md` |
 | Fixelsoft internal backend-util dependencies, common utilities, `StringUtil`, `NumberUtil`, `DateUtil`, `ListUtil`, or `Params` | `references/build-setup.md` and `references/backend-util.md` |
-| JPA, QueryDSL, jOOQ, Flyway, paging, identifier strategy | `references/persistence.md` and `references/build-setup.md` |
+| JPA, QueryDSL, jOOQ, Flyway, identifier strategy | `references/persistence.md` and `references/build-setup.md` |
+| Paging, `*Search`, `putParam`, page/pageSize, `@ModelAttribute` search binding | `references/persistence.md` and `references/web-and-app.md` |
 | Controllers, DTOs, string enum input parsing, app composition, response envelope | `references/web-and-app.md` and `references/naming.md` |
 | Kafka, messaging, event publishing or consuming, outbox, topic contracts | `references/messaging.md`, `references/architecture.md`, and `references/testing-checklist.md` |
 | Caffeine/Valkey/Redis caching, cache selection, cache keys, TTL, cache invalidation | `references/caching.md`, `references/architecture.md`, and `references/testing-checklist.md` |
@@ -63,6 +64,7 @@ This is an opinionated guideline for new scaffolds and architecture reviews. Do 
 If you see any of the following, read `references/anti-patterns.md` plus the changed-area references from the routing table before editing:
 
 - Controllers in domain modules; app DTOs passed into service/store contracts.
+- Unrolling `*Search` into individual `@RequestParam` values; an app request DTO that only repeats Search accessors; Spring Data `Pageable` as the list-search contract; Search filters stored as subclass fields instead of the paging param bag.
 - One-method interfaces with no distinct role; one-consumer app helper beans extracted from private methods.
 - `MessageSource` or `LocaleContextHolder` in reusable domain logic; translated exception sentences used as service contracts.
 - JPA entity fetch reads used as the default Store read model; direct `Enum.valueOf(...)` parsing at boundaries.
