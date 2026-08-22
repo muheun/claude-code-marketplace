@@ -1,6 +1,6 @@
 ---
 name: smart-git-commit
-description: Use when the user explicitly asks to commit, push, initialize a Git repository, create a branch, or prepare a Korean Gitmoji commit message.
+description: Use when the user explicitly asks to commit, push, initialize a Git repository, create a branch, create a git worktree, or prepare a Korean Gitmoji commit message.
 ---
 
 # Smart Git Commit
@@ -17,13 +17,13 @@ Korean triggers:
 - Commit/push: "커밋해줘" / "커밋해" / "커밋" / "푸시해줘" / "푸시해" / "푸시"
 - Message only: "커밋 메시지 작성" / "커밋 메시지 추천" / "커밋 메시지만 만들어줘" / "커밋 메세지 추천"
 - Init: "초기화해줘" / "깃 초기화" / "git init" / "저장소 초기화" / "초기 커밋"
-- Branch: "브랜치 만들어줘" / "브랜치 생성" / "새 브랜치" / "작업 브랜치 만들어줘"
+- Branch: "브랜치 만들어줘" / "브랜치 생성" / "새 브랜치" / "작업 브랜치 만들어줘" / "워크트리" / "worktree"
 
 English triggers:
 - Commit/push: "commit" / "commit this" / "create commit" / "push" / "push changes" / "commit and push"
 - Message only: "write a commit message" / "suggest a commit message" / "commit message only"
 - Init: "initialize git" / "git init" / "initial commit" / "initialize repository"
-- Branch: "create branch" / "new branch" / "make a branch"
+- Branch: "create branch" / "new branch" / "make a branch" / "create worktree" / "git worktree"
 
 **Ambiguous phrases require clarification before Git write actions:**
 - "저장해줘" / "저장해" / "save" / "save changes"
@@ -39,7 +39,7 @@ English triggers:
 
 ## Git Write Safety
 
-Never run `git add`, `git commit`, `git push`, `git init`, `git switch -c`, or any other Git write command unless the current task flow includes an explicit user request for that Git write action.
+Never run `git add`, `git commit`, `git push`, `git init`, `git switch -c`, `git worktree add`, or any other Git write command unless the current task flow includes an explicit user request for that Git write action.
 
 Do not infer permission from:
 
@@ -52,9 +52,9 @@ Do not infer permission from:
 - the user's usual workflow or past approval pattern
 - "go ahead" unless it answers the active approval prompt in this workflow
 
-If a Git write action seems useful but was not requested, ask whether the user wants it and stop. Do not stage, commit, push, create a branch, or initialize a repository while waiting for that answer.
+If a Git write action seems useful but was not requested, ask whether the user wants it and stop. Do not stage, commit, push, create a branch, create a worktree, or initialize a repository while waiting for that answer.
 
-For commit-message-only requests, generate the message and stop. Do not present commit, push, branch creation, or repository initialization as selectable actions unless the user separately requests a Git write action.
+For commit-message-only requests, generate the message and stop. Do not present commit, push, branch creation, worktree creation, or repository initialization as selectable actions unless the user separately requests a Git write action.
 
 Never force-add ignored files. Files ignored by repository `.gitignore`, `.git/info/exclude`, or the user's global gitignore are intentionally outside normal commit scope. Do not use `git add -f`, `git add --force`, or equivalent force-add behavior. If an ignored file seems necessary, report that it is ignored and stop; the user must explicitly request the exact force-add action or change the ignore rules.
 
@@ -482,9 +482,21 @@ EOF
 
 If user chose "Commit + Push":
 
+Push from the checkout whose current branch is the branch being pushed. Run `git branch --show-current` first.
+
+If it is exactly `<branch>`:
+
 ```bash
-git push origin HEAD
+git push -u origin <branch>
 ```
+
+If this directory is still the start-point and `<branch>` lives in a worktree:
+
+```bash
+git -C <path> push -u origin <branch>
+```
+
+Do not run `git push origin HEAD`. Do not re-run Branch Step 6 (`git worktree add` / `git switch -c`) from commit+push.
 
 **4.4 Report results:**
 
@@ -510,7 +522,7 @@ Push failure (after successful commit):
 ⚠️ Push failed: <error message>
 
 Your changes are committed locally.
-Try: git push origin HEAD
+Retry the 4.3 push from the checkout that has the branch.
 ```
 
 ## Repository Initialization Workflow
@@ -636,7 +648,7 @@ git branch --show-current
 
 If the directory is not a Git repository, offer to run `Repository Initialization Workflow` first.
 
-If the worktree has uncommitted changes, do not block branch creation. Use those changes as the primary context for naming unless the user provided a clearer branch purpose.
+If the current checkout has uncommitted changes, do not block branch creation. Use those changes as the primary context for naming unless the user provided a clearer branch purpose.
 
 ### Branch Step 2: Analyze Work Intent
 
@@ -715,41 +727,89 @@ If the local or remote branch already exists, append a short semantic suffix ins
 - `fix/resolve-login-error` → `fix/resolve-login-error-validation`
 - If no meaningful suffix is available, append `-2`.
 
-### Branch Step 5: Ask for Approval
+### Branch Step 5: Ask for Placement and Approval
 
-Show the generated branch name. If `origin` exists, provide exactly 4 options:
+Never default to the current directory or to a worktree. Always ask. Q1 is one AskUserQuestion (at most 4 options). Q2 is a second AskUserQuestion only when `origin` exists and Q1 was Current directory or New worktree.
 
-1. **Create branch** - Run `git switch -c <branch>`
-2. **Create + push upstream** - Run `git switch -c <branch>` and `git push -u origin <branch>`
-3. **Modify branch name** - Let user provide a branch name, then validate the format and conflict checks again
+Show the generated branch name, the start-point, and a proposed worktree path. The start-point is the current branch; if `git branch --show-current` is empty, use `HEAD`; if the user named a ref, use that. Compute the default worktree path from the repository root, not the current working directory:
+
+```bash
+git rev-parse --show-toplevel
+```
+
+The default path is a sibling of that root with `/` in the branch name replaced by `-` (example: `feat/create-items` → `<repo-parent>/feat-create-items`). If the current checkout is dirty, say that `git switch -c` keeps those changes on the new branch, while a new worktree is a clean checkout and the dirty files stay in the current directory.
+
+**Q1 — placement** (exactly 4 options):
+
+1. **Current directory** - `git switch -c <branch> <start-point>`
+2. **New worktree** - `git worktree add -b <branch> <path> <start-point>`
+3. **Modify branch name** - Let the user provide a branch name, then validate the format and conflict checks again
 4. **Cancel** - Abort branch creation
 
-If `origin` does not exist, provide exactly 3 options:
+If the user chooses Modify, re-run naming and conflict checks, then Q1 again. If Cancel, stop.
 
-1. **Create local branch** - Run `git switch -c <branch>`
-2. **Modify branch name** - Let user provide a branch name, then validate the format and conflict checks again
-3. **Cancel** - Abort branch creation
+**Q2 — push** (only when `origin` exists and Q1 was Current directory or New worktree; exactly 2 options):
 
-Do not create or push the branch without explicit user approval.
+1. **Local only** - do not push
+2. **Push upstream** - `git push -u origin <branch>` (current directory) or `git -C <path> push -u origin <branch>` (worktree)
+
+If `origin` does not exist, skip Q2. Do not offer a push-upstream option.
+
+If the user picks a worktree and wants a different path, confirm that path before executing. If the path already exists or `git worktree list` already uses it, do not overwrite; ask for another path.
+
+Do not create a branch, worktree, or upstream without explicit user approval.
 
 ### Branch Step 6: Execute Branch Creation
 
-For local branch creation:
+A worktree path, a branch name, and an upstream are three different things. `git push` follows the **checked-out branch's** upstream, not the folder name.
+
+**Current directory**
+
+Use the same start-point as Step 5 (`HEAD` when that is the start-point):
 
 ```bash
-git switch -c <branch>
+git switch -c <branch> <start-point>
 git branch --show-current
 ```
 
-For branch creation with upstream push:
+With upstream, only after `git branch --show-current` equals `<branch>`:
 
 ```bash
-git switch -c <branch>
 git push -u origin <branch>
-git branch --show-current
 ```
 
 If `git switch -c` fails because the branch exists, do not overwrite it. Ask whether to switch to the existing branch or choose a new name.
+
+**New worktree**
+
+Create the new branch and the worktree in one command. `<start-point>` is the current branch, `HEAD` when the current checkout has no branch name, or the ref the user named.
+
+Refuse to overwrite, then create, then verify, then optionally push. Do not put `push` in the same command block as `add`.
+
+```bash
+git worktree list
+```
+
+If `<path>` is already listed, stop and ask for another path. Also refuse if the path exists on disk (`test -e <path>` in Bash; `Test-Path` in PowerShell). Do not run `git worktree add` against that path.
+
+```bash
+git worktree add -b <branch> <path> <start-point>
+git -C <path> branch --show-current
+```
+
+If that current branch is not exactly `<branch>`, stop. Do not push.
+
+The parent checkout stays on the start-point. Later commits and pushes for the new branch use `git -C <path>` (or an explicit `cd` into `<path>`). Do not `git push origin HEAD` from the parent for that branch.
+
+If Q2 was Push upstream and verification succeeded:
+
+```bash
+git -C <path> push -u origin <branch>
+```
+
+Do not run `git worktree add <path> <start-point>` or `git worktree add <path>`. The first checks out the start-point branch when that ref is an existing branch, so later commits and `git push` go to that branch's upstream. The second creates a branch named after the folder basename, not the generated `<type>/<slug>`.
+
+Do not assume the worktree folder name is the remote branch or the upstream. After a worktree push, report `origin/<branch>`, not the path.
 
 ## Edge Cases
 
@@ -764,6 +824,7 @@ Common edge cases and how to handle them. For complete details, see `references/
 - No remote branch → Offer `git push -u origin <branch>`
 - Merge conflict → Request resolution before commit
 - Detached HEAD → Suggest creating branch
+- Worktree on an existing start-point branch → Stop; do not push that start-point. See Branch Creation Workflow.
 
 *Full edge case handling: `references/edge_cases.md`*
 
@@ -777,7 +838,7 @@ Before each commit-message-only workflow:
 - [ ] Non-ignored untracked file contents inspected read-only when present
 - [ ] Correct Gitmoji selected
 - [ ] Korean message follows the format and quality rules
-- [ ] No commit, push, branch, or initialization action offered
+- [ ] No commit, push, branch, worktree, or initialization action offered
 - [ ] Workflow stopped after showing the message
 
 Before each commit or push workflow:
@@ -823,6 +884,12 @@ Before branch creation:
 - [ ] Branch slug normalized to lowercase kebab-case
 - [ ] Local and remote branch conflicts checked
 - [ ] `origin` remote verified before offering upstream push
+- [ ] User chose current directory vs new worktree in a 4-option placement question
+- [ ] Push was a second question only when origin exists
+- [ ] Worktree path was checked with `git worktree list` and does not already exist
+- [ ] Worktree create used `git worktree add -b <branch> <path> <start-point>` when chosen
+- [ ] After worktree create, current branch in that path is exactly `<branch>` before any push
+- [ ] Upstream push used `origin/<new-branch>`, not the start-point branch
 - [ ] Force push avoided unless explicitly requested
 - [ ] User approved branch creation
 
@@ -849,7 +916,7 @@ This skill implements MY_RULES.md Git workflow rules:
 ✅ **Triggers:**
 - Commit/push: "커밋", "커밋해줘", "commit", "push", "푸시"
 - Init: "초기화", "깃 초기화", "initialize git", "initial commit"
-- Branch: "브랜치", "브랜치 만들어줘", "create branch", "new branch"
+- Branch: "브랜치", "브랜치 만들어줘", "create branch", "new branch", "워크트리", "worktree"
 
 ✅ **Quality:**
 - Gitmoji + 한글 메시지 자동 생성

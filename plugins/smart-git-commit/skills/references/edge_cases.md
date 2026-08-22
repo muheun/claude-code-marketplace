@@ -239,24 +239,21 @@ git diff --cached --stat
 ### 처리 방법
 
 **에러 감지:**
-```bash
-git push origin HEAD
-# fatal: The current branch feat/auth has no upstream branch.
-```
+현재 체크아웃에 브랜치는 있으나 upstream이 없다.
 
 **사용자에게 안내:**
-```
-⚠️ No upstream branch configured.
-
-Run this to push and set upstream:
-git push -u origin feat/auth
-
-Would you like me to execute this? (yes/no)
-```
+upstream이 없다. 브랜치가 있는 체크아웃에서 `git push -u origin <branch>` (worktree면 `git -C <path>`, Branch Step 6)를 실행할지 묻는다. 시작점 체크아웃에서 `git push origin HEAD` 하지 않는다.
 
 **사용자 승인 시 실행:**
+
 ```bash
-git push -u origin feat/auth
+git push -u origin <branch>
+```
+
+worktree에서 만든 브랜치:
+
+```bash
+git -C <path> push -u origin <branch>
 ```
 
 **결과 보고:**
@@ -399,14 +396,8 @@ Would you like me to generate a branch name and create it? (yes/no)
 ```
 
 **사용자 승인 시:**
-- `Branch Creation Workflow`를 사용해 현재 작업 의도에 맞는 브랜치 이름을 생성한다.
-- 예: `feat/create-items`, `fix/resolve-login-error`, `refactor/modify-member-business`
-- 사용자 승인 후 생성한다.
-
-```bash
-git switch -c feat/create-items
-# 이후 정상 커밋 진행
-```
+- `Branch Creation Workflow`로 이름을 정하고, 현재 디렉터리 vs 새 worktree를 물은 뒤 생성한다. Detached HEAD면 start-point는 `HEAD`다.
+- 여기서 `git switch -c`를 바로 실행하지 않는다.
 
 ---
 
@@ -532,7 +523,7 @@ git ls-remote --heads origin <candidate-branch> 2>/dev/null
 
 ---
 
-## Case 15: Branch Creation With Dirty Worktree
+## Case 15: Branch Creation With Uncommitted Changes
 
 ### 상황
 - 커밋되지 않은 변경사항이 있는 상태에서 브랜치 생성을 요청한 경우
@@ -541,6 +532,7 @@ git ls-remote --heads origin <candidate-branch> 2>/dev/null
 - 브랜치 생성을 막지 않는다.
 - 변경사항을 브랜치 이름 추론의 주요 근거로 사용한다.
 - `git switch -c <branch>`는 변경사항을 유지하므로 stash를 요구하지 않는다.
+- 새 worktree는 깨끗한 체크아웃이다. 더티 파일은 현재 디렉터리에 남는다. 더티 변경을 새 브랜치로 가져가려면 current-directory 옵션을 고른다.
 - 단, 충돌이나 checkout 실패가 발생하면 Git 오류를 그대로 설명하고 사용자의 정리를 요청한다.
 
 ---
@@ -594,14 +586,27 @@ git ls-remote --heads origin <candidate-branch> 2>/dev/null
 git remote get-url origin
 ```
 
-- `origin`이 없으면 `Create + push upstream` 옵션을 제공하지 않는다.
-- 로컬 브랜치 생성만 가능하다고 설명한다.
+- `origin`이 없으면 Q2(push)를 생략한다. Q1만 남긴다: Current directory, New worktree, Modify branch name, Cancel.
+- 로컬 생성만 가능하다고 설명한다. 현재 디렉터리와 새 worktree는 모두 가능하다.
 - 사용자가 remote 설정을 원하면 remote URL을 받은 뒤 별도 Git 설정 작업으로 처리한다.
 - remote 설정 전에는 `git push -u origin <branch>`를 실행하지 않는다.
 
 ---
 
-## Case 19: Force Git Operation Seems Necessary
+## Case 19: Worktree Checked Out the Start-Point Branch
+
+### 상황
+- `git worktree add <path> <existing-branch>`로 worktree를 만들어, 새 브랜치가 아니라 시작점 브랜치가 체크아웃된 경우
+- 그 worktree에서 커밋한 뒤 `git push`가 시작점 원격(예: `origin/release/dev`)으로 올라간 경우
+
+### 처리 방법
+- 이미 시작점 브랜치가 체크아웃된 worktree면 푸시하지 않는다.
+- 새 브랜치를 Branch Creation Workflow worktree 경로(`-b`)로 다시 만들거나, 사용자가 시작점 브랜치에 커밋할 의도인지 확인한다.
+- 생성 명령은 Branch Step 6을 따른다.
+
+---
+
+## Case 20: Force Git Operation Seems Necessary
 
 ### 상황
 - ignored 파일을 추가해야 하거나, hook이 실패하거나, push가 rejected 되어 force 계열 명령이 필요해 보이는 경우
